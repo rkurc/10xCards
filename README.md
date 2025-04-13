@@ -73,21 +73,9 @@ This project is configured with AI development tools to enhance the development 
 - Accessibility best practices
 - Astro and React guidelines
 
-### Cursor IDE
-
-The project includes AI rules in `.cursor/rules/` directory that help Cursor IDE understand the project structure and provide better code suggestions.
-
 ### GitHub Copilot
 
 AI instructions for GitHub Copilot are available in `.github/copilot-instructions.md`
-
-### Windsurf
-
-The `.windsurfrules` file contains AI configuration for Windsurf.
-
-## Contributing
-
-Please follow the AI guidelines and coding practices defined in the AI configuration files when contributing to this project.
 
 ## License
 
