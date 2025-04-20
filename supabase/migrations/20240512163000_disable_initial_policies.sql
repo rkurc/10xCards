@@ -51,3 +51,4 @@ drop policy if exists "authenticated users can manage own personalizations" on p
 drop policy if exists "anon users cannot select generation_logs" on public.generation_logs;
 drop policy if exists "authenticated users can view own generation logs" on public.generation_logs;
 drop policy if exists "authenticated users can insert own generation logs" on public.generation_logs;
+

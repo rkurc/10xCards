@@ -2,6 +2,8 @@ import type { APIContext } from "astro";
 import { processTextSchema } from "../../../schemas/generation";
 import { GenerationService } from "../../../services/generation.service";
 
+
+export const prerender = false;
 /**
  * Rate limit information by user
  */
@@ -17,8 +19,9 @@ const RATE_LIMIT = {
 
 export async function POST({ request, locals }: APIContext) {
   try {
-    // Check if user is authenticated (using a fixed user ID for initial implementation)
-    const userId = "test-user-id"; // In a real implementation, this would come from auth
+    // Use a valid UUID format for testing
+    // This is a sample UUID that follows the format expected by Supabase
+    const userId = "c26087da-dacc-4988-8bd1-e5449a1a4b9f"; // Test UUID in valid format
 
     // Check rate limits
     if (!checkRateLimit(userId)) {
@@ -61,10 +64,10 @@ export async function POST({ request, locals }: APIContext) {
 
     // Process the text
     const generationService = new GenerationService(locals.supabase);
-    const result = await generationService.startTextProcessing(userId, result.data);
+    const processingResult = await generationService.startTextProcessing(userId, result.data);
 
     // Return success response
-    return new Response(JSON.stringify(result), {
+    return new Response(JSON.stringify(processingResult), {
       status: 202, // Accepted
       headers: { "Content-Type": "application/json" },
     });
