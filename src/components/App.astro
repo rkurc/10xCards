@@ -1,0 +1,63 @@
+---
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+---
+
+<div class="container mx-auto py-12 px-4">
+  <div class="max-w-4xl mx-auto">
+    <div class="text-center mb-12">
+      <h1 class="text-4xl font-bold tracking-tight mb-4">
+        Witaj w 10xCards
+      </h1>
+      <p class="text-xl text-muted-foreground">
+        Twórz i ucz się za pomocą fiszek generowanych przez sztuczną inteligencję
+      </p>
+    </div>
+
+    <div class="grid gap-8">
+      <!-- Main feature card -->
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-2xl">Automatyczne generowanie fiszek</CardTitle>
+          <CardDescription>
+            Oszczędź czas i wysiłek dzięki zaawansowanej AI
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p>
+            Zapomnij o żmudnym, ręcznym tworzeniu fiszek. Z 10xCards wystarczy, że wkleisz
+            dowolny tekst, a nasza sztuczna inteligencja automatycznie wygeneruje wysokiej
+            jakości fiszki dostosowane do twoich potrzeb naukowych.
+          </p>
+        </CardContent>
+        <CardFooter>
+          <a href="/dashboard" class="w-full">
+            <Button size="lg" className="w-full">Rozpocznij teraz</Button>
+          </a>
+        </CardFooter>
+      </Card>
+
+      <!-- Features grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- ...existing feature cards... -->
+      </div>
+
+      <!-- Call to action -->
+      <Card className="bg-primary text-primary-foreground">
+        <CardHeader>
+          <CardTitle>Gotowy na efektywniejszą naukę?</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>Dołącz do społeczności użytkowników, którzy już korzystają z naszych narzędzi i osiągają lepsze wyniki.</p>
+        </CardContent>
+        <CardFooter>
+          <a href="/dashboard" class="w-full">
+            <Button variant="secondary" size="lg" className="w-full">
+              Zarejestruj się za darmo
+            </Button>
+          </a>
+        </CardFooter>
+      </Card>
+    </div>
+  </div>
+</div>

@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { GenerationService } from "@/services/generation.service";
 import { supabaseClient } from "@/db/supabase.client";
 
@@ -36,7 +35,6 @@ type FormValues = z.infer<typeof formSchema>;
 export function GenerateForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [charsCount, setCharsCount] = useState(0);
-  const navigate = useNavigate();
 
   // Initialize react-hook-form with zod validation
   const form = useForm<FormValues>({
@@ -70,8 +68,8 @@ export function GenerateForm() {
 
       toast.success("Tekst przesłany do analizy");
 
-      // Redirect to review page with the generation ID from the response
-      navigate(`/generate/review/${response.generation_id}`);
+      // Use standard browser navigation instead of React Router
+      window.location.href = `/generate/review/${response.generation_id}`;
     } catch (error) {
       console.error("Error submitting form:", error);
       toast.error("Wystąpił błąd podczas przesyłania tekstu");
