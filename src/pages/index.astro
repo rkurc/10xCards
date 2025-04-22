@@ -1,8 +1,8 @@
 ---
-import Welcome from "../components/Welcome.astro";
-import Layout from "../layouts/Layout.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { App } from "../components/App";
 ---
 
-<Layout>
-  <Welcome />
-</Layout>
+<BaseLayout title="10xCards - Twórz i ucz się z fiszkami AI">
+  <App client:load />
+</BaseLayout>

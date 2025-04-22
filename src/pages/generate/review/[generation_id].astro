@@ -1,0 +1,33 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { ReviewContent } from "../../../components/review/ReviewContent";
+import { Breadcrumb } from "../../../components/navigation/Breadcrumb";
+import { checkAuth } from "../../../utils/auth";
+
+// Authentication check
+const user = await checkAuth(Astro);
+if (!user) {
+  return Astro.redirect("/login?redirect=" + Astro.request.url);
+}
+
+// Get generation ID from params
+const { generation_id } = Astro.params;
+
+// Validate generation ID
+if (!generation_id || !/^[a-zA-Z0-9_-]+$/.test(generation_id)) {
+  return Astro.redirect("/404");
+}
+---
+
+<BaseLayout title="Przegląd wygenerowanych fiszek | 10xCards">
+  <div class="container mx-auto py-8">
+    <Breadcrumb
+      items={[
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Generuj fiszki", href: "/generate" },
+        { label: "Przegląd", href: `/generate/review/${generation_id}` },
+      ]}
+    />
+    <ReviewContent generationId={generation_id} client:load />
+  </div>
+</BaseLayout>

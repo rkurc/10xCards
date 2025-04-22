@@ -1,7 +1,15 @@
+/* Place Tailwind directives first */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Then include imports */
 @import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
+
+/* ...existing CSS reset or custom styles... */
 
 :root {
   --radius: 0.625rem;

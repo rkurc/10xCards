@@ -1,0 +1,15 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { LoginForm } from "../components/auth/LoginForm";
+
+// Get redirect URL from query params if present
+const redirectUrl = Astro.url.searchParams.get("redirect") || "/dashboard";
+---
+
+<BaseLayout title="Zaloguj się | 10xCards">
+  <div class="flex items-center justify-center min-h-[80vh]">
+    <div class="w-full max-w-md">
+      <LoginForm redirectUrl={redirectUrl} client:load />
+    </div>
+  </div>
+</BaseLayout>

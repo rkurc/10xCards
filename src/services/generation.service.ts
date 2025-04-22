@@ -1,9 +1,18 @@
-import { SupabaseClient } from "../db/supabase.client";
-import { Database } from "../db/database.types";
-import { GenerationCardDTO, GenerationStartCommand, GenerationStartResponse, GenerationStatus } from "../types";
+import { supabaseClient } from "../db/supabase.client";
+import type { Database } from "../db/database.types";
+import type {
+  GenerationCardDTO,
+  GenerationStartCommand,
+  GenerationStartResponse,
+  GenerationStatus,
+  CardDTO,
+  GenerationAcceptAllCommand,
+  GenerationAcceptAllResponse,
+  GenerationCardAcceptCommand,
+} from "../types";
 
 export class GenerationService {
-  constructor(private supabase: SupabaseClient<Database>) {}
+  constructor(private supabase: supabaseClient<Database>) {}
 
   /**
    * Starts a flashcard generation process from the provided text
@@ -15,7 +24,6 @@ export class GenerationService {
     // print user id and command details
     console.log("User ID:", userId);
     console.log("Command Details:", command);
-    
 
     // Calculate estimated processing time based on text length (simplified)
     const estimatedTimeSeconds = Math.max(5, Math.ceil(command.text.length / 1000) * 2);
@@ -228,5 +236,303 @@ export class GenerationService {
         v = c === "x" ? r : (r & 0x3) | 0x8;
       return v.toString(16);
     });
+  }
+
+  /**
+   * Gets the results of a generation job
+   * @param userId The ID of the requesting user
+   * @param generationId The ID of the generation job
+   * @returns The generation results including cards and stats
+   */
+  async getGenerationResults(userId: string, generationId: string): Promise<GenerationResultResponse> {
+    // Get generation log to check ownership and get metadata
+    const { data: generationLog, error: logError } = await this.supabase
+      .from("generation_logs")
+      .select("*")
+      .eq("id", generationId)
+      .single();
+
+    if (logError) {
+      throw new Error("Failed to fetch generation log");
+    }
+
+    if (!generationLog) {
+      throw new Error("Generation not found");
+    }
+
+    if (generationLog.user_id !== userId) {
+      throw new Error("Access denied");
+    }
+
+    // Get generated cards
+    const { data: cards, error: cardsError } = await this.supabase
+      .from("generation_results")
+      .select("id, front_content, back_content, readability_score")
+      .eq("generation_id", generationId);
+
+    if (cardsError) {
+      throw new Error("Failed to fetch generated cards");
+    }
+
+    return {
+      cards: cards.map((card: { id: any; front_content: any; back_content: any; readability_score: any }) => ({
+        id: card.id,
+        front_content: card.front_content,
+        back_content: card.back_content,
+        readability_score: card.readability_score,
+      })),
+      stats: {
+        text_length: generationLog.source_text_length,
+        generated_count: generationLog.generated_count,
+        generation_time_ms: generationLog.generation_duration,
+      },
+    };
+  }
+
+  /**
+   * Accepts all generated flashcards from a generation job
+   * @param userId The ID of the requesting user
+   * @param generationId The ID of the generation job
+   * @param command The accept command containing optional set ID
+   * @returns The count and IDs of accepted cards
+   */
+  async acceptAllCards(
+    userId: string,
+    generationId: string,
+    command: GenerationAcceptAllCommand
+  ): Promise<GenerationAcceptAllResponse> {
+    // Get generation log to check ownership
+    const { data: generationLog, error: logError } = await this.supabase
+      .from("generation_logs")
+      .select("*")
+      .eq("id", generationId)
+      .single();
+
+    if (logError || !generationLog) {
+      throw new Error("Generation not found");
+    }
+
+    if (generationLog.user_id !== userId) {
+      throw new Error("Access denied");
+    }
+
+    // If set_id provided, verify set exists and belongs to user
+    if (command.set_id) {
+      const { data: cardSet, error: setError } = await this.supabase
+        .from("card_sets")
+        .select("id")
+        .eq("id", command.set_id)
+        .eq("user_id", userId)
+        .single();
+
+      if (setError || !cardSet) {
+        throw new Error("Card set not found");
+      }
+    }
+
+    // Get all generated cards
+    const { data: generatedCards, error: cardsError } = await this.supabase
+      .from("generation_results")
+      .select("*")
+      .eq("generation_id", generationId);
+
+    if (cardsError) {
+      throw new Error("Failed to fetch generated cards");
+    }
+
+    // Begin a transaction to create cards and update statistics
+    const { data: cards, error: insertError } = await this.supabase
+      .from("cards")
+      .insert(
+        generatedCards.map((card: { front_content: any; back_content: any; readability_score: any }) => ({
+          user_id: userId,
+          front_content: card.front_content,
+          back_content: card.back_content,
+          source_type: "ai",
+          readability_score: card.readability_score,
+        }))
+      )
+      .select("id");
+
+    if (insertError) {
+      throw new Error("Failed to create cards");
+    }
+
+    // If set_id provided, link cards to set
+    if (command.set_id && cards) {
+      const { error: linkError } = await this.supabase.from("cards_to_sets").insert(
+        cards.map((card: { id: any }) => ({
+          card_id: card.id,
+          set_id: command.set_id,
+        }))
+      );
+
+      if (linkError) {
+        throw new Error("Failed to link cards to set");
+      }
+    }
+
+    // Update generation statistics
+    await this.supabase
+      .from("generation_logs")
+      .update({
+        accepted_unedited_count: generatedCards.length,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", generationId);
+
+    return {
+      accepted_count: cards?.length || 0,
+      card_ids: cards?.map((c: { id: any }) => c.id) || [],
+    };
+  }
+
+  /**
+   * Accepts a specific generated flashcard, optionally with edits
+   * @param userId The ID of the requesting user
+   * @param generationId The ID of the generation job
+   * @param cardId The ID of the card to accept
+   * @param command The accept command containing optional edits and set ID
+   * @returns The created card
+   */
+  async acceptCard(
+    userId: string,
+    generationId: string,
+    cardId: string,
+    command: GenerationCardAcceptCommand
+  ): Promise<CardDTO> {
+    // Get generation log to check ownership
+    const { data: generationLog, error: logError } = await this.supabase
+      .from("generation_logs")
+      .select("*")
+      .eq("id", generationId)
+      .single();
+
+    if (logError || !generationLog) {
+      throw new Error("Generation not found");
+    }
+
+    if (generationLog.user_id !== userId) {
+      throw new Error("Access denied");
+    }
+
+    // If set_id provided, verify set exists and belongs to user
+    if (command.set_id) {
+      const { data: cardSet, error: setError } = await this.supabase
+        .from("card_sets")
+        .select("id")
+        .eq("id", command.set_id)
+        .eq("user_id", userId)
+        .single();
+
+      if (setError || !cardSet) {
+        throw new Error("Card set not found");
+      }
+    }
+
+    // Get the generated card
+    const { data: generatedCard, error: cardError } = await this.supabase
+      .from("generation_results")
+      .select("*")
+      .eq("generation_id", generationId)
+      .eq("id", cardId)
+      .single();
+
+    if (cardError || !generatedCard) {
+      throw new Error("Generated card not found");
+    }
+
+    // Create the card with optional edited content
+    const { data: card, error: insertError } = await this.supabase
+      .from("cards")
+      .insert({
+        user_id: userId,
+        front_content: command.front_content || generatedCard.front_content,
+        back_content: command.back_content || generatedCard.back_content,
+        source_type: command.front_content || command.back_content ? "ai_edited" : "ai",
+        readability_score: generatedCard.readability_score,
+      })
+      .select()
+      .single();
+
+    if (insertError || !card) {
+      throw new Error("Failed to create card");
+    }
+
+    // If set_id provided, link card to set
+    if (command.set_id) {
+      const { error: linkError } = await this.supabase
+        .from("cards_to_sets")
+        .insert({ card_id: card.id, set_id: command.set_id });
+
+      if (linkError) {
+        throw new Error("Failed to link card to set");
+      }
+    }
+
+    // Update generation statistics
+    await this.supabase
+      .from("generation_logs")
+      .update({
+        [command.front_content || command.back_content ? "accepted_edited_count" : "accepted_unedited_count"]:
+          generationLog[
+            command.front_content || command.back_content ? "accepted_edited_count" : "accepted_unedited_count"
+          ] + 1,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", generationId);
+
+    return card;
+  }
+
+  /**
+   * Rejects a specific generated flashcard
+   * @param userId The ID of the requesting user
+   * @param generationId The ID of the generation job
+   * @param cardId The ID of the card to reject
+   */
+  async rejectCard(userId: string, generationId: string, cardId: string): Promise<void> {
+    // Get generation log to check ownership
+    const { data: generationLog, error: logError } = await this.supabase
+      .from("generation_logs")
+      .select("*")
+      .eq("id", generationId)
+      .single();
+
+    if (logError || !generationLog) {
+      throw new Error("Generation not found");
+    }
+
+    if (generationLog.user_id !== userId) {
+      throw new Error("Access denied");
+    }
+
+    // Get the generated card
+    const { data: generatedCard, error: cardError } = await this.supabase
+      .from("generation_results")
+      .select("id")
+      .eq("generation_id", generationId)
+      .eq("id", cardId)
+      .single();
+
+    if (cardError || !generatedCard) {
+      throw new Error("Generated card not found");
+    }
+
+    // Mark the card as rejected by deleting it from generation_results
+    const { error: deleteError } = await this.supabase.from("generation_results").delete().eq("id", cardId);
+
+    if (deleteError) {
+      throw new Error("Failed to reject card");
+    }
+
+    // Update rejection statistics in generation_logs
+    await this.supabase
+      .from("generation_logs")
+      .update({
+        rejected_count: (generationLog.rejected_count || 0) + 1,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", generationId);
   }
 }

@@ -1,0 +1,24 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import GenerateContent from "../../components/generate/GenerateContent";
+import { Breadcrumb } from "../../components/navigation/Breadcrumb";
+import { checkAuth } from "../../utils/auth";
+
+// Authentication check
+const user = await checkAuth(Astro);
+if (!user) {
+  return Astro.redirect("/login?redirect=/generate");
+}
+---
+
+<BaseLayout title="Generuj fiszki | 10xCards">
+  <div class="container mx-auto py-8">
+    <Breadcrumb
+      items={[
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Generuj fiszki", href: "/generate" },
+      ]}
+    />
+    <GenerateContent client:load />
+  </div>
+</BaseLayout>
