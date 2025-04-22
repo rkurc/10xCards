@@ -56,20 +56,28 @@ export function GenerateForm() {
   // Handle form submission
   async function onSubmit(data: FormValues) {
     setIsSubmitting(true);
+    console.log("Submitting form for generation...");
 
     try {
-      // Call the actual generation service (in a real app, userId would come from auth context)
-      const mockUserId = "user-1"; // Mock user ID for testing
+      const mockUserId = "user-1";
       const response = await generationService.startTextProcessing(mockUserId, {
         text: data.text,
         target_count: data.target_count,
         set_id: data.set_id
       });
 
+      console.log(`Generation successful, got ID: ${response.generation_id}`);
       toast.success("Tekst przesłany do analizy");
-
-      // Use standard browser navigation instead of React Router
-      window.location.href = `/generate/review/${response.generation_id}`;
+      
+      // Add delay to ensure the toast is visible
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Create the URL and log it
+      const reviewUrl = `/generate/review/${response.generation_id}`;
+      console.log(`Redirecting to: ${reviewUrl}`);
+      
+      // Use direct browser navigation
+      window.location.href = reviewUrl;
     } catch (error) {
       console.error("Error submitting form:", error);
       toast.error("Wystąpił błąd podczas przesyłania tekstu");

@@ -1,10 +1,10 @@
 import { supabaseClient } from "../db/supabase.client";
 import type { Database } from "../db/database.types";
+
 import type {
   GenerationCardDTO,
   GenerationStartCommand,
   GenerationStartResponse,
-  GenerationStatus,
   CardDTO,
   GenerationAcceptAllCommand,
   GenerationAcceptAllResponse,
@@ -12,7 +12,7 @@ import type {
 } from "../types";
 
 export class GenerationService {
-  constructor(private supabase: supabaseClient<Database>) {}
+  constructor(private supabase: typeof supabaseClient | supabaseClient<Database>) {}
 
   /**
    * Starts a flashcard generation process from the provided text
@@ -21,43 +21,13 @@ export class GenerationService {
    * @returns The generation ID and estimated processing time
    */
   async startTextProcessing(userId: string, command: GenerationStartCommand): Promise<GenerationStartResponse> {
-    // print user id and command details
-    console.log("User ID:", userId);
-    console.log("Command Details:", command);
-
-    // Calculate estimated processing time based on text length (simplified)
-    const estimatedTimeSeconds = Math.max(5, Math.ceil(command.text.length / 1000) * 2);
-
-    // Create a new generation log entry
-    // Note: We're not specifying the ID since it's a bigserial in the database
-    const { data, error } = await this.supabase
-      .from("generation_logs")
-      .insert({
-        user_id: userId,
-        status: "pending" as GenerationStatus,
-        source_text: command.text,
-        target_count: command.target_count,
-        set_id: command.set_id,
-        estimated_time_seconds: estimatedTimeSeconds,
-        // Additional fields from original schema
-        model: "mock-model-v1",
-        source_text_length: command.text.length,
-        source_text_hash: this.hashText(command.text),
-      })
-      .select()
-      .single();
-
-    if (error || !data) {
-      throw new Error(`Failed to create generation log: ${error?.message || "Unknown error"}`);
-    }
-
-    // Dispatch an asynchronous task to process the text
-    // Using setTimeout to simulate asynchronous processing
-    setTimeout(() => this.processTextAsync(data.id.toString()), 100);
-
+    // Mock implementation for now
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    const generationId = 'mock-gen-' + Date.now();
+    
     return {
-      generation_id: data.id.toString(), // Convert bigint to string
-      estimated_time_seconds: estimatedTimeSeconds,
+      generation_id: generationId,
+      estimated_time_seconds: 5
     };
   }
 
