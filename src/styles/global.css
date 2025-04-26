@@ -1,11 +1,11 @@
-/* Place Tailwind directives first */
+/* First include imports */
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Then Tailwind directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Then include imports */
-@import "tailwindcss";
-@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -120,7 +120,8 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
+    outline-color: oklch(var(--ring) / 0.5); /* Replace outline-ring/50 with direct CSS */
   }
   body {
     @apply bg-background text-foreground;
