@@ -1,11 +1,16 @@
 ---
 import "../styles/global.css";
+import { UserMenu } from "../components/auth/UserMenu";
+import { checkAuth } from "../utils/auth";
 
 interface Props {
   title: string;
 }
 
 const { title } = Astro.props;
+
+// Check if user is authenticated
+const user = checkAuth();
 ---
 
 <!doctype html>
@@ -16,6 +21,34 @@ const { title } = Astro.props;
     <title>{title} | 10xCards</title>
   </head>
   <body class="min-h-screen bg-background">
+    <header class="border-b">
+      <div class="container mx-auto py-4 px-4 flex items-center justify-between">
+        <a href="/" class="text-xl font-bold">10xCards</a>
+        <nav>
+          <ul class="flex items-center gap-4">
+            {user ? (
+              <>
+                <li><a href="/dashboard" class="text-sm hover:text-primary">Dashboard</a></li>
+                <li><a href="/sets" class="text-sm hover:text-primary">Zestawy</a></li>
+                <li><a href="/learn" class="text-sm hover:text-primary">Nauka</a></li>
+                <li><UserMenu client:load user={user} /></li>
+              </>
+            ) : (
+              <>
+                <li>
+                  <a href="/login" class="text-sm hover:text-primary">Logowanie</a>
+                </li>
+                <li>
+                  <a href="/register" class="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90">
+                    Rejestracja
+                  </a>
+                </li>
+              </>
+            )}
+          </ul>
+        </nav>
+      </div>
+    </header>
     <main class="relative">
       <slot />
     </main>

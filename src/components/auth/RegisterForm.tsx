@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,16 +12,24 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 // Form schema using zod
 const formSchema = z.object({
   email: z.string().email("Podaj poprawny adres email"),
-  password: z.string().min(1, "Podaj hasło"),
+  password: z
+    .string()
+    .min(8, "Hasło musi mieć co najmniej 8 znaków")
+    .regex(/[a-zA-Z]/, "Hasło musi zawierać co najmniej jedną literę")
+    .regex(/[0-9]/, "Hasło musi zawierać co najmniej jedną cyfrę"),
+  passwordConfirm: z.string().min(8, "Powtórz hasło"),
+}).refine((data) => data.password === data.passwordConfirm, {
+  message: "Hasła nie są identyczne",
+  path: ["passwordConfirm"],
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface LoginFormProps {
+interface RegisterFormProps {
   redirectUrl?: string;
 }
 
-export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
+export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Initialize react-hook-form with zod validation
@@ -30,6 +38,7 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
     defaultValues: {
       email: "",
       password: "",
+      passwordConfirm: "",
     },
   });
 
@@ -39,16 +48,16 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
 
     try {
       // This is where we would call the auth service in a real implementation
-      console.log("Login form submitted:", data);
-      toast.success("Logowanie udane");
+      console.log("Register form submitted:", data);
+      toast.success("Konto zostało utworzone. Możesz się teraz zalogować.");
       
       // Add a small delay before redirecting to ensure the toast is visible
       setTimeout(() => {
-        window.location.href = redirectUrl || "/dashboard";
-      }, 1000);
+        window.location.href = "/login";
+      }, 2000);
     } catch (error) {
-      console.error("Login error:", error);
-      toast.error("Niepoprawny email lub hasło");
+      console.error("Registration error:", error);
+      toast.error("Wystąpił błąd podczas rejestracji");
     } finally {
       setIsSubmitting(false);
     }
@@ -57,9 +66,9 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle>Zaloguj się</CardTitle>
+        <CardTitle>Zarejestruj się</CardTitle>
         <CardDescription>
-          Zaloguj się, aby kontynuować naukę z 10xCards
+          Utwórz konto, aby korzystać z pełnej funkcjonalności 10xCards
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -88,25 +97,36 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
                   <FormControl>
                     <Input type="password" placeholder="••••••••" {...field} />
                   </FormControl>
+                  <FormDescription>
+                    Minimum 8 znaków, w tym jedna litera i jedna cyfra
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <div className="text-sm text-right"></div>
-              <a href="/forgot-password" className="text-primary hover:underline">
-                Zapomniałeś hasła?
-              </a>
-            </div>
+            <FormField
+              control={form.control}
+              name="passwordConfirm"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Powtórz hasło</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="••••••••" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Logowanie...
+                  Rejestracja...
                 </>
               ) : (
-                "Zaloguj się"
+                "Zarejestruj się"
               )}
             </Button>
           </form>
@@ -114,9 +134,9 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
       </CardContent>
       <CardFooter className="flex justify-center">
         <div className="text-sm text-muted-foreground">
-          Nie masz konta?{" "}
-          <a href="/register" className="text-primary hover:underline">
-            Zarejestruj się
+          Masz już konto?{" "}
+          <a href="/login" className="text-primary hover:underline">
+            Zaloguj się
           </a>
         </div>
       </CardFooter>

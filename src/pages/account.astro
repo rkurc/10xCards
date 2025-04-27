@@ -1,0 +1,92 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import Breadcrumb from "../components/navigation/Breadcrumb.astro";
+import { checkAuth } from "../utils/auth";
+
+// Authentication check
+const user = checkAuth();
+if (!user) {
+  return Astro.redirect("/login?redirect=/account");
+}
+---
+
+<BaseLayout title="Konto użytkownika">
+  <div class="container mx-auto py-8 px-4">
+    <Breadcrumb
+      items={[
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Konto użytkownika", href: "/account" },
+      ]}
+    />
+    
+    <h1 class="text-3xl font-bold tracking-tight mb-6">Ustawienia konta</h1>
+    
+    <div class="grid gap-6 md:grid-cols-2">
+      <Card>
+        <CardHeader>
+          <CardTitle>Dane konta</CardTitle>
+          <CardDescription>Podstawowe informacje o Twoim koncie</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <dl class="space-y-4">
+            <div>
+              <dt class="text-sm font-medium text-muted-foreground">Email</dt>
+              <dd>{user.email}</dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-muted-foreground">Nazwa użytkownika</dt>
+              <dd>{user.name || "Nie ustawiono"}</dd>
+            </div>
+          </dl>
+        </CardContent>
+        <CardFooter>
+          <Button variant="outline" disabled>Edytuj dane</Button>
+        </CardFooter>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Bezpieczeństwo</CardTitle>
+          <CardDescription>Zarządzaj hasłem i bezpieczeństwem konta</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p class="mb-4">Twoje hasło powinno być silne i unikalne dla każdego konta.</p>
+          <p class="text-sm text-muted-foreground">
+            Ostatnia zmiana hasła: Nigdy
+          </p>
+        </CardContent>
+        <CardFooter>
+          <Button variant="outline" disabled>Zmień hasło</Button>
+        </CardFooter>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Eksport danych</CardTitle>
+          <CardDescription>Pobierz swoje dane zgodnie z RODO</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p>Możesz pobrać wszystkie dane związane z Twoim kontem w formacie JSON.</p>
+        </CardContent>
+        <CardFooter>
+          <Button variant="outline" disabled>Eksportuj dane</Button>
+        </CardFooter>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle class="text-destructive">Usunięcie konta</CardTitle>
+          <CardDescription>Ta operacja jest nieodwracalna</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p>Usunięcie konta spowoduje trwałe usunięcie wszystkich Twoich danych, w tym fiszek i historii nauki.</p>
+        </CardContent>
+        <CardFooter>
+          <Button variant="destructive" disabled>Usuń konto</Button>
+        </CardFooter>
+      </Card>
+    </div>
+  </div>
+</BaseLayout>

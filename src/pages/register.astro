@@ -1,0 +1,20 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { RegisterForm } from "../components/auth/RegisterForm";
+import { checkAuth } from "../utils/auth";
+
+// Check if user is already authenticated
+const user = checkAuth();
+if (user) {
+  return Astro.redirect('/dashboard');
+}
+---
+
+<BaseLayout title="Rejestracja">
+  <div class="container mx-auto py-12 px-4">
+    <div class="max-w-md mx-auto">
+      <h1 class="text-3xl font-bold tracking-tight mb-6 text-center">Załóż konto</h1>
+      <RegisterForm client:load />
+    </div>
+  </div>
+</BaseLayout>

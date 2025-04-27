@@ -1,0 +1,23 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { ResetPasswordForm } from "../../components/auth/ResetPasswordForm";
+import { checkAuth } from "../../utils/auth";
+
+// Get token from URL params
+const { token } = Astro.params;
+
+// Check if user is already authenticated
+const user = checkAuth();
+if (user) {
+  return Astro.redirect('/dashboard');
+}
+---
+
+<BaseLayout title="Resetowanie hasła">
+  <div class="container mx-auto py-12 px-4">
+    <div class="max-w-md mx-auto">
+      <h1 class="text-3xl font-bold tracking-tight mb-6 text-center">Resetowanie hasła</h1>
+      <ResetPasswordForm client:load token={token} />
+    </div>
+  </div>
+</BaseLayout>
