@@ -1,13 +1,9 @@
 import type { APIRoute } from 'astro';
 import { createSupabaseServerClient } from '../../../lib/supabase.server';
-import { mockAuth } from '../../../lib/auth-mock';
-
-// Change to true if you want to use mock auth for debugging
-const USE_MOCK_AUTH = false;
 
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   try {
-    console.log("🔑 API login endpoint called");
+    console.debug("Login endpoint called");
     
     // Parse the request body with more robust error handling
     let email, password, redirectUrl;
@@ -29,10 +25,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       } else {
         throw new Error(`Unsupported content type: ${contentType}`);
       }
-      
-      console.log(`🔑 Login attempt for: ${email}, redirect: ${redirectUrl || 'none'}`);
     } catch (parseError) {
-      console.error("❌ Error parsing request body:", parseError);
+      console.error("Error parsing request body:", parseError);
       return new Response(JSON.stringify({ 
         success: false, 
         error: "Invalid request format" 
@@ -45,7 +39,6 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     }
     
     if (!email || !password) {
-      console.error("❌ Missing required fields");
       return new Response(JSON.stringify({ 
         success: false, 
         error: "Email and password are required" 
@@ -57,60 +50,12 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       });
     }
 
-    // Use mock authentication for debugging
-    if (USE_MOCK_AUTH) {
-      console.log("🔒 Using mock authentication");
-      const mockResult = await mockAuth.login(email, password);
-      
-      if (!mockResult.success) {
-        console.error(`❌ Mock login failed:`, mockResult.error);
-        return new Response(JSON.stringify({ 
-          success: false, 
-          error: mockResult.error 
-        }), { 
-          status: 401,
-          headers: {
-            "Content-Type": "application/json"
-          }
-        });
-      }
-
-      console.log("✅ Mock login successful for:", email);
-      
-      // Set mock cookies to simulate logged in state
-      cookies.set('mock-auth-token', 'mock-token-value', {
-        path: '/',
-        httpOnly: true,
-        secure: import.meta.env.PROD,
-        maxAge: 60 * 60 * 24 * 7, // 1 week
-      });
-      
-      // Support direct redirects
-      if (redirectUrl && request.headers.get('accept')?.includes('text/html')) {
-        console.log("🔄 Redirecting to:", redirectUrl);
-        return redirect(redirectUrl);
-      }
-
-      // Return success response with user information
-      return new Response(JSON.stringify({ 
-        success: true,
-        user: mockResult.user,
-        redirectUrl: redirectUrl || '/dashboard' // Include redirect URL in response
-      }), { 
-        status: 200,
-        headers: {
-          "Content-Type": "application/json"
-        }
-      });
-    }
-    
-    // Create Supabase server client - Wrap in try/catch to handle any initialization errors
-    console.log("Creating Supabase server client");
+    // Create Supabase server client
     let supabase;
     try {
       supabase = createSupabaseServerClient({ cookies, headers: request.headers });
     } catch (error) {
-      console.error("❌ Failed to create Supabase client:", error);
+      console.error("Failed to create Supabase client:", error);
       return new Response(JSON.stringify({ 
         success: false, 
         error: "Authentication service initialization failed" 
@@ -122,8 +67,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       });
     }
 
-    // Attempt login - Always use try/catch to handle Supabase errors
-    console.log("Calling Supabase auth.signInWithPassword");
+    // Attempt login
     let data, error;
     try {
       const result = await supabase.auth.signInWithPassword({
@@ -132,18 +76,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       });
       data = result.data;
       error = result.error;
-      
-      // Important: Log the session data to verify it was created
-      console.log("Session created:", !!data.session, "User authenticated:", !!data.user);
-      
-      // If successful, explicitly set the access token cookie for client-side access
-      if (data.session) {
-        // The ssr client should automatically handle setting cookies,
-        // but we can log to confirm this is happening
-        console.log("Auth cookies set automatically by Supabase SSR client");
-      }
     } catch (supabaseError) {
-      console.error("❌ Supabase login error:", supabaseError);
+      console.error("Supabase login error:", supabaseError);
       return new Response(JSON.stringify({ 
         success: false, 
         error: "Authentication service error" 
@@ -168,12 +102,11 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       });
     }
 
-    console.log("Login successful for:", email);
+    console.debug("Login successful for:", email);
     
     // IMPORTANT: For API requests, NEVER redirect - just return JSON
     // Only redirect for form submissions that accept HTML responses
     if (redirectUrl && request.headers.get('accept')?.includes('text/html')) {
-      console.log("Redirecting to:", redirectUrl);
       return redirect(redirectUrl);
     }
 
@@ -194,7 +127,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     });
   } catch (error) {
     // Make sure we always return JSON, even for unexpected errors
-    console.error("❌ Unexpected error during login:", error);
+    console.error("Unexpected error during login:", error);
     return new Response(JSON.stringify({ 
       success: false, 
       error: "An unexpected error occurred during login" 

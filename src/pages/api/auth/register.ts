@@ -3,9 +3,9 @@ import { createSupabaseServerClient } from '../../../lib/supabase.server';
 
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   try {
-    console.log("🔑 API register endpoint called");
+    console.debug("Register endpoint called");
 
-    // Parse the request body with more robust error handling
+    // Parse the request body
     let email, password, userData, redirectUrl;
     try {
       // Handle both JSON and form data requests
@@ -27,10 +27,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       } else {
         throw new Error(`Unsupported content type: ${contentType}`);
       }
-      
-      console.log(`🔑 Register attempt for: ${email}, redirect: ${redirectUrl || 'none'}`);
     } catch (parseError) {
-      console.error("❌ Error parsing register request body:", parseError);
+      console.error("Error parsing register request:", parseError);
       return new Response(JSON.stringify({ 
         success: false, 
         error: "Invalid request format" 
@@ -44,7 +42,6 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
 
     // Validate required fields
     if (!email || !password) {
-      console.error("❌ Missing required fields for registration");
       return new Response(JSON.stringify({ 
         success: false, 
         error: "Email and password are required" 
@@ -56,12 +53,12 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       });
     }
 
-    // Create Supabase client with error handling
+    // Create Supabase client
     let supabase;
     try {
       supabase = createSupabaseServerClient({ cookies, headers: request.headers });
     } catch (error) {
-      console.error("❌ Failed to create Supabase client:", error);
+      console.error("Failed to create Supabase client:", error);
       return new Response(JSON.stringify({ 
         success: false, 
         error: "Authentication service initialization failed" 
@@ -74,7 +71,6 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     }
 
     // Attempt registration with metadata for user's name
-    console.log("🔑 Making Supabase auth.signUp call with userData:", userData);
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -85,7 +81,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     });
     
     if (error) {
-      console.error("❌ Registration error:", error);
+      console.error("Registration error:", error);
       return new Response(JSON.stringify({ 
         success: false, 
         error: error.message 
@@ -99,7 +95,6 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
 
     // Check if email confirmation is required
     const emailConfirmationRequired = !data.session;
-    console.log("✅ Registration successful, email confirmation required:", emailConfirmationRequired);
     
     if (emailConfirmationRequired) {
       return new Response(JSON.stringify({ 
@@ -133,7 +128,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       }
     });
   } catch (error) {
-    console.error("❌ Unexpected registration error:", error);
+    console.error("Unexpected registration error:", error);
     return new Response(JSON.stringify({ 
       success: false, 
       error: "An unexpected error occurred during registration" 

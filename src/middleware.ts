@@ -8,14 +8,11 @@ const PUBLIC_PATHS = [
   "/register",
   "/forgot-password",
   "/reset-password",
-  "/auth-callback",  // Important! Add this to public paths
+  "/auth-callback",
   "/api/auth/login",
   "/api/auth/register",
   "/api/auth/reset-password",
   "/api/auth/logout",
-  "/api/debug/supabase-status",  // Debug endpoints should be public
-  "/api/debug/auth-state",
-  "/api/debug/echo",
 ];
 
 // Change this value to false to use real Supabase authentication
@@ -23,11 +20,10 @@ const USE_MOCK_AUTH = false;
 
 export const onRequest = defineMiddleware(
   async ({ locals, cookies, url, request, redirect }, next) => {
-    console.log("🔒 Middleware processing request for:", url.pathname);
+    console.debug("Processing request for:", url.pathname);
     
     // Check for mock auth token first if in mock mode
     if (USE_MOCK_AUTH && cookies.has('mock-auth-token')) {
-      console.log("🔒 Using mock authentication in middleware");
       locals.user = {
         id: "mock-user-id",
         email: "test@example.com",
@@ -52,22 +48,15 @@ export const onRequest = defineMiddleware(
     
     // Skip auth checks for public paths to avoid unnecessary redirects
     if (isPublicPath) {
-      console.log("🔓 Public path, skipping auth check:", url.pathname);
       return next();
     }
 
-    console.log("🔐 Protected path, checking auth:", url.pathname);
-    
-    // IMPORTANT: Use getUser() instead of getSession() for security
-    // This verifies the user's auth status with the Supabase server
+    // SECURE: Always use getUser() which verifies with the auth server
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    // Log auth status for debugging
-    console.log("🔑 User authenticated:", !!user, "Auth error:", !!userError);
     
     // Handle auth errors
     if (userError) {
-      console.error("Auth error:", userError);
+      console.debug("Auth error:", userError.message);
       
       // Clear invalid auth state to force re-authentication
       await supabase.auth.signOut();
@@ -85,10 +74,8 @@ export const onRequest = defineMiddleware(
         email: user.email!,
         name: user.user_metadata?.name || user.email?.split('@')[0],
       };
-      console.log("👤 User authenticated:", locals.user.email);
       return next();
     } else {
-      console.log("❌ No authenticated user, redirecting to login");
       // Ensure unauthenticated users are redirected with return path
       const returnUrl = encodeURIComponent(url.pathname + url.search);
       return redirect(`/login?redirect=${returnUrl}`);

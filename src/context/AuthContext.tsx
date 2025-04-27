@@ -41,7 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
         const { data: { user: supabaseUser }, error } = await supabase.auth.getUser();
         
         if (error) {
-          console.error("Error verifying user:", error);
+          console.debug("Error verifying user:", error.message);
           setUser(null);
           return;
         }
@@ -64,11 +64,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
       checkUser();
     }
 
-    // Listen for auth changes, but always verify with getUser when needed
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
-        // For critical operations that need verification, use getUser() explicitly
-        // For UI updates based on auth state changes, session data is generally acceptable
         setUser({
           id: session.user.id,
           email: session.user.email!,
@@ -86,9 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
 
   const login = async (email: string, password: string) => {
     try {
-      console.log(`Attempting login for user: ${email}`);
-      
-      // Use direct API call for more reliable behavior
+      // Use direct API call
       try {
         const response = await fetch('/api/auth/login', {
           method: 'POST',
@@ -99,14 +95,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
           body: JSON.stringify({ email, password }),
         });
         
-        // Handle non-JSON responses
+        // Handle response
         const responseText = await response.text();
         let result;
         
         try {
           result = JSON.parse(responseText);
         } catch (parseError) {
-          console.error("Failed to parse response as JSON:", responseText);
+          console.error("Failed to parse response as JSON");
           return { success: false, error: "Invalid server response format" };
         }
         
@@ -114,7 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
           return { success: false, error: result.error || "Authentication failed" };
         }
         
-        // If we have user data, update the state
+        // Update user state if we have user data
         if (result.user) {
           setUser({
             id: result.user.id,
@@ -126,7 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
         return { success: true };
         
       } catch (apiError) {
-        console.error("API login error:", apiError);
+        console.debug("API login error, falling back to Supabase client");
         
         // Fallback to Supabase client
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -141,18 +137,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
         return { success: true };
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      console.error("Login error:", errorMessage);
+      console.error("Login error:", error);
       return { success: false, error: "Wystąpił błąd podczas logowania." };
     }
   };
 
   const register = async (email: string, password: string, options?: { name?: string }) => {
     try {
-      // Use API endpoint for registration with improved error handling
+      // Use API endpoint for registration
       try {
-        console.log("Registering user via API endpoint:", email);
-        
         const response = await fetch('/api/auth/register', {
           method: 'POST',
           headers: {
@@ -166,28 +159,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
           }),
         });
         
-        // Handle non-JSON responses
+        // Parse response
         const responseText = await response.text();
         let result;
         
         try {
           result = JSON.parse(responseText);
         } catch (parseError) {
-          console.error("Failed to parse response as JSON:", responseText);
+          console.error("Failed to parse response as JSON");
           return { success: false, error: "Invalid server response format" };
         }
         
-        console.log("Registration API response:", result);
         return {
           success: result.success,
           error: result.error,
           requiresEmailConfirmation: result.requiresEmailConfirmation
         };
       } catch (apiError) {
-        console.error("API registration error:", apiError);
+        console.debug("API registration error, falling back to direct Supabase");
         
         // Fallback to direct Supabase client
-        console.log("Falling back to direct Supabase registration");
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -198,12 +189,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
         });
 
         if (error) {
-          console.error("Supabase registration error:", error);
           return { success: false, error: error.message };
         }
 
-        console.log("Supabase registration successful:", data);
-        // For local development with auto-confirm enabled, user will be immediately logged in
+        // Check if email confirmation is required
         if (data.session) {
           return { success: true };
         } else {
@@ -214,7 +203,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
         }
       }
     } catch (error) {
-      console.error("Unexpected registration error:", error);
+      console.error("Registration error:", error);
       return { success: false, error: "An error occurred during registration." };
     }
   };

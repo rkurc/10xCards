@@ -24,14 +24,7 @@ interface LoginFormProps {
 
 export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [debugMessages, setDebugMessages] = useState<string[]>([]);
   const { login } = useAuth();
-
-  // Debug helper
-  const addDebugMessage = (message: string) => {
-    console.log(`DEBUG: ${message}`);
-    setDebugMessages(prev => [message, ...prev].slice(0, 5));
-  };
 
   // Initialize react-hook-form with zod validation
   const form = useForm<FormValues>({
@@ -50,23 +43,18 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
     }
   }, []);
 
-  // Handle form submission with enhanced debugging
+  // Handle form submission
   async function onSubmit(data: FormValues) {
-    addDebugMessage(`Form submission started: ${data.email}`);
-    
+    console.debug(`Login attempt: ${data.email}`);
     setIsSubmitting(true);
 
     try {
-      addDebugMessage(`Calling login function with: ${data.email}`);
-      
+      // Try direct API call first
       try {
-        addDebugMessage('Making direct API call to /api/auth/login');
-        
         const response = await fetch('/api/auth/login', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            // Explicitly request JSON only, not HTML
             'Accept': 'application/json'
           },
           body: JSON.stringify({ 
@@ -76,60 +64,35 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
           }),
         });
         
-        // Log response status
-        addDebugMessage(`Response status: ${response.status}`);
+        // Check if response can be parsed as JSON
+        const responseText = await response.text();
+        let result;
         
-        let responseText;
         try {
-          // Get the raw text response
-          responseText = await response.text();
-          addDebugMessage(`Response length: ${responseText.length} characters`);
-          
-          // Check if response looks like HTML (quick check for common HTML indicators)
-          if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
-            addDebugMessage(`WARNING: Received HTML instead of JSON`);
-            toast.error("Server responded with HTML instead of JSON. Check server logs.");
-            return;
-          }
-
-          // Limit response text display to avoid overwhelming the UI
-          const truncatedResponse = responseText.length > 100 
-            ? responseText.substring(0, 100) + '...' 
-            : responseText;
-          addDebugMessage(`Response: ${truncatedResponse}`);
-          
-          // Try to parse as JSON
-          const result = JSON.parse(responseText);
-          addDebugMessage(`Parsed JSON successfully`);
-          
-          if (!response.ok) {
-            addDebugMessage(`API call failed: ${result.error || response.statusText}`);
-            toast.error(result.error || "Login failed");
-            return;
-          }
-          
-          addDebugMessage(`Login successful, redirecting to: ${redirectUrl}`);
-          toast.success("Logowanie udane");
-          
-          setTimeout(() => {
-            window.location.href = redirectUrl;
-          }, 1500);
+          result = JSON.parse(responseText);
         } catch (jsonError) {
-          addDebugMessage(`Failed to parse response as JSON: ${jsonError.message}`);
-          addDebugMessage(`Response: ${responseText?.substring(0, 100)}...`); 
+          console.error("Failed to parse response as JSON:", jsonError);
           toast.error("Invalid server response format");
+          return;
         }
-      } catch (fetchError) {
-        addDebugMessage(`Fetch error: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`);
         
-        // Fallback to context login function
-        addDebugMessage('Falling back to context login');
+        if (!response.ok) {
+          toast.error(result.error || "Login failed");
+          return;
+        }
+        
+        toast.success("Logowanie udane");
+        
+        setTimeout(() => {
+          window.location.href = redirectUrl;
+        }, 1500);
+        
+      } catch (fetchError) {
+        console.debug('Falling back to context login');
         const result = await login(data.email, data.password);
         
         if (result.success) {
           toast.success("Logowanie udane");
-          
-          // Add a small delay before redirecting
           setTimeout(() => {
             window.location.href = redirectUrl;
           }, 1000);
@@ -138,8 +101,7 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
         }
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      addDebugMessage(`Login error: ${errorMessage}`);
+      console.error("Login error:", error);
       toast.error("Wystąpił błąd podczas logowania");
     } finally {
       setIsSubmitting(false);
@@ -157,10 +119,7 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
       <CardContent>
         <Form {...form}>
           <form 
-            onSubmit={(e) => {
-              addDebugMessage("Native form submit event triggered");
-              form.handleSubmit(onSubmit)(e);
-            }} 
+            onSubmit={form.handleSubmit(onSubmit)} 
             className="space-y-4"
           >
             <FormField
@@ -197,7 +156,6 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
               </a>
             </div>
 
-            {/* Make sure button is not outlined variant */}
             <Button 
               type="submit" 
               className="w-full bg-primary text-primary-foreground hover:bg-primary/90" 
@@ -212,34 +170,6 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
                 "Zaloguj się"
               )}
             </Button>
-            
-            {/* Direct login for testing - explicitly defined function */}
-            {import.meta.env.DEV && (
-              <Button 
-                type="button"
-                variant="secondary"
-                className="w-full mt-2" 
-                onClick={() => {
-                  addDebugMessage("Direct login button clicked");
-                  const formData = form.getValues();
-                  onSubmit(formData);
-                }}
-              >
-                Test Direct Login
-              </Button>
-            )}
-            
-            {/* Debug info section */}
-            {import.meta.env.DEV && debugMessages.length > 0 && (
-              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                <p className="font-medium mb-1">Debug log:</p>
-                <ul className="space-y-1">
-                  {debugMessages.map((msg, i) => (
-                    <li key={i}>{msg}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </form>
         </Form>
       </CardContent>

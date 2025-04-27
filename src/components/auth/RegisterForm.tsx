@@ -41,14 +41,7 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
   const [emailConfirmationSent, setEmailConfirmationSent] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [commonErrors, setCommonErrors] = useState<string[]>([]);
-  const [debugMessages, setDebugMessages] = useState<string[]>([]); // Added debug state
   const { register } = useAuth();
-
-  // Debug helper function
-  const addDebugMessage = (message: string) => {
-    console.log(`DEBUG: ${message}`);
-    setDebugMessages(prev => [message, ...prev].slice(0, 5));
-  };
 
   // Initialize react-hook-form with zod validation
   const form = useForm<FormValues>({
@@ -101,15 +94,13 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
 
   // Handle form submission
   async function onSubmit(data: FormValues) {
-    addDebugMessage(`Form submission started with: ${data.email}`);
+    console.debug(`Registration attempt: ${data.email}`);
     setIsSubmitting(true);
 
     try {
-      addDebugMessage("Calling register function");
-      
-      // Try using direct fetch first to bypass potential context issues
+      // Try using direct fetch first
       try {
-        addDebugMessage("Making direct API call to /api/auth/register");
+        console.debug("Making registration API call");
         
         const response = await fetch('/api/auth/register', {
           method: 'POST',
@@ -126,44 +117,28 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
           }),
         });
         
-        // Log response status
-        addDebugMessage(`Response status: ${response.status}`);
-        
-        // Get the raw text response
+        // Get the response and parse it
         const responseText = await response.text();
-        addDebugMessage(`Response length: ${responseText.length} characters`);
-        
-        // Check if response is HTML instead of JSON
-        if (responseText.trim().startsWith('<!DOCTYPE') || responseText.trim().startsWith('<html')) {
-          addDebugMessage(`WARNING: Received HTML instead of JSON`);
-          toast.error("Server responded with HTML instead of JSON. Check server logs.");
-          return;
-        }
-        
-        // Try to parse as JSON
         let result;
+        
         try {
           result = JSON.parse(responseText);
-          addDebugMessage(`Parsed JSON successfully: ${JSON.stringify(result).substring(0, 100)}`);
         } catch (jsonError) {
-          addDebugMessage(`Failed to parse response as JSON: ${jsonError.message}`);
+          console.error(`Failed to parse response as JSON: ${jsonError.message}`);
           toast.error("Invalid server response format");
           return;
         }
         
         if (!response.ok) {
-          addDebugMessage(`API call failed: ${result.error || response.statusText}`);
           toast.error(result.error || "Registration failed");
           return;
         }
         
         // Handle success
         if (result.requiresEmailConfirmation) {
-          addDebugMessage("Registration successful - email confirmation required");
           setEmailConfirmationSent(true);
           toast.success("Wysłano link aktywacyjny na podany adres email");
         } else {
-          addDebugMessage("Registration successful - redirecting");
           toast.success("Konto zostało utworzone pomyślnie");
           
           setTimeout(() => {
@@ -172,8 +147,7 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
         }
       } catch (fetchError) {
         // Fallback to context register function
-        addDebugMessage(`Fetch error: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`);
-        addDebugMessage('Falling back to context register');
+        console.debug('Falling back to context register');
         
         const result = await register(data.email, data.password, {
           name: data.name
@@ -202,8 +176,6 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
         }
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      addDebugMessage(`Registration error: ${errorMessage}`);
       console.error("Registration error:", error);
       toast.error("Wystąpił błąd podczas rejestracji");
     } finally {
@@ -239,7 +211,6 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
             variant="outline" 
             className="w-full"
             onClick={() => {
-              // Here we would add resend functionality
               toast.success("Link aktywacyjny został wysłany ponownie");
             }}
           >
@@ -264,25 +235,7 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
       <CardContent>
         <Form {...form}>
           <form 
-            onSubmit={(e) => {
-              addDebugMessage("Form submit event triggered");
-              e.preventDefault(); // Ensure default form submission is prevented
-              
-              // Check form validity before submission
-              const isValid = form.formState.isValid;
-              addDebugMessage(`Form valid: ${isValid}`);
-              
-              if (!isValid) {
-                addDebugMessage("Form validation failed");
-                // Trigger validation on all fields
-                form.trigger();
-                return;
-              }
-              
-              const formData = form.getValues();
-              onSubmit(formData);
-            }} 
-            noValidate // Use our own validation
+            onSubmit={form.handleSubmit(onSubmit)} 
             className="space-y-4"
           >
             <FormField
@@ -391,10 +344,6 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
               type="submit" 
               className="w-full" 
               disabled={isSubmitting}
-              onClick={() => {
-                addDebugMessage("Submit button clicked");
-                // Button click debugging only - form onSubmit handles actual submission
-              }}
             >
               {isSubmitting ? (
                 <>
@@ -405,35 +354,6 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
                 "Zarejestruj się"
               )}
             </Button>
-            
-            {/* Direct registration for testing - explicitly defined function */}
-            {import.meta.env.DEV && (
-              <Button 
-                type="button"
-                variant="secondary"
-                className="w-full mt-2" 
-                onClick={() => {
-                  addDebugMessage("Direct registration button clicked");
-                  const formData = form.getValues();
-                  onSubmit(formData);
-                }}
-              >
-                Test Direct Registration
-              </Button>
-            )}
-            
-            {/* Debug info section */}
-            {import.meta.env.DEV && debugMessages.length > 0 && (
-              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                <p className="font-medium mb-1">Debug log:</p>
-                <ul className="space-y-1">
-                  {debugMessages.map((msg, i) => (
-                    <li key={i}>{msg}</li>
-                  ))}
-                </ul>
-                <p className="mt-2 text-xs">Form errors: {Object.keys(form.formState.errors).join(', ')}</p>
-              </div>
-            )}
           </form>
         </Form>
       </CardContent>
