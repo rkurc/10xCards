@@ -85,10 +85,15 @@ Manualne tworzenie wysokiej jakości fiszek jest czasochłonne i męczące, co z
 - Tytuł: Rejestracja i logowanie użytkownika
 - Opis: Jako nowy użytkownik chcę się zarejestrować i zalogować, aby móc bezpiecznie przechowywać swoje fiszki.
 - Kryteria akceptacji:
-  - Proces rejestracji wymaga podania podstawowych danych (email, hasło)
-  - Proces rejestracji i logowania jest prosty, szybki i bezpieczny
-  - System autoryzacji chroni dane użytkownika
-  - Użytkownik może zresetować hasło w przypadku jego zapomnienia
+  - Logowanie i rejestracja odbywają się na dedykowanych stronach.
+  - Logowanie wymaga podania adresu email i hasła.
+  - Rejestracja wymaga podania adresu email, hasła i potwierdzenia hasła.
+  - Użytkownik MOŻE przejść wyłącznie do strony powitalnej bez zalogowania do systemu
+  - Użytkownik NIE MOŻE korzystać z funkcji Kolekcji bez logowania się do systemu (US-001, US-009).
+  - Użytkownik może logować się do systemu poprzez przycisk w prawym górnym rogu.
+  - Użytkownik może się wylogować z systemu poprzez przycisk w prawym górnym rogu w głównym @Layout.astro.
+  - Nie korzystamy z zewnętrznych serwisów logowania (np. Google, GitHub).
+  - Odzyskiwanie hasła powinno być możliwe.
 
 ### US-004
 - Tytuł: Sesja nauki z fiszkami
