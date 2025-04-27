@@ -21,6 +21,19 @@
 - Dostęp do szerokiej gamy modeli (OpenAI, Anthropic, Google i wiele innych), które pozwolą nam znaleźć rozwiązanie zapewniające wysoką efektywność i niskie koszta
 - Pozwala na ustawianie limitów finansowych na klucze API
 
+## Testing - Kompleksowe narzędzia do testowania jakości
+
+### Testy Jednostkowe i Komponentów
+- Vitest jako szybki framework do testów jednostkowych 
+- React Testing Library do testowania komponentów React
+- Node.js test runner dla testowania usług backend
+- MSW (Mock Service Worker) do mockowania odpowiedzi API
+
+### Testy End-to-End (E2E)
+- Playwright do automatyzacji testów pełnych przepływów użytkownika
+- BrowserStack do testowania na różnych przeglądarkach i urządzeniach
+- Supabase CLI i lokalna instancja emulująca usługi backend
+
 ## CI/CD i Hosting
 
 - Github Actions do tworzenia pipeline'ów CI/CD

@@ -6,13 +6,26 @@ AI-powered flashcard generator for efficient learning through spaced repetition.
 ![Version](https://img.shields.io/badge/version-0.0.1-blue)
 
 ## Table of Contents
-- [Overview](#overview)
-- [Tech Stack](#tech-stack)
-- [Getting Started](#getting-started)
-- [Available Scripts](#available-scripts)
-- [Project Scope](#project-scope)
-- [Project Status](#project-status)
-- [License](#license)
+- [10xCards](#10xcards)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+    - [Key Features](#key-features)
+  - [Tech Stack](#tech-stack)
+    - [Frontend](#frontend)
+    - [Backend](#backend)
+    - [AI Integration](#ai-integration)
+    - [Testing Tools](#testing-tools)
+    - [CI/CD and Hosting](#cicd-and-hosting)
+  - [Getting Started](#getting-started)
+    - [Prerequisites](#prerequisites)
+    - [Installation](#installation)
+  - [Available Scripts](#available-scripts)
+  - [Project Scope](#project-scope)
+    - [Included Features](#included-features)
+    - [Not Included in MVP](#not-included-in-mvp)
+  - [Project Status](#project-status)
+    - [Success Metrics](#success-metrics)
+  - [License](#license)
 
 ## Overview
 
@@ -47,6 +60,13 @@ AI-powered flashcard generator for efficient learning through spaced repetition.
 
 ### AI Integration
 - [Openrouter.ai](https://openrouter.ai/) - Access to various language models
+
+### Testing Tools
+- [Vitest](https://vitest.dev/) - Fast unit testing framework for components and services
+- [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/) - Testing utilities for React components
+- [Playwright](https://playwright.dev/) - End-to-end testing framework for web applications
+- [Supertest](https://github.com/visionmedia/supertest) - API testing library
+- [Supabase Local Emulator](https://supabase.com/docs/guides/cli/local-development) - Local testing environment for Supabase
 
 ### CI/CD and Hosting
 - GitHub Actions for CI/CD pipelines
@@ -100,6 +120,8 @@ AI-powered flashcard generator for efficient learning through spaced repetition.
 - `npm run lint` - Runs ESLint to find code issues
 - `npm run lint:fix` - Runs ESLint and automatically fixes issues
 - `npm run format` - Formats code with Prettier
+- `npm run test` - Runs Vitest unit tests
+- `npm run test:e2e` - Runs Playwright end-to-end tests
 
 ## Project Scope
 
