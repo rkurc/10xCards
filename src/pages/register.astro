@@ -1,20 +1,141 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { RegisterForm } from "../components/auth/RegisterForm";
-import { checkAuth } from "../utils/auth";
+import { createSupabaseServerClient } from "../lib/supabase.server";
 
-// Check if user is already authenticated
-const user = checkAuth();
-if (user) {
-  return Astro.redirect('/dashboard');
+// Disable pre-rendering for dynamic auth content
+export const prerender = false;
+
+// Get redirectUrl from query params
+const redirectUrl = Astro.url.searchParams.get('redirect') || '/dashboard';
+
+// Support non-JavaScript users with HTML form handling
+if (Astro.request.method === 'POST') {
+  try {
+    const formData = await Astro.request.formData();
+    const email = formData.get('email')?.toString();
+    const password = formData.get('password')?.toString();
+    const name = formData.get('name')?.toString();
+    const passwordConfirm = formData.get('passwordConfirm')?.toString();
+    const termsAccepted = formData.get('termsAccepted') === 'on';
+    
+    // Simple validation
+    if (!email || !password || !passwordConfirm || !termsAccepted) {
+      return Astro.redirect(`/register?error=Wszystkie pola są wymagane&redirect=${redirectUrl}`);
+    }
+    
+    if (password !== passwordConfirm) {
+      return Astro.redirect(`/register?error=Hasła nie są identyczne&redirect=${redirectUrl}`);
+    }
+    
+    const supabase = createSupabaseServerClient({
+      cookies: Astro.cookies,
+      headers: Astro.request.headers
+    });
+    
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { name },
+        emailRedirectTo: `${Astro.url.origin}/auth-callback`
+      }
+    });
+    
+    if (error) {
+      return Astro.redirect(`/register?error=${encodeURIComponent(error.message)}&redirect=${redirectUrl}`);
+    }
+    
+    // Check if email confirmation is required
+    if (!data.session) {
+      return Astro.redirect('/registration-success?email=' + encodeURIComponent(email));
+    }
+    
+    // If no email confirmation is required, redirect to dashboard
+    return Astro.redirect(redirectUrl);
+  } catch (error) {
+    console.error('Registration error:', error);
+    return Astro.redirect(`/register?error=Wystąpił nieoczekiwany błąd&redirect=${redirectUrl}`);
+  }
 }
+
+// Prevent authenticated users from accessing registration page
+const supabase = createSupabaseServerClient({
+  cookies: Astro.cookies,
+  headers: Astro.request.headers
+});
+
+const {
+  data: { user },
+} = await supabase.auth.getUser();
+
+if (user) {
+  return Astro.redirect(redirectUrl);
+}
+
+// Display any registration errors
+const error = Astro.url.searchParams.get('error');
 ---
 
 <BaseLayout title="Rejestracja">
   <div class="container mx-auto py-12 px-4">
     <div class="max-w-md mx-auto">
       <h1 class="text-3xl font-bold tracking-tight mb-6 text-center">Załóż konto</h1>
-      <RegisterForm client:load />
+      
+      {error && (
+        <div class="bg-destructive/10 text-destructive rounded-md p-3 mb-4 text-sm">
+          {decodeURIComponent(error)}
+        </div>
+      )}
+      
+      <RegisterForm client:load redirectUrl={redirectUrl} />
+      
+      <!-- Fallback for users with JavaScript disabled -->
+      <noscript>
+        <form method="POST" class="space-y-4 border p-4 rounded-md mt-8">
+          <div class="text-sm text-muted-foreground mb-4">
+            JavaScript jest wyłączony. Używam prostego formularza HTML.
+          </div>
+          
+          <div class="space-y-2">
+            <label for="name" class="text-sm font-medium">Imię</label>
+            <input type="text" name="name" id="name" required
+              class="flex h-9 w-full rounded-md border border-input px-3 py-1 text-sm shadow-sm" />
+          </div>
+          
+          <div class="space-y-2">
+            <label for="email" class="text-sm font-medium">Email</label>
+            <input type="email" name="email" id="email" required
+              class="flex h-9 w-full rounded-md border border-input px-3 py-1 text-sm shadow-sm" />
+          </div>
+          
+          <div class="space-y-2">
+            <label for="password" class="text-sm font-medium">Hasło</label>
+            <input type="password" name="password" id="password" required
+              class="flex h-9 w-full rounded-md border border-input px-3 py-1 text-sm shadow-sm" />
+          </div>
+          
+          <div class="space-y-2">
+            <label for="passwordConfirm" class="text-sm font-medium">Powtórz hasło</label>
+            <input type="password" name="passwordConfirm" id="passwordConfirm" required
+              class="flex h-9 w-full rounded-md border border-input px-3 py-1 text-sm shadow-sm" />
+          </div>
+          
+          <div class="flex items-center space-x-2 py-2">
+            <input type="checkbox" name="termsAccepted" id="termsAccepted" required
+              class="h-4 w-4 rounded-sm border border-input" />
+            <label for="termsAccepted" class="text-sm">
+              Akceptuję <a href="/terms" class="text-primary hover:underline">regulamin</a> i 
+              <a href="/privacy" class="text-primary hover:underline">politykę prywatności</a>
+            </label>
+          </div>
+          
+          <button type="submit" 
+            class="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground w-full">
+            Zarejestruj się
+          </button>
+        </form>
+      </noscript>
     </div>
   </div>
 </BaseLayout>

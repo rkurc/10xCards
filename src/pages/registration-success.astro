@@ -1,0 +1,48 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+
+// Get email from query params
+const email = Astro.url.searchParams.get('email') || '';
+---
+
+<BaseLayout title="Rejestracja zakończona">
+  <div class="container mx-auto py-12 px-4">
+    <div class="max-w-md mx-auto">
+      <Card>
+        <CardHeader>
+          <div class="mx-auto w-12 h-12 flex items-center justify-center rounded-full bg-green-100 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <CardTitle class="text-center">Sprawdź swoją skrzynkę email</CardTitle>
+          <CardDescription class="text-center">
+            Wysłaliśmy link aktywacyjny na adres {email}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div class="space-y-4 text-center">
+            <p>
+              Aby dokończyć proces rejestracji, kliknij w link aktywacyjny, który wysłaliśmy na podany adres email.
+            </p>
+            <p class="text-sm text-muted-foreground">
+              Link aktywacyjny jest ważny przez 24 godziny. Jeśli nie otrzymałeś wiadomości, sprawdź folder spam.
+            </p>
+          </div>
+        </CardContent>
+        <CardFooter class="flex flex-col items-center space-y-4">
+          <Button asChild variant="outline" class="w-full">
+            <a href="/api/auth/resend-verification?email={encodeURIComponent(email)}">
+              Wyślij link ponownie
+            </a>
+          </Button>
+          <a href="/login" class="text-primary hover:underline text-sm">
+            Powrót do strony logowania
+          </a>
+        </CardFooter>
+      </Card>
+    </div>
+  </div>
+</BaseLayout>

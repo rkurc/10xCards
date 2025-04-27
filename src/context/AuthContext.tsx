@@ -12,7 +12,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (email: string, password: string) => Promise<{ success: boolean; error?: string; requiresEmailConfirmation?: boolean }>;
+  register: (email: string, password: string, options?: { name?: string }) => Promise<{ success: boolean; error?: string; requiresEmailConfirmation?: boolean }>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
 }
@@ -147,33 +147,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
     }
   };
 
-  const register = async (email: string, password: string) => {
+  const register = async (email: string, password: string, options?: { name?: string }) => {
     try {
-      // For local Supabase development, we can set email confirmation to false
-      // by passing the appropriate options
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          // This is the key option for local development
-          emailRedirectTo: `${window.location.origin}/auth-callback`
+      // Use API endpoint for registration
+      try {
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({ 
+            email, 
+            password, 
+            userData: options 
+          }),
+        });
+        
+        // Handle non-JSON responses
+        const responseText = await response.text();
+        let result;
+        
+        try {
+          result = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error("Failed to parse response as JSON:", responseText);
+          return { success: false, error: "Invalid server response format" };
         }
-      });
-
-      if (error) {
-        return { success: false, error: error.message };
-      }
-
-      // For local development with auto-confirm enabled, 
-      // user will be immediately logged in
-      if (data.session) {
-        return { success: true };
-      } else {
-        // Email confirmation still required (if configured in Supabase)
-        return { 
-          success: true,
-          requiresEmailConfirmation: true 
+        
+        return {
+          success: result.success,
+          error: result.error,
+          requiresEmailConfirmation: result.requiresEmailConfirmation
         };
+      } catch (apiError) {
+        console.error("API registration error:", apiError);
+        
+        // Fallback to direct Supabase client
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: options,
+            emailRedirectTo: `${window.location.origin}/auth-callback`
+          }
+        });
+
+        if (error) {
+          return { success: false, error: error.message };
+        }
+
+        // For local development with auto-confirm enabled, user will be immediately logged in
+        if (data.session) {
+          return { success: true };
+        } else {
+          return { 
+            success: true,
+            requiresEmailConfirmation: true 
+          };
+        }
       }
     } catch (error) {
       console.error("Registration error:", error);
