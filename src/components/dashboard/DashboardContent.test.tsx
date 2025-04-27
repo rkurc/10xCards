@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { DashboardContent } from "./DashboardContent";
-import { AuthContext, AuthContextType } from "@/context/AuthContext";
+import { AuthContext, AuthContextType, TestAuthProvider } from "@/context/AuthContext";
 import { ErrorBoundary } from "react-error-boundary";
 import * as React from "react";
 
@@ -106,9 +106,9 @@ const TestErrorBoundary = ({ children }: { children: React.ReactNode }) => {
   );
 };
 
-// Create a test wrapper component
+// Create a test wrapper component - update to use the TestAuthProvider
 const TestWrapper = ({ children, authContext }: { children: React.ReactNode; authContext: AuthContextType }) => (
-  <AuthContext.Provider value={authContext}>{children}</AuthContext.Provider>
+  <TestAuthProvider value={authContext}>{children}</TestAuthProvider>
 );
 
 describe("DashboardContent", () => {
