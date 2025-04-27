@@ -2,6 +2,8 @@
 import "../styles/global.css";
 import { UserMenu } from "../components/auth/UserMenu";
 import { AuthProvider } from "../context/AuthContext";
+import { ModeToggle } from "../components/theme/ModeToggle";
+import { Button } from "../components/ui/button";
 
 interface Props {
   title: string;
@@ -11,6 +13,9 @@ const { title } = Astro.props;
 
 // Check if user is authenticated from Astro.locals
 const user = Astro.locals.user;
+
+// Generate title with app name
+const fullTitle = title ? `${title} | 10xCards` : "10xCards";
 ---
 
 <!doctype html>
@@ -18,41 +23,75 @@ const user = Astro.locals.user;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{title} | 10xCards</title>
+    <meta name="description" content="Learn efficiently with AI-generated flashcards" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{fullTitle}</title>
   </head>
   <body class="min-h-screen bg-background">
     <AuthProvider client:load initialUser={user}>
-      <header class="border-b">
+      <header class="border-b sticky top-0 bg-background z-10">
         <div class="container mx-auto py-4 px-4 flex items-center justify-between">
-          <a href="/" class="text-xl font-bold">10xCards</a>
-          <nav>
-            <ul class="flex items-center gap-4">
-              {user ? (
-                <>
-                  <li><a href="/dashboard" class="text-sm hover:text-primary">Dashboard</a></li>
-                  <li><a href="/sets" class="text-sm hover:text-primary">Zestawy</a></li>
-                  <li><a href="/learn" class="text-sm hover:text-primary">Nauka</a></li>
-                  <li><UserMenu client:load user={user} /></li>
-                </>
-              ) : (
-                <>
-                  <li>
-                    <a href="/login" class="text-sm hover:text-primary">Logowanie</a>
-                  </li>
-                  <li>
-                    <a href="/register" class="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90">
-                      Rejestracja
-                    </a>
-                  </li>
-                </>
-              )}
-            </ul>
-          </nav>
+          <div class="flex items-center gap-6">
+            <a href="/" class="text-xl font-bold">10xCards</a>
+            
+            {/* Show navigation links only to authenticated users */}
+            {user && (
+              <nav class="hidden md:block">
+                <ul class="flex items-center gap-6">
+                  <li><a href="/dashboard" class="text-sm hover:text-primary transition-colors">Dashboard</a></li>
+                  <li><a href="/sets" class="text-sm hover:text-primary transition-colors">Zestawy</a></li>
+                  <li><a href="/generate" class="text-sm hover:text-primary transition-colors">Generuj</a></li>
+                  <li><a href="/learn" class="text-sm hover:text-primary transition-colors">Nauka</a></li>
+                </ul>
+              </nav>
+            )}
+          </div>
+          
+          <div class="flex items-center gap-4">
+            <ModeToggle client:load />
+            
+            {user ? (
+              <div class="flex items-center gap-4">
+                {/* Display user name on larger screens */}
+                <span class="text-sm hidden md:inline-block">
+                  {user.name || user.email}
+                </span>
+                
+                {/* User menu with dropdown for profile actions and logout */}
+                <UserMenu client:load user={user} />
+                
+                {/* Alternative logout button for direct access */}
+                <form action="/api/auth/logout" method="post" class="hidden sm:block">
+                  <Button type="submit" variant="outline" size="sm">
+                    Wyloguj
+                  </Button>
+                </form>
+              </div>
+            ) : (
+              <div class="flex items-center gap-3">
+                <a href="/login" class="text-sm hover:text-primary transition-colors">
+                  Logowanie
+                </a>
+                <a 
+                  href="/register" 
+                  class="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 transition-colors">
+                  Rejestracja
+                </a>
+              </div>
+            )}
+          </div>
         </div>
       </header>
+      
       <main class="relative">
         <slot />
       </main>
+      
+      <footer class="border-t py-6 mt-12">
+        <div class="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          <p>&copy; {new Date().getFullYear()} 10xCards. All rights reserved.</p>
+        </div>
+      </footer>
     </AuthProvider>
   </body>
 </html>
