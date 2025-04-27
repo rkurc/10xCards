@@ -58,40 +58,38 @@ export const onRequest = defineMiddleware(
 
     console.log("🔐 Protected path, checking auth:", url.pathname);
     
-    // Get session first to ensure token refresh happens if needed
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+    // IMPORTANT: Use getUser() instead of getSession() for security
+    // This verifies the user's auth status with the Supabase server
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     
-    // Log session status for debugging
-    console.log("🔑 Session exists:", !!session, "Session error:", !!sessionError);
+    // Log auth status for debugging
+    console.log("🔑 User authenticated:", !!user, "Auth error:", !!userError);
     
-    // Handle session errors to prevent invalid authentication states
-    if (sessionError) {
-      console.error("Session error:", sessionError);
+    // Handle auth errors
+    if (userError) {
+      console.error("Auth error:", userError);
       
       // Clear invalid auth state to force re-authentication
       await supabase.auth.signOut();
       
-      // Redirect to login with return URL for better user experience
+      // Redirect to login with return URL
       const returnUrl = encodeURIComponent(url.pathname + url.search);
       return redirect(`/login?redirect=${returnUrl}`);
     }
     
-    // Proceed with valid session
-    if (session?.user) {
+    // Proceed with valid authentication
+    if (user) {
       // Make user data available throughout the request lifecycle
       locals.user = {
-        id: session.user.id,
-        email: session.user.email!,
-        name: session.user.user_metadata?.name || session.user.email?.split('@')[0],
+        id: user.id,
+        email: user.email!,
+        name: user.user_metadata?.name || user.email?.split('@')[0],
       };
       console.log("👤 User authenticated:", locals.user.email);
       return next();
     } else {
       console.log("❌ No authenticated user, redirecting to login");
-      // Ensure unauthenticated users are redirected with return path for seamless post-login experience
+      // Ensure unauthenticated users are redirected with return path
       const returnUrl = encodeURIComponent(url.pathname + url.search);
       return redirect(`/login?redirect=${returnUrl}`);
     }

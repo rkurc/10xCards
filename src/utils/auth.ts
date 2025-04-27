@@ -25,7 +25,8 @@ export async function checkAuth(Astro?: AstroGlobal): Promise<User | null> {
     });
     
     try {
-      console.log("checkAuth: Getting user from Supabase");
+      // SECURE: Always use getUser() which verifies with the auth server
+      console.log("checkAuth: Securely getting user from Supabase");
       const { data: { user }, error } = await supabase.auth.getUser();
       
       if (error) {
@@ -50,7 +51,6 @@ export async function checkAuth(Astro?: AstroGlobal): Promise<User | null> {
     }
   }
   
-  // For compatibility with existing code, when Astro is not available
   console.log("checkAuth: No Astro context provided, returning null");
   return null;
 }

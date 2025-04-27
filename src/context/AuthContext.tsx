@@ -37,7 +37,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+        // SECURE: Always use getUser() which verifies with the auth server
+        const { data: { user: supabaseUser }, error } = await supabase.auth.getUser();
+        
+        if (error) {
+          console.error("Error verifying user:", error);
+          setUser(null);
+          return;
+        }
+        
         if (supabaseUser) {
           setUser({
             id: supabaseUser.id,
@@ -56,8 +64,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
       checkUser();
     }
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    // Listen for auth changes, but always verify with getUser when needed
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
+        // For critical operations that need verification, use getUser() explicitly
+        // For UI updates based on auth state changes, session data is generally acceptable
         setUser({
           id: session.user.id,
           email: session.user.email!,
