@@ -2,13 +2,13 @@ import type { AstroCookies } from 'astro';
 import { createServerClient, type CookieOptionsWithName } from '@supabase/ssr';
 import type { Database } from '../types/database.types';
 
-// Zwiększamy bezpieczeństwo cookie - wymuszamy secure i httpOnly
+// Enhance security by using secure, httpOnly cookies
 export const cookieOptions: CookieOptionsWithName = {
   path: '/',
-  secure: true, // Wymusza protokół HTTPS
-  httpOnly: true, // Zapobiega dostępowi przez JavaScript
-  sameSite: 'strict', // Dodatkowa ochrona przed CSRF
-  maxAge: 7 * 24 * 60 * 60, // 7 dni, określamy jednoznaczny czas życia cookies
+  secure: true, // Prevent exposure over non-HTTPS connections
+  httpOnly: true, // Prevent JavaScript access to mitigate XSS attacks
+  sameSite: 'strict', // Protect against CSRF attacks
+  maxAge: 7 * 24 * 60 * 60, // Set 7-day expiry for predictable session duration
 };
 
 function parseCookieHeader(cookieHeader: string): { name: string; value: string }[] {
@@ -28,7 +28,7 @@ export const createSupabaseServerClient = (context: {
     {
       cookieOptions,
       cookies: {
-        // Używamy tylko getAll i setAll zgodnie z zaleceniami @supabase/ssr
+        // Follow Supabase SSR best practices to avoid cookie conflicts
         getAll() {
           return parseCookieHeader(context.headers.get('Cookie') ?? '');
         },
@@ -38,7 +38,7 @@ export const createSupabaseServerClient = (context: {
           );
         },
       },
-      // Dodajemy automatyczne odświeżanie tokenów
+      // Enable automatic token refresh for seamless user experience
       auth: {
         autoRefreshToken: true,
         persistSession: true,

@@ -4,13 +4,13 @@ import { LoginForm } from "../components/auth/LoginForm";
 import { AuthProvider } from "../context/AuthContext";
 import { createSupabaseServerClient } from "../lib/supabase.server";
 
-// Ustawienie opcji pre-renderingu
+// Disable pre-rendering to ensure auth state is always current
 export const prerender = false;
 
 // Get redirectUrl from query params
 const redirectUrl = Astro.url.searchParams.get('redirect') || '/dashboard';
 
-// Obsługujemy też POST z formularza HTML dla przypadków gdy JavaScript jest wyłączony
+// Support non-JavaScript users with HTML form handling
 if (Astro.request.method === 'POST') {
   try {
     const formData = await Astro.request.formData();
@@ -32,11 +32,11 @@ if (Astro.request.method === 'POST') {
     });
     
     if (error) {
-      // W przypadku błędu wyświetlamy stronę logowania z komunikatem
+      // Return to login page with error details for better user feedback
       return Astro.redirect(`/login?error=${encodeURIComponent(error.message)}&redirect=${redirectUrl}`);
     }
     
-    // Po pomyślnym logowaniu przekierowujemy bezpośrednio
+    // Redirect authenticated users to their intended destination
     return Astro.redirect(redirectUrl);
   } catch (error) {
     console.error('Login error:', error);
@@ -44,7 +44,7 @@ if (Astro.request.method === 'POST') {
   }
 }
 
-// Sprawdzenie czy użytkownik jest już zalogowany
+// Prevent authenticated users from accessing login page
 const supabase = createSupabaseServerClient({
   cookies: Astro.cookies,
   headers: Astro.request.headers
@@ -54,12 +54,12 @@ const {
   data: { user },
 } = await supabase.auth.getUser();
 
-// Jeśli użytkownik jest zalogowany, przekieruj go
+// Redirect authenticated users to their intended destination
 if (user) {
   return Astro.redirect(redirectUrl);
 }
 
-// Pobieramy ewentualne błędy z parametrów URL
+// Display any auth errors from previous attempts
 const error = Astro.url.searchParams.get('error');
 ---
 
@@ -74,16 +74,16 @@ const error = Astro.url.searchParams.get('error');
         </div>
       )}
       
-      <!-- Form z obsługą JavaScript -->
+      <!-- Interactive login form for JavaScript-enabled browsers -->
       <AuthProvider client:load>
         <LoginForm client:load redirectUrl={redirectUrl} />
       </AuthProvider>
       
-      <!-- Fallback dla użytkowników bez JavaScript -->
+      <!-- Fallback for users with JavaScript disabled -->
       <noscript>
         <form method="POST" class="space-y-4 border p-4 rounded-md mt-4">
           <div class="text-sm text-muted-foreground mb-4">
-            JavaScript jest wyłączony. Używam prostego formularza HTML.
+            JavaScript is disabled. Using a simple HTML form instead.
           </div>
           <div class="space-y-2">
             <label for="email" class="text-sm font-medium">Email</label>

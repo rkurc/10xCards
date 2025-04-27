@@ -23,8 +23,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     });
   }
 
-  // Zamiast przekazywania informacji o sukcesie, przekierowujemy bezpośrednio
-  // Ta trasa będzie wykorzystywana tylko w przypadku gdy JavaScript jest wyłączony
+  // Support direct redirects for form submissions without JavaScript
   if (redirectUrl) {
     return redirect(redirectUrl);
   }

@@ -1,7 +1,7 @@
 import { defineMiddleware } from 'astro:middleware';
 import { createSupabaseServerClient } from './lib/supabase.server';
 
-// Ścieżki dostępne publicznie
+// Define endpoints that don't require authentication
 const PUBLIC_PATHS = [
   "/",
   "/login",
@@ -16,45 +16,46 @@ const PUBLIC_PATHS = [
 
 export const onRequest = defineMiddleware(
   async ({ locals, cookies, url, request, redirect }, next) => {
-    // Inicjalizujemy klienta Supabase dla każdego żądania
+    // Initialize Supabase for each request to ensure fresh auth state
     const supabase = createSupabaseServerClient({
       cookies,
       headers: request.headers,
     });
     
-    // Dodajemy klienta do locals dla późniejszego użycia
+    // Make Supabase available throughout the request lifecycle
     locals.supabase = supabase;
     
-    // Sprawdzamy, czy ścieżka jest publiczna
+    // Allow public access to certain paths without authentication
     const isPublicPath = PUBLIC_PATHS.some(path => 
       url.pathname === path || url.pathname.startsWith(`${path}/`)
     );
     
-    // Dla ścieżek publicznych nie sprawdzamy autentykacji
+    // Skip auth checks for public paths to avoid unnecessary redirects
     if (isPublicPath) {
       return next();
     }
 
-    // Najpierw pobieramy sesję, co automatycznie odświeża token jeśli jest to konieczne
+    // Get session first to ensure token refresh happens if needed
     const {
       data: { session },
       error: sessionError,
     } = await supabase.auth.getSession();
     
-    // Sprawdzamy czy wystąpił błąd sesji lub jej brak
+    // Handle session errors to prevent invalid authentication states
     if (sessionError) {
       console.error("Session error:", sessionError);
       
-      // Wyloguj użytkownika w przypadku błędu sesji
+      // Clear invalid auth state to force re-authentication
       await supabase.auth.signOut();
       
-      // Przekierowanie na stronę logowania
+      // Redirect to login with return URL for better user experience
       const returnUrl = encodeURIComponent(url.pathname + url.search);
       return redirect(`/login?redirect=${returnUrl}`);
     }
     
-    // Jeśli mamy poprawną sesję, dodajemy użytkownika do locals
+    // Proceed with valid session
     if (session?.user) {
+      // Make user data available throughout the request lifecycle
       locals.user = {
         id: session.user.id,
         email: session.user.email!,
@@ -62,7 +63,7 @@ export const onRequest = defineMiddleware(
       };
       return next();
     } else {
-      // Brak sesji - przekierowanie na stronę logowania z URL powrotu
+      // Ensure unauthenticated users are redirected with return path for seamless post-login experience
       const returnUrl = encodeURIComponent(url.pathname + url.search);
       return redirect(`/login?redirect=${returnUrl}`);
     }
