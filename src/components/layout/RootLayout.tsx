@@ -5,12 +5,12 @@ import { Footer } from "@/components/layout/Footer";
 import { useState, createContext, type ReactNode } from "react";
 
 // Create a simple auth context
-type AuthContextType = {
+interface AuthContextType {
   isAuthenticated: boolean;
-  user: { id?: string; name?: string } | null;
+  user: { id?: string; name?: string; email?: string } | null;
   login: () => void;
   logout: () => void;
-};
+}
 
 export const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,

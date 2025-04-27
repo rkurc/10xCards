@@ -5,7 +5,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Suspense } from "react";
-import { AuthContext } from "../layout/RootLayout";
+import { AuthContext } from "@/context/AuthContext";
 
 function ErrorFallback({ error }: { error: Error }) {
   return (
@@ -34,9 +34,7 @@ export function DashboardContent() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight mb-2">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Witaj, {user?.name}! Co chcesz dzisiaj zrobić?
-          </p>
+          <p className="text-muted-foreground">Witaj{user?.name ? `, ${user.name}` : ""}! Co chcesz dzisiaj zrobić?</p>
         </div>
 
         <Suspense fallback={<LoadingFallback />}>

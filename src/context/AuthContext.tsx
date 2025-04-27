@@ -2,29 +2,22 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { createBrowserSupabaseClient } from "../lib/supabase.client";
 import { toast } from "sonner";
 
-type User = {
+export type User = {
   id: string;
-  email: string;
   name?: string;
+  email: string;
 };
 
-interface AuthContextType {
+export type AuthContextType = {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (email: string, password: string, options?: { name?: string }) => Promise<{ success: boolean; error?: string; requiresEmailConfirmation?: boolean }>;
+  error: Error | null;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
-}
+};
 
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  loading: true,
-  login: async () => ({ success: false, error: "Not implemented" }),
-  register: async () => ({ success: false, error: "Not implemented" }),
-  logout: async () => {},
-  resetPassword: async () => ({ success: false, error: "Not implemented" }),
-});
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: User }> = ({ 
   children,
@@ -251,4 +244,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
