@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { LogOut, Settings, User as UserIcon } from "lucide-react";
-import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 
 interface UserMenuProps {
   user: {
@@ -18,20 +18,11 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ user }: UserMenuProps) {
+  const { logout } = useAuth();
+
   const handleLogout = async () => {
-    try {
-      // This is where we would call the auth service in a real implementation
-      console.log("Logging out");
-      toast.success("Wylogowano pomyślnie");
-      
-      // Add a small delay before redirecting to ensure the toast is visible
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 1000);
-    } catch (error) {
-      console.error("Logout error:", error);
-      toast.error("Wystąpił błąd podczas wylogowywania");
-    }
+    await logout();
+    window.location.href = "/";
   };
 
   return (

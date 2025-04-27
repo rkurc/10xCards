@@ -8,6 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/context/AuthContext";
 
 // Form schema using zod
 const formSchema = z.object({
@@ -23,6 +24,7 @@ interface LoginFormProps {
 
 export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { login } = useAuth();
 
   // Initialize react-hook-form with zod validation
   const form = useForm<FormValues>({
@@ -38,17 +40,22 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
     setIsSubmitting(true);
 
     try {
-      // This is where we would call the auth service in a real implementation
-      console.log("Login form submitted:", data);
-      toast.success("Logowanie udane");
+      const result = await login(data.email, data.password);
       
-      // Add a small delay before redirecting to ensure the toast is visible
-      setTimeout(() => {
-        window.location.href = redirectUrl || "/dashboard";
-      }, 1000);
+      if (result.success) {
+        toast.success("Logowanie udane");
+        
+        // Add a small delay before redirecting to ensure the toast is visible
+        setTimeout(() => {
+          window.location.href = redirectUrl || "/dashboard";
+        }, 1000);
+      } else {
+        // Show error message from Supabase or a default message
+        toast.error(result.error || "Niepoprawny email lub hasło");
+      }
     } catch (error) {
       console.error("Login error:", error);
-      toast.error("Niepoprawny email lub hasło");
+      toast.error("Wystąpił błąd podczas logowania");
     } finally {
       setIsSubmitting(false);
     }
@@ -93,7 +100,7 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
               )}
             />
 
-            <div className="text-sm text-right"></div>
+            <div className="text-sm text-right">
               <a href="/forgot-password" className="text-primary hover:underline">
                 Zapomniałeś hasła?
               </a>

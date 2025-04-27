@@ -1,23 +1,106 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { LoginForm } from "../components/auth/LoginForm";
-import { checkAuth } from "../utils/auth";
+import { AuthProvider } from "../context/AuthContext";
+import { createSupabaseServerClient } from "../lib/supabase.server";
+
+// Ustawienie opcji pre-renderingu
+export const prerender = false;
 
 // Get redirectUrl from query params
 const redirectUrl = Astro.url.searchParams.get('redirect') || '/dashboard';
 
-// Check if user is already authenticated
-const user = checkAuth();
+// Obsługujemy też POST z formularza HTML dla przypadków gdy JavaScript jest wyłączony
+if (Astro.request.method === 'POST') {
+  try {
+    const formData = await Astro.request.formData();
+    const email = formData.get('email')?.toString();
+    const password = formData.get('password')?.toString();
+    
+    if (!email || !password) {
+      return new Response('Email and password are required', { status: 400 });
+    }
+    
+    const supabase = createSupabaseServerClient({
+      cookies: Astro.cookies,
+      headers: Astro.request.headers
+    });
+    
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    
+    if (error) {
+      // W przypadku błędu wyświetlamy stronę logowania z komunikatem
+      return Astro.redirect(`/login?error=${encodeURIComponent(error.message)}&redirect=${redirectUrl}`);
+    }
+    
+    // Po pomyślnym logowaniu przekierowujemy bezpośrednio
+    return Astro.redirect(redirectUrl);
+  } catch (error) {
+    console.error('Login error:', error);
+    return Astro.redirect(`/login?error=Unexpected%20error&redirect=${redirectUrl}`);
+  }
+}
+
+// Sprawdzenie czy użytkownik jest już zalogowany
+const supabase = createSupabaseServerClient({
+  cookies: Astro.cookies,
+  headers: Astro.request.headers
+});
+
+const {
+  data: { user },
+} = await supabase.auth.getUser();
+
+// Jeśli użytkownik jest zalogowany, przekieruj go
 if (user) {
   return Astro.redirect(redirectUrl);
 }
+
+// Pobieramy ewentualne błędy z parametrów URL
+const error = Astro.url.searchParams.get('error');
 ---
 
 <BaseLayout title="Logowanie">
   <div class="container mx-auto py-12 px-4">
     <div class="max-w-md mx-auto">
       <h1 class="text-3xl font-bold tracking-tight mb-6 text-center">Logowanie</h1>
-      <LoginForm client:load redirectUrl={redirectUrl} />
+      
+      {error && (
+        <div class="bg-destructive/10 text-destructive rounded-md p-3 mb-4 text-sm">
+          {decodeURIComponent(error)}
+        </div>
+      )}
+      
+      <!-- Form z obsługą JavaScript -->
+      <AuthProvider client:load>
+        <LoginForm client:load redirectUrl={redirectUrl} />
+      </AuthProvider>
+      
+      <!-- Fallback dla użytkowników bez JavaScript -->
+      <noscript>
+        <form method="POST" class="space-y-4 border p-4 rounded-md mt-4">
+          <div class="text-sm text-muted-foreground mb-4">
+            JavaScript jest wyłączony. Używam prostego formularza HTML.
+          </div>
+          <div class="space-y-2">
+            <label for="email" class="text-sm font-medium">Email</label>
+            <input type="email" name="email" id="email" required 
+              class="flex h-9 w-full rounded-md border border-input px-3 py-1 text-sm shadow-sm" />
+          </div>
+          <div class="space-y-2">
+            <label for="password" class="text-sm font-medium">Hasło</label>
+            <input type="password" name="password" id="password" required 
+              class="flex h-9 w-full rounded-md border border-input px-3 py-1 text-sm shadow-sm" />
+          </div>
+          <button type="submit" 
+            class="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground w-full">
+            Zaloguj się
+          </button>
+        </form>
+      </noscript>
     </div>
   </div>
 </BaseLayout>
