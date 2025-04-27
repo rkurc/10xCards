@@ -149,8 +149,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
 
   const register = async (email: string, password: string, options?: { name?: string }) => {
     try {
-      // Use API endpoint for registration
+      // Use API endpoint for registration with improved error handling
       try {
+        console.log("Registering user via API endpoint:", email);
+        
         const response = await fetch('/api/auth/register', {
           method: 'POST',
           headers: {
@@ -175,6 +177,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
           return { success: false, error: "Invalid server response format" };
         }
         
+        console.log("Registration API response:", result);
         return {
           success: result.success,
           error: result.error,
@@ -184,6 +187,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
         console.error("API registration error:", apiError);
         
         // Fallback to direct Supabase client
+        console.log("Falling back to direct Supabase registration");
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -194,9 +198,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
         });
 
         if (error) {
+          console.error("Supabase registration error:", error);
           return { success: false, error: error.message };
         }
 
+        console.log("Supabase registration successful:", data);
         // For local development with auto-confirm enabled, user will be immediately logged in
         if (data.session) {
           return { success: true };
@@ -208,7 +214,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
         }
       }
     } catch (error) {
-      console.error("Registration error:", error);
+      console.error("Unexpected registration error:", error);
       return { success: false, error: "An error occurred during registration." };
     }
   };

@@ -5,15 +5,76 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   try {
     console.log("🔑 API register endpoint called");
 
-    // Parse the request body
-    const { email, password, userData, redirectUrl } = await request.json();
+    // Parse the request body with more robust error handling
+    let email, password, userData, redirectUrl;
+    try {
+      // Handle both JSON and form data requests
+      const contentType = request.headers.get('content-type') || '';
+      
+      if (contentType.includes('application/json')) {
+        const body = await request.json();
+        email = body.email;
+        password = body.password;
+        userData = body.userData;
+        redirectUrl = body.redirectUrl;
+      } else if (contentType.includes('application/x-www-form-urlencoded') || 
+                contentType.includes('multipart/form-data')) {
+        const formData = await request.formData();
+        email = formData.get('email')?.toString();
+        password = formData.get('password')?.toString();
+        userData = formData.get('userData') ? JSON.parse(formData.get('userData')?.toString() || '{}') : {};
+        redirectUrl = formData.get('redirectUrl')?.toString();
+      } else {
+        throw new Error(`Unsupported content type: ${contentType}`);
+      }
+      
+      console.log(`🔑 Register attempt for: ${email}, redirect: ${redirectUrl || 'none'}`);
+    } catch (parseError) {
+      console.error("❌ Error parsing register request body:", parseError);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "Invalid request format" 
+      }), { 
+        status: 400,
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+    }
 
-    console.log(`🔑 Register attempt for: ${email}`);
+    // Validate required fields
+    if (!email || !password) {
+      console.error("❌ Missing required fields for registration");
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "Email and password are required" 
+      }), { 
+        status: 400,
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+    }
 
-    // Create Supabase client
-    const supabase = createSupabaseServerClient({ cookies, headers: request.headers });
+    // Create Supabase client with error handling
+    let supabase;
+    try {
+      supabase = createSupabaseServerClient({ cookies, headers: request.headers });
+    } catch (error) {
+      console.error("❌ Failed to create Supabase client:", error);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: "Authentication service initialization failed" 
+      }), { 
+        status: 500,
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+    }
 
     // Attempt registration with metadata for user's name
+    console.log("🔑 Making Supabase auth.signUp call with userData:", userData);
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -22,7 +83,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
         emailRedirectTo: `${new URL(request.url).origin}/auth-callback`
       }
     });
-
+    
     if (error) {
       console.error("❌ Registration error:", error);
       return new Response(JSON.stringify({ 
@@ -53,7 +114,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     }
 
     // If email confirmation is not required, immediately log the user in
-    // and redirect if a URL was provided
+    // and redirect if a URL was provided and client accepts HTML
     if (redirectUrl && request.headers.get('accept')?.includes('text/html')) {
       return redirect(redirectUrl);
     }
