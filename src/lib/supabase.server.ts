@@ -5,12 +5,14 @@ import type { Database } from '../types/database.types';
 // Enhance security by using secure, httpOnly cookies
 export const cookieOptions: CookieOptionsWithName = {
   path: '/',
-  secure: true, // Prevent exposure over non-HTTPS connections
+  // Use secure cookies only in production to allow local development
+  secure: import.meta.env.PROD, 
   httpOnly: true, // Prevent JavaScript access to mitigate XSS attacks
-  sameSite: 'strict', // Protect against CSRF attacks
+  sameSite: 'lax', // Changed from 'strict' to 'lax' to help with redirects
   maxAge: 7 * 24 * 60 * 60, // Set 7-day expiry for predictable session duration
 };
 
+// Helper function to parse cookie header
 function parseCookieHeader(cookieHeader: string): { name: string; value: string }[] {
   return cookieHeader.split(';').map((cookie) => {
     const [name, ...rest] = cookie.trim().split('=');
@@ -29,8 +31,23 @@ export const createSupabaseServerClient = (context: {
       cookieOptions,
       cookies: {
         // Follow Supabase SSR best practices to avoid cookie conflicts
+        get(name) {
+          const value = context.cookies.get(name)?.value;
+          return value ?? '';
+        },
+        set(name, value, options) {
+          // Log cookie operations for debugging
+          console.log(`Setting cookie: ${name} (expiry: ${options?.maxAge || 'session'})`);
+          context.cookies.set(name, value, options);
+        },
+        remove(name, options) {
+          console.log(`Removing cookie: ${name}`);
+          context.cookies.delete(name, options);
+        },
+        // The getAll method is used by Supabase for initial cookie reading
         getAll() {
-          return parseCookieHeader(context.headers.get('Cookie') ?? '');
+          const cookieHeader = context.headers.get('Cookie') ?? '';
+          return parseCookieHeader(cookieHeader);
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) =>

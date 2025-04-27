@@ -8,6 +8,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/context/AuthContext";
 
 // Form schema using zod
 const formSchema = z.object({
@@ -31,6 +32,8 @@ interface RegisterFormProps {
 
 export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [emailConfirmationSent, setEmailConfirmationSent] = useState(false);
+  const { register } = useAuth();
 
   // Initialize react-hook-form with zod validation
   const form = useForm<FormValues>({
@@ -47,20 +50,56 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
     setIsSubmitting(true);
 
     try {
-      // This is where we would call the auth service in a real implementation
-      console.log("Register form submitted:", data);
-      toast.success("Konto zostało utworzone. Możesz się teraz zalogować.");
+      const result = await register(data.email, data.password);
       
-      // Add a small delay before redirecting to ensure the toast is visible
-      setTimeout(() => {
-        window.location.href = "/login";
-      }, 2000);
+      if (result.success) {
+        if (result.requiresEmailConfirmation) {
+          setEmailConfirmationSent(true);
+          toast.success("Wysłano link aktywacyjny na podany adres email");
+        } else {
+          toast.success("Konto zostało utworzone pomyślnie");
+          
+          // Add a small delay before redirecting
+          setTimeout(() => {
+            window.location.href = redirectUrl;
+          }, 1500);
+        }
+      } else {
+        toast.error(result.error || "Nie udało się utworzyć konta");
+      }
     } catch (error) {
       console.error("Registration error:", error);
       toast.error("Wystąpił błąd podczas rejestracji");
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  // Show email confirmation message if email verification is required
+  if (emailConfirmationSent) {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader>
+          <CardTitle>Sprawdź swoją skrzynkę email</CardTitle>
+          <CardDescription>
+            Wysłaliśmy link aktywacyjny na podany adres email
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-4">
+            Aby dokończyć proces rejestracji, kliknij w link aktywacyjny, który wysłaliśmy na adres {form.getValues("email")}.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Jeśli nie otrzymałeś wiadomości, sprawdź folder spam lub skontaktuj się z nami.
+          </p>
+        </CardContent>
+        <CardFooter className="flex justify-center">
+          <a href="/login" className="text-primary hover:underline">
+            Powrót do strony logowania
+          </a>
+        </CardFooter>
+      </Card>
+    );
   }
 
   return (

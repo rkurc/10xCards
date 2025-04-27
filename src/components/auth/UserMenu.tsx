@@ -7,8 +7,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { LogOut, Settings, User as UserIcon } from "lucide-react";
+import { LogOut, Settings, User as UserIcon, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useState } from "react";
+import { toast } from "sonner"; // Changed from react-toastify to sonner
 
 interface UserMenuProps {
   user: {
@@ -19,10 +21,39 @@ interface UserMenuProps {
 
 export function UserMenu({ user }: UserMenuProps) {
   const { logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
-    await logout();
-    window.location.href = "/";
+    setIsLoggingOut(true);
+    
+    try {
+      // First try direct API call
+      console.log("Sending logout request to API");
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        // After successful logout, forcefully reload the page to reset all state
+        console.log("Logout successful, reloading page");
+        window.location.href = '/';
+        return;
+      }
+      
+      // Fallback to context logout if API call fails
+      console.log("API logout failed, using context logout");
+      await logout();
+      window.location.href = '/';
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Failed to log out. Please try again.");
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -48,9 +79,22 @@ export function UserMenu({ user }: UserMenuProps) {
           </a>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 cursor-pointer">
-          <LogOut className="h-4 w-4" />
-          <span>Wyloguj się</span>
+        <DropdownMenuItem 
+          onClick={handleLogout} 
+          className="flex items-center gap-2 cursor-pointer"
+          disabled={isLoggingOut}
+        >
+          {isLoggingOut ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Wylogowywanie...</span>
+            </>
+          ) : (
+            <>
+              <LogOut className="h-4 w-4" />
+              <span>Wyloguj się</span>
+            </>
+          )}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

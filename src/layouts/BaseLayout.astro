@@ -60,9 +60,14 @@ const fullTitle = title ? `${title} | 10xCards` : "10xCards";
                 {/* User menu with dropdown for profile actions and logout */}
                 <UserMenu client:load user={user} />
                 
-                {/* Alternative logout button for direct access */}
-                <form action="/api/auth/logout" method="post" class="hidden sm:block">
-                  <Button type="submit" variant="outline" size="sm">
+                {/* Alternative logout button with enhanced functionality */}
+                <form id="logout-form" action="/api/auth/logout" method="post" class="hidden sm:block">
+                  <Button 
+                    type="submit" 
+                    variant="outline" 
+                    size="sm"
+                    id="logout-button"
+                  >
                     Wyloguj
                   </Button>
                 </form>
@@ -93,5 +98,45 @@ const fullTitle = title ? `${title} | 10xCards` : "10xCards";
         </div>
       </footer>
     </AuthProvider>
+    
+    {/* Script to enhance logout form to prevent getting stuck */}
+    <script>
+      // Make sure DOM is loaded
+      document.addEventListener('DOMContentLoaded', () => {
+        const logoutForm = document.getElementById('logout-form');
+        const logoutButton = document.getElementById('logout-button');
+        
+        if (logoutForm && logoutButton) {
+          logoutForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            logoutButton.setAttribute('disabled', 'true');
+            logoutButton.textContent = 'Wylogowywanie...';
+            
+            try {
+              // Use fetch instead of form submission for better control
+              const response = await fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                }
+              });
+              
+              // If successful, redirect to home page
+              if (response.ok) {
+                window.location.href = '/';
+              } else {
+                console.error('Logout failed');
+                logoutButton.removeAttribute('disabled');
+                logoutButton.textContent = 'Wyloguj';
+              }
+            } catch (error) {
+              console.error('Logout error:', error);
+              logoutButton.removeAttribute('disabled');
+              logoutButton.textContent = 'Wyloguj';
+            }
+          });
+        }
+      });
+    </script>
   </body>
 </html>

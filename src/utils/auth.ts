@@ -8,36 +8,49 @@ export interface User {
 }
 
 export async function checkAuth(Astro?: AstroGlobal): Promise<User | null> {
-  // Jeśli mamy już usera w locals, użyj go
+  console.log("checkAuth called");
+  
+  // If we have already user in locals, use it
   if (Astro?.locals.user) {
+    console.log("checkAuth: Using user from locals");
     return Astro.locals.user;
   }
   
-  // W przeciwnym razie użyj klienta Supabase
+  // If Astro is provided, use it to create a Supabase client
   if (Astro) {
+    console.log("checkAuth: Creating Supabase client");
     const supabase = createSupabaseServerClient({
       cookies: Astro.cookies,
       headers: Astro.request.headers,
     });
     
     try {
+      console.log("checkAuth: Getting user from Supabase");
       const { data: { user }, error } = await supabase.auth.getUser();
       
-      if (error || !user) {
+      if (error) {
+        console.error("checkAuth: Auth error:", error);
         return null;
       }
       
+      if (!user) {
+        console.log("checkAuth: No user found");
+        return null;
+      }
+      
+      console.log("checkAuth: User found", user.email);
       return {
         id: user.id,
         email: user.email!,
         name: user.user_metadata?.name || user.email?.split('@')[0],
       };
     } catch (error) {
-      console.error('Auth error:', error);
+      console.error('checkAuth: Unexpected error:', error);
       return null;
     }
   }
   
-  // Dla kompatybilności z istniejącym kodem, gdy Astro nie jest dostępne
+  // For compatibility with existing code, when Astro is not available
+  console.log("checkAuth: No Astro context provided, returning null");
   return null;
 }

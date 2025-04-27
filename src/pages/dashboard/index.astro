@@ -3,11 +3,17 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import { DashboardContent } from "../../components/dashboard/DashboardContent";
 import { checkAuth } from "../../utils/auth";
 
-// Authentication check
+// Authentication check - add debug logging
+console.log("Dashboard page: Checking authentication");
 const user = await checkAuth(Astro);
+console.log("Dashboard page: User authenticated:", !!user);
+
 if (!user) {
+  console.log("Dashboard page: User not authenticated, redirecting to login");
   return Astro.redirect("/login?redirect=/dashboard");
 }
+
+console.log("Dashboard page: Rendering for authenticated user:", user.email);
 ---
 
 <BaseLayout title="Dashboard | 10xCards">

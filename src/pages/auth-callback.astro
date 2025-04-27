@@ -1,0 +1,46 @@
+---
+import { createSupabaseServerClient } from "../lib/supabase.server";
+
+// Add logging for debugging
+console.log("Auth callback page reached");
+
+// Get auth code from URL if present
+const code = Astro.url.searchParams.get('code');
+console.log("Auth code present:", !!code);
+
+if (code) {
+  const supabase = createSupabaseServerClient({
+    cookies: Astro.cookies,
+    headers: Astro.request.headers
+  });
+
+  try {
+    // Exchange code for session
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    
+    if (error) {
+      console.error("Error exchanging code for session:", error);
+    } else {
+      console.log("Successfully exchanged code for session");
+    }
+  } catch (err) {
+    console.error("Exception during auth callback:", err);
+  }
+}
+
+// Redirect to dashboard after processing
+console.log("Redirecting to dashboard");
+return Astro.redirect('/dashboard');
+---
+
+<!-- Display a loading message for a moment while the redirect happens -->
+<html>
+  <head>
+    <title>Authenticating...</title>
+  </head>
+  <body>
+    <div style="display:flex;justify-content:center;align-items:center;height:100vh;">
+      <p>Authenticating...</p>
+    </div>
+  </body>
+</html>
