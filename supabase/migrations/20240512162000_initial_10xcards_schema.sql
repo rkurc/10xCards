@@ -25,7 +25,7 @@
 create extension if not exists "uuid-ossp";
 
 -- Create custom enum types for type safety
-create type source_type as enum ('ai', 'ai_edited', 'manual')
+create type source_type as enum ('ai', 'ai_edited', 'manual');
 create type knowledge_status as enum ('new', 'learning', 'review', 'mastered');
 
 -- Create profiles table extending auth.users
