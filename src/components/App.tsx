@@ -1,7 +1,7 @@
 import { useContext } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AuthContext } from "./layout/RootLayout";
+import { AuthContext } from "@/context/AuthContext";
 
 export function App() {
   const { isAuthenticated, login } = useContext(AuthContext);
@@ -45,8 +45,12 @@ export function App() {
               </p>
             </CardContent>
             <CardFooter>
-              <Button asChild size="lg" className="w-full">
-                <a href="/dashboard">Rozpocznij teraz</a>
+              <Button 
+                onClick={handleGetStarted} 
+                variant="secondary" 
+                size="lg"
+              >
+                {isAuthenticated ? "Przejdź do panelu" : "Zarejestruj się za darmo"}
               </Button>
             </CardFooter>
           </Card>
