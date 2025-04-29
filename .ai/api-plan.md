@@ -300,6 +300,27 @@ The 10xCards API is organized around the following main resources:
 - **Success Codes**: 204 No Content
 - **Error Codes**: 401 Unauthorized, 404 Not Found
 
+#### POST /api/generation/{generation_id}/finalize
+- **Description**: Finalize the generation process by creating a new set from accepted cards
+- **Request Body**:
+```json
+{
+  "name": "string",
+  "description": "string", // Optional
+  "accepted_cards": ["uuid"]
+}
+```
+- **Response Body**:
+```json
+{
+  "set_id": "uuid",
+  "name": "string",
+  "card_count": "number"
+}
+```
+- **Success Codes**: 201 Created
+- **Error Codes**: 400 Bad Request, 401 Unauthorized, 404 Not Found
+
 ### 2.7 Statistics
 
 #### GET /api/statistics/generation

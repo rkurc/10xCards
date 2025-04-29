@@ -67,21 +67,24 @@ Architektura wykorzystuje wzorzec Islands Architecture, minimalizując ilość J
 
 ### 2.4 Card Review View (Przegląd wygenerowanych fiszek)
 - **Ścieżka**: `/generate/review/{generation_id}`
-- **Główny cel**: Umożliwienie przeglądu, edycji i akceptacji wygenerowanych fiszek
+- **Główny cel**: Umożliwienie przeglądu, edycji i akceptacji wygenerowanych fiszek oraz utworzenie nowego zestawu
 - **Kluczowe informacje**: 
   - Lista wygenerowanych propozycji fiszek
   - Status generowania
   - Opcje edycji każdej fiszki
+  - Formularz nazwy zestawu
 - **Kluczowe komponenty**:
   - Lista kart z podglądem przód/tył
   - Kontrolki edycji dla każdej fiszki
   - Przyciski zaznaczania/odznaczania wszystkich
-  - Przycisk "Zapisz wybrane"
+  - Modal finalizacji z formularzem nazwy zestawu
+  - Przycisk "Finalizuj i utwórz zestaw"
   - Pasek postępu generowania
 - **UX i dostępność**:
   - Możliwość przełączania widoku fiszki (przód/tył)
   - Wyraźne oznaczenia fiszek wybranych/odrzuconych
   - Inline edycja treści
+  - Obowiązkowe pole nazwy zestawu przed finalizacją
   - Toast notifications dla zakończonych operacji
 
 ### 2.5 Card Set List View (Lista zestawów fiszek)
@@ -190,8 +193,9 @@ Architektura wykorzystuje wzorzec Islands Architecture, minimalizując ilość J
 4. Użytkownik widzi pasek postępu
 5. Po zakończeniu generowania użytkownik jest przenoszony do `/generate/review/{generation_id}`
 6. Użytkownik przegląda, edytuje i zaznacza fiszki do zaakceptowania
-7. Po kliknięciu "Zapisz wybrane" zaakceptowane fiszki są zapisywane
-8. Użytkownik otrzymuje potwierdzenie i zostaje przekierowany do widoku zestawu lub dashboardu
+7. Po kliknięciu "Finalizuj i utwórz zestaw" pojawia się modal z polem nazwy zestawu
+8. Po zatwierdzeniu nazwy system tworzy nowy zestaw z wybranymi fiszkami
+9. Użytkownik jest przekierowywany do widoku nowo utworzonego zestawu
 
 ### Przepływ zarządzania zestawami
 1. Użytkownik przechodzi do `/sets` z menu nawigacyjnego
@@ -266,6 +270,7 @@ Architektura wykorzystuje wzorzec Islands Architecture, minimalizując ilość J
 - **TextInput** - Rozbudowane pole tekstowe z licznikiem znaków i walidacją
 - **GenerationProgressIndicator** - Wskaźnik postępu generowania
 - **GeneratedCardsList** - Lista wygenerowanych fiszek z kontrolkami akceptacji/odrzucenia
+- **SetNameForm** - Formularz do nazwania zestawu podczas finalizacji generowania
 
 ### Komponenty interfejsu użytkownika
 - **NavigationBar** - Główny pasek nawigacyjny

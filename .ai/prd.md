@@ -116,12 +116,15 @@ Manualne tworzenie wysokiej jakości fiszek jest czasochłonne i męczące, co z
 
 ### US-006
 - Tytuł: Akceptacja lub odrzucenie wygenerowanych fiszek
-- Opis: Jako użytkownik chcę móc akceptować, modyfikować lub odrzucać fiszki wygenerowane przez AI, aby mieć kontrolę nad jakością materiałów.
+- Opis: Jako użytkownik chcę móc akceptować, modyfikować lub odrzucać fiszki wygenerowane przez AI, aby mieć kontrolę nad jakością materiałów. Kiedy skończę powyższe, chcę mieć możliwość potwierdzenia moich wyborów, co spowoduje nadanie nazwy zestawowi fiszek
 - Kryteria akceptacji:
   - Interfejs umożliwia łatwe zaakceptowanie, modyfikację lub odrzucenie każdej fiszki
   - System zapisuje decyzje użytkownika
-  - Odrzucone fiszki są usuwane z zestawu
   - Zmodyfikowane fiszki zastępują oryginalne propozycje AI
+  - Odrzucone fiszki są oznaczone jako usunięte
+  - Process kończy się nadaniem nazwy zestawowi fiszek
+  - Powoduje to również trwałe usunięcie fiszek oznaczonych jako usunięte
+  
 
 ### US-007
 - Tytuł: Przeglądanie statystyk generowania
