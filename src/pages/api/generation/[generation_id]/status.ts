@@ -27,37 +27,27 @@ export async function GET({ params, locals }: APIContext) {
       );
     }
 
-    // Pobieranie wyników generacji
+    // Pobieranie statusu generacji
     const generationService = new GenerationService(locals.supabase);
-    try {
-      const results = await generationService.getGenerationResults(
-        user.id, 
-        params.generation_id
-      );
+    const status = await generationService.getGenerationStatus(
+      user.id, 
+      params.generation_id
+    );
 
-      // Zwracanie wyników generacji
+    if (!status) {
       return new Response(
-        JSON.stringify(results),
-        { status: 200, headers: { "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Nie znaleziono procesu generacji" }),
+        { status: 404, headers: { "Content-Type": "application/json" } }
       );
-    } catch (serviceError: any) {
-      // Obsługa różnych typów błędów serwisowych
-      if (serviceError.code === "NOT_FOUND") {
-        return new Response(
-          JSON.stringify({ error: "Nie znaleziono procesu generacji" }),
-          { status: 404, headers: { "Content-Type": "application/json" } }
-        );
-      } else if (serviceError.code === "ACCESS_DENIED") {
-        return new Response(
-          JSON.stringify({ error: "Brak dostępu do tego zasobu" }),
-          { status: 403, headers: { "Content-Type": "application/json" } }
-        );
-      } else {
-        throw serviceError; // Przekazanie do głównego catch
-      }
     }
+
+    // Zwracanie statusu generacji
+    return new Response(
+      JSON.stringify(status),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
   } catch (error) {
-    console.error("Błąd podczas pobierania wyników generacji:", error);
+    console.error("Błąd podczas sprawdzania statusu generacji:", error);
     
     return new Response(
       JSON.stringify({ error: "Wystąpił błąd wewnętrzny" }),

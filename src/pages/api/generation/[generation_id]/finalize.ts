@@ -1,17 +1,17 @@
 import type { APIContext } from "astro";
-import { cardPathParamsSchema, acceptCardSchema } from "../../../../../../schemas/generation";
-import { GenerationService } from "../../../../../../services/generation.service";
+import { generationIdSchema, finalizeGenerationSchema } from "../../../../schemas/generation";
+import { GenerationService } from "../../../../services/generation.service";
 
 export const prerender = false;
 
 export async function POST({ params, request, locals }: APIContext) {
   try {
-    // Walidacja parametrów ścieżki
-    const paramValidation = cardPathParamsSchema.safeParse(params);
+    // Walidacja parametru generationId
+    const paramValidation = generationIdSchema.safeParse(params);
     if (!paramValidation.success) {
       return new Response(
         JSON.stringify({
-          error: "Nieprawidłowy format identyfikatorów",
+          error: "Nieprawidłowy format identyfikatora generacji",
           details: paramValidation.error.format()
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
@@ -28,11 +28,9 @@ export async function POST({ params, request, locals }: APIContext) {
     }
 
     // Parsowanie i walidacja body
-    let requestBody = {};
+    let requestBody;
     try {
-      if (request.headers.get("content-length") !== "0") {
-        requestBody = await request.json();
-      }
+      requestBody = await request.json();
     } catch (error) {
       return new Response(
         JSON.stringify({ error: "Nieprawidłowy format JSON" }),
@@ -40,7 +38,7 @@ export async function POST({ params, request, locals }: APIContext) {
       );
     }
 
-    const bodyValidation = acceptCardSchema.safeParse(requestBody);
+    const bodyValidation = finalizeGenerationSchema.safeParse(requestBody);
     if (!bodyValidation.success) {
       return new Response(
         JSON.stringify({
@@ -51,38 +49,43 @@ export async function POST({ params, request, locals }: APIContext) {
       );
     }
 
-    // Akceptacja fiszki
+    // Finalizacja procesu generowania
     const generationService = new GenerationService(locals.supabase);
     try {
-      const result = await generationService.acceptCard(
+      const result = await generationService.finalizeGeneration(
         user.id,
         params.generation_id,
-        params.card_id,
         bodyValidation.data
       );
 
-      // Zwracanie informacji o stworzonej fiszce
+      // Zwracanie informacji o utworzonym zestawie
       return new Response(
         JSON.stringify(result),
         { status: 201, headers: { "Content-Type": "application/json" } }
       );
     } catch (serviceError: any) {
-      if (serviceError.message?.includes("not found") || serviceError.code === "NOT_FOUND") {
+      // Obsługa różnych typów błędów serwisowych
+      if (serviceError.code === "NOT_FOUND") {
         return new Response(
-          JSON.stringify({ error: serviceError.message || "Nie znaleziono procesu generacji, fiszki lub zestawu" }),
+          JSON.stringify({ error: serviceError.message || "Nie znaleziono procesu generacji" }),
           { status: 404, headers: { "Content-Type": "application/json" } }
         );
-      } else if (serviceError.message?.includes("denied") || serviceError.code === "ACCESS_DENIED") {
+      } else if (serviceError.code === "ACCESS_DENIED") {
         return new Response(
           JSON.stringify({ error: "Brak dostępu do tego zasobu" }),
           { status: 403, headers: { "Content-Type": "application/json" } }
         );
+      } else if (serviceError.code === "INVALID_CARDS") {
+        return new Response(
+          JSON.stringify({ error: "Jedna lub więcej wybranych fiszek nie należy do tego procesu generacji" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
       } else {
-        throw serviceError;
+        throw serviceError; // Przekazanie do głównego catch
       }
     }
   } catch (error) {
-    console.error("Błąd podczas akceptacji fiszki:", error);
+    console.error("Błąd podczas finalizacji procesu generowania:", error);
     
     return new Response(
       JSON.stringify({ error: "Wystąpił błąd wewnętrzny" }),

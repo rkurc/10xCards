@@ -1,40 +1,64 @@
-import type { APIRoute } from "astro";
-import { generationCardParamsSchema } from "../../../../../../schemas/generation.schema";
+import type { APIContext } from "astro";
+import { cardPathParamsSchema } from "../../../../../../schemas/generation";
 import { GenerationService } from "../../../../../../services/generation.service";
 
-export const post: APIRoute = async ({ params, locals, request }) => {
+export const prerender = false;
+
+export async function POST({ params, locals }: APIContext) {
   try {
-    // Validate path parameters
-    const pathResult = generationCardParamsSchema.safeParse(params);
-    if (!pathResult.success) {
-      return new Response(JSON.stringify({ error: "Invalid generation ID or card ID format" }), { status: 400 });
+    // Walidacja parametrów ścieżki
+    const paramValidation = cardPathParamsSchema.safeParse(params);
+    if (!paramValidation.success) {
+      return new Response(
+        JSON.stringify({
+          error: "Nieprawidłowy format identyfikatorów",
+          details: paramValidation.error.format()
+        }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    // Extract user ID from header
-    const userId = request.headers.get("x-user-id");
-    if (!userId) {
-      return new Response(JSON.stringify({ error: "Authentication required" }), { status: 401 });
+    // Pobieranie ID użytkownika z sesji
+    const { data: { user } } = await locals.supabase.auth.getUser();
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: "Wymagana autoryzacja" }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    // Reject the card
+    // Odrzucanie fiszki
     const generationService = new GenerationService(locals.supabase);
-    await generationService.rejectCard(userId, pathResult.data.generation_id, pathResult.data.card_id);
+    try {
+      await generationService.rejectCard(
+        user.id,
+        params.generation_id,
+        params.card_id
+      );
 
-    return new Response(null, { status: 204 });
-  } catch (error) {
-    if (error instanceof Error) {
-      if (error.message === "Generation not found") {
-        return new Response(JSON.stringify({ error: "Generation job not found" }), { status: 404 });
-      }
-      if (error.message === "Generated card not found") {
-        return new Response(JSON.stringify({ error: "Generated card not found" }), { status: 404 });
-      }
-      if (error.message === "Access denied") {
-        return new Response(JSON.stringify({ error: "Access denied" }), { status: 403 });
+      // Zwracanie pustej odpowiedzi (204 No Content)
+      return new Response(null, { status: 204 });
+    } catch (serviceError: any) {
+      if (serviceError.message?.includes("not found") || serviceError.code === "NOT_FOUND") {
+        return new Response(
+          JSON.stringify({ error: serviceError.message || "Nie znaleziono procesu generacji lub fiszki" }),
+          { status: 404, headers: { "Content-Type": "application/json" } }
+        );
+      } else if (serviceError.message?.includes("denied") || serviceError.code === "ACCESS_DENIED") {
+        return new Response(
+          JSON.stringify({ error: "Brak dostępu do tego zasobu" }),
+          { status: 403, headers: { "Content-Type": "application/json" } }
+        );
+      } else {
+        throw serviceError;
       }
     }
-
-    console.error("Error processing request:", error);
-    return new Response(JSON.stringify({ error: "Internal server error" }), { status: 500 });
+  } catch (error) {
+    console.error("Błąd podczas odrzucania fiszki:", error);
+    
+    return new Response(
+      JSON.stringify({ error: "Wystąpił błąd wewnętrzny" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
   }
-};
+}

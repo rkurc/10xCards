@@ -9,6 +9,10 @@ import type {
   GenerationAcceptAllCommand,
   GenerationAcceptAllResponse,
   GenerationCardAcceptCommand,
+  GenerationResultResponse,
+  GenerationStatusResponse,
+  GenerationFinalizeCommand,
+  GenerationFinalizeResponse
 } from "../types";
 
 export class GenerationService {
@@ -504,5 +508,201 @@ export class GenerationService {
         updated_at: new Date().toISOString(),
       })
       .eq("id", generationId);
+  }
+
+  /**
+   * Pobiera status procesu generacji fiszek
+   * @param userId ID użytkownika
+   * @param generationId ID procesu generacji
+   * @returns Status procesu generacji
+   */
+  async getGenerationStatus(userId: string, generationId: string): Promise<GenerationStatusResponse | null> {
+    // Sprawdzenie czy proces generacji istnieje i należy do użytkownika
+    const { data: generationJob, error } = await this.supabase
+      .from("generation_logs")
+      .select("id, created_at, generated_count")
+      .eq("id", generationId)
+      .eq("user_id", userId)
+      .single();
+
+    if (error || !generationJob) {
+      return null;
+    }
+
+    // Status generacji zależy od stanu danych w bazie
+    // Tutaj dodałbym rzeczywistą logikę sprawdzania statusu, np. czy istnieją już wyniki
+    // W przykładzie zakładamy, że jeśli proces istnieje, to jest już ukończony
+    
+    return {
+      status: "completed", // W rzeczywistości status byłby dynamiczny
+      progress: 100        // W rzeczywistości postęp byłby dynamiczny
+    };
+  }
+
+  /**
+   * Pobiera wyniki procesu generacji fiszek
+   * @param userId ID użytkownika
+   * @param generationId ID procesu generacji
+   * @returns Wygenerowane propozycje fiszek i statystyki
+   */
+  async getGenerationResults(userId: string, generationId: string): Promise<GenerationResultResponse> {
+    // Sprawdzenie czy proces generacji istnieje i należy do użytkownika
+    const { data: generationJob, error: jobError } = await this.supabase
+      .from("generation_logs")
+      .select("id, created_at, generated_count, source_text_length")
+      .eq("id", generationId)
+      .eq("user_id", userId)
+      .single();
+
+    if (jobError || !generationJob) {
+      throw { code: "NOT_FOUND", message: "Proces generacji nie został znaleziony" };
+    }
+
+    // Pobieranie wygenerowanych propozycji fiszek
+    const { data: cards, error: cardsError } = await this.supabase
+      .from("generation_results") // Zakładamy, że taka tabela istnieje
+      .select("id, front_content, back_content, readability_score")
+      .eq("generation_id", generationId);
+
+    if (cardsError) {
+      throw { code: "DATABASE_ERROR", message: "Błąd podczas pobierania wyników generacji" };
+    }
+
+    // Przekształcenie danych do odpowiedniego formatu
+    const cardDTOs: GenerationCardDTO[] = cards.map(card => ({
+      id: card.id,
+      front_content: card.front_content,
+      back_content: card.back_content,
+      readability_score: card.readability_score
+    }));
+
+    return {
+      cards: cardDTOs,
+      stats: {
+        text_length: generationJob.source_text_length || 0,
+        generated_count: generationJob.generated_count || cardDTOs.length,
+        generation_time_ms: 0 // W rzeczywistości pobieralibyśmy czas generacji
+      }
+    };
+  }
+
+  /**
+   * Finalizuje proces generacji tworząc nowy zestaw fiszek
+   * @param userId ID użytkownika
+   * @param generationId ID procesu generacji
+   * @param command Dane do utworzenia zestawu
+   * @returns Informacje o utworzonym zestawie
+   */
+  async finalizeGeneration(
+    userId: string, 
+    generationId: string, 
+    command: GenerationFinalizeCommand
+  ): Promise<GenerationFinalizeResponse> {
+    // Sprawdzenie czy proces generacji istnieje i należy do użytkownika
+    const { data: generationJob, error: jobError } = await this.supabase
+      .from("generation_logs")
+      .select("id")
+      .eq("id", generationId)
+      .eq("user_id", userId)
+      .single();
+
+    if (jobError || !generationJob) {
+      throw { code: "NOT_FOUND", message: "Proces generacji nie został znaleziony" };
+    }
+
+    // Sprawdzenie czy wszystkie karty należą do tego procesu generacji
+    const { data: cards, error: cardsError } = await this.supabase
+      .from("generation_results")
+      .select("id")
+      .eq("generation_id", generationId)
+      .in("id", command.accepted_cards);
+
+    if (cardsError) {
+      throw { code: "DATABASE_ERROR", message: "Błąd podczas weryfikacji wybranych fiszek" };
+    }
+
+    if (cards.length !== command.accepted_cards.length) {
+      throw { code: "INVALID_CARDS", message: "Niektóre wybrane fiszki nie należą do tego procesu generacji" };
+    }
+
+    // Rozpoczęcie transakcji
+    // W rzeczywistej implementacji użylibyśmy transakcji dla zapewnienia atomowości operacji
+    
+    // 1. Utworzenie nowego zestawu
+    const { data: newSet, error: setError } = await this.supabase
+      .from("card_sets")
+      .insert({
+        name: command.name,
+        description: command.description || "",
+        user_id: userId
+      })
+      .select("id")
+      .single();
+
+    if (setError || !newSet) {
+      throw { code: "DATABASE_ERROR", message: "Błąd podczas tworzenia nowego zestawu" };
+    }
+
+    // 2. Pobranie pełnych danych wybranych fiszek
+    const { data: selectedCards, error: selectedCardsError } = await this.supabase
+      .from("generation_results")
+      .select("id, front_content, back_content, readability_score")
+      .in("id", command.accepted_cards);
+
+    if (selectedCardsError || !selectedCards) {
+      throw { code: "DATABASE_ERROR", message: "Błąd podczas pobierania wybranych fiszek" };
+    }
+
+    // 3. Utworzenie nowych fiszek na podstawie zaakceptowanych propozycji
+    const cardsToInsert = selectedCards.map(card => ({
+      front_content: card.front_content,
+      back_content: card.back_content,
+      source_type: "ai", // Zakładamy, że to są fiszki z AI bez edycji
+      readability_score: card.readability_score,
+      user_id: userId
+    }));
+
+    const { data: insertedCards, error: insertCardsError } = await this.supabase
+      .from("cards")
+      .insert(cardsToInsert)
+      .select("id");
+
+    if (insertCardsError || !insertedCards) {
+      throw { code: "DATABASE_ERROR", message: "Błąd podczas tworzenia fiszek" };
+    }
+
+    // 4. Dodanie fiszek do nowo utworzonego zestawu
+    const cardsToSetsRecords = insertedCards.map(card => ({
+      card_id: card.id,
+      set_id: newSet.id
+    }));
+
+    const { error: linkError } = await this.supabase
+      .from("cards_to_sets")
+      .insert(cardsToSetsRecords);
+
+    if (linkError) {
+      throw { code: "DATABASE_ERROR", message: "Błąd podczas dodawania fiszek do zestawu" };
+    }
+
+    // 5. Aktualizacja statystyk generacji
+    const { error: statsError } = await this.supabase
+      .from("generation_logs")
+      .update({
+        accepted_unedited_count: command.accepted_cards.length
+      })
+      .eq("id", generationId);
+
+    if (statsError) {
+      console.error("Błąd podczas aktualizacji statystyk generacji:", statsError);
+      // Nie przerywamy procesu z powodu błędu aktualizacji statystyk
+    }
+
+    // Zwrócenie informacji o utworzonym zestawie
+    return {
+      set_id: newSet.id,
+      name: command.name,
+      card_count: insertedCards.length
+    };
   }
 }

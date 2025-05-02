@@ -183,6 +183,24 @@ export interface GenerationCardAcceptCommand {
   back_content?: string;
 }
 
+/**
+ * Command to finalize the generation process and create a new set from accepted cards
+ */
+export interface GenerationFinalizeCommand {
+  name: string;
+  description?: string;
+  accepted_cards: string[];
+}
+
+/**
+ * Response after finalizing the generation process
+ */
+export interface GenerationFinalizeResponse {
+  set_id: string;
+  name: string;
+  card_count: number;
+}
+
 // ===== Statistics Types =====
 
 /**
