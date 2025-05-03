@@ -217,7 +217,7 @@ describe("GenerationService", () => {
           return {
             ...mockSupabase,
             select: vi.fn().mockReturnThis(),
-            eq: vi.fn().mockReturnThis(),
+            match: vi.fn().mockReturnThis(),
             single: vi.fn().mockResolvedValue({
               data: { id: cardId },
               error: null,

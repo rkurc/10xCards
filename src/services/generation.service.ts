@@ -219,47 +219,43 @@ export class GenerationService {
    * @returns The generation results including cards and stats
    */
   async getGenerationResults(userId: string, generationId: string): Promise<GenerationResultResponse> {
-    // Get generation log to check ownership and get metadata
-    const { data: generationLog, error: logError } = await this.supabase
+    // Sprawdzenie czy proces generacji istnieje i należy do użytkownika
+    const { data: generationJob, error: jobError } = await this.supabase
       .from("generation_logs")
-      .select("*")
+      .select("id, created_at, generated_count, source_text_length")
       .eq("id", generationId)
+      .eq("user_id", userId)
       .single();
 
-    if (logError) {
-      throw new Error("Failed to fetch generation log");
+    if (jobError || !generationJob) {
+      throw { code: "NOT_FOUND", message: "Proces generacji nie został znaleziony" };
     }
 
-    if (!generationLog) {
-      throw new Error("Generation not found");
-    }
-
-    if (generationLog.user_id !== userId) {
-      throw new Error("Access denied");
-    }
-
-    // Get generated cards
+    // Pobieranie wygenerowanych propozycji fiszek
     const { data: cards, error: cardsError } = await this.supabase
-      .from("generation_results")
+      .from("generation_results") // Zakładamy, że taka tabela istnieje
       .select("id, front_content, back_content, readability_score")
       .eq("generation_id", generationId);
 
     if (cardsError) {
-      throw new Error("Failed to fetch generated cards");
+      throw { code: "DATABASE_ERROR", message: "Błąd podczas pobierania wyników generacji" };
     }
 
+    // Przekształcenie danych do odpowiedniego formatu
+    const cardDTOs: GenerationCardDTO[] = cards.map(card => ({
+      id: card.id,
+      front_content: card.front_content,
+      back_content: card.back_content,
+      readability_score: card.readability_score
+    }));
+
     return {
-      cards: cards.map((card: { id: any; front_content: any; back_content: any; readability_score: any }) => ({
-        id: card.id,
-        front_content: card.front_content,
-        back_content: card.back_content,
-        readability_score: card.readability_score,
-      })),
+      cards: cardDTOs,
       stats: {
-        text_length: generationLog.source_text_length,
-        generated_count: generationLog.generated_count,
-        generation_time_ms: generationLog.generation_duration,
-      },
+        text_length: generationJob.source_text_length || 0,
+        generated_count: generationJob.generated_count || cardDTOs.length,
+        generation_time_ms: 0 // W rzeczywistości pobieralibyśmy czas generacji
+      }
     };
   }
 
@@ -481,12 +477,11 @@ export class GenerationService {
       throw new Error("Access denied");
     }
 
-    // Get the generated card
+    // Get the generated card - use match instead of chaining eq
     const { data: generatedCard, error: cardError } = await this.supabase
       .from("generation_results")
       .select("id")
-      .eq("generation_id", generationId)
-      .eq("id", cardId)
+      .match({ generation_id: generationId, id: cardId })
       .single();
 
     if (cardError || !generatedCard) {
@@ -536,53 +531,6 @@ export class GenerationService {
     return {
       status: "completed", // W rzeczywistości status byłby dynamiczny
       progress: 100        // W rzeczywistości postęp byłby dynamiczny
-    };
-  }
-
-  /**
-   * Pobiera wyniki procesu generacji fiszek
-   * @param userId ID użytkownika
-   * @param generationId ID procesu generacji
-   * @returns Wygenerowane propozycje fiszek i statystyki
-   */
-  async getGenerationResults(userId: string, generationId: string): Promise<GenerationResultResponse> {
-    // Sprawdzenie czy proces generacji istnieje i należy do użytkownika
-    const { data: generationJob, error: jobError } = await this.supabase
-      .from("generation_logs")
-      .select("id, created_at, generated_count, source_text_length")
-      .eq("id", generationId)
-      .eq("user_id", userId)
-      .single();
-
-    if (jobError || !generationJob) {
-      throw { code: "NOT_FOUND", message: "Proces generacji nie został znaleziony" };
-    }
-
-    // Pobieranie wygenerowanych propozycji fiszek
-    const { data: cards, error: cardsError } = await this.supabase
-      .from("generation_results") // Zakładamy, że taka tabela istnieje
-      .select("id, front_content, back_content, readability_score")
-      .eq("generation_id", generationId);
-
-    if (cardsError) {
-      throw { code: "DATABASE_ERROR", message: "Błąd podczas pobierania wyników generacji" };
-    }
-
-    // Przekształcenie danych do odpowiedniego formatu
-    const cardDTOs: GenerationCardDTO[] = cards.map(card => ({
-      id: card.id,
-      front_content: card.front_content,
-      back_content: card.back_content,
-      readability_score: card.readability_score
-    }));
-
-    return {
-      cards: cardDTOs,
-      stats: {
-        text_length: generationJob.source_text_length || 0,
-        generated_count: generationJob.generated_count || cardDTOs.length,
-        generation_time_ms: 0 // W rzeczywistości pobieralibyśmy czas generacji
-      }
     };
   }
 
