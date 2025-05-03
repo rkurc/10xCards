@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
@@ -13,16 +13,27 @@ export function GenerateForm() {
   const { text, setText, targetCount, setTargetCount, setGenerationId, setCurrentStep } = useGenerationContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [localText, setLocalText] = useState(text);
+  
+  // Sync local state with context when context changes
+  useEffect(() => {
+    setLocalText(text);
+  }, [text]);
+  
+  // Update context after local state changes
+  useEffect(() => {
+    setText(localText);
+  }, [localText, setText]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!text.trim()) {
+    if (!localText.trim()) {
       setError("Please enter some text to generate flashcards.");
       return;
     }
 
-    if (text.length < 100) {
+    if (localText.length < 100) {
       setError("Please enter at least 100 characters for better results.");
       return;
     }
@@ -37,7 +48,7 @@ export function GenerateForm() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          text,
+          text: localText,
           target_count: targetCount,
         }),
       });
@@ -85,16 +96,16 @@ export function GenerateForm() {
             <Label htmlFor="text">Paste your text below</Label>
             <Textarea
               id="text"
-              value={text}
-              onChange={(e) => setText(e.target.value)}
+              value={localText}
+              onChange={(e) => setLocalText(e.target.value)}
               placeholder="Paste the text you want to generate flashcards from..."
               rows={10}
               required
               className="min-h-[200px]"
             />
             <p className="text-xs text-muted-foreground">
-              Character count: {text.length}
-              {text.length < 100 && text.length > 0 && " (minimum 100 characters required)"}
+              Character count: {localText.length}
+              {localText.length < 100 && localText.length > 0 && " (minimum 100 characters required)"}
             </p>
           </div>
 
@@ -114,7 +125,7 @@ export function GenerateForm() {
         </CardContent>
 
         <CardFooter className="flex justify-end space-x-2">
-          <Button type="submit" disabled={isSubmitting || text.length < 100} className="min-w-[120px]">
+          <Button type="submit" disabled={isSubmitting || localText.length < 100} className="min-w-[120px]">
             {isSubmitting ? "Processing..." : "Generate Cards"}
           </Button>
         </CardFooter>
