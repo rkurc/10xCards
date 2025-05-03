@@ -1,8 +1,36 @@
 import { test, expect } from "@playwright/test";
-import { GeneratePage } from "../models/GeneratePage";
-import { ReviewResultsPage } from "../models/ReviewResultsPage";
-import { TEST_DATA } from "../fixtures/test-data";
-import { LoginPage } from "../models/LoginPage";
+import { GeneratePage } from "./models/GeneratePage";
+import { ReviewResultsPage } from "./models/ReviewResultsPage";
+import { TEST_DATA } from "./fixtures/test-data";
+import { LoginPage } from "./models/LoginPage";
+import { DashboardPage } from "./models/DashboardPage";
+
+// Test setup to ensure we have a logged-in user
+test.beforeEach(async ({ page, context }) => {
+  // Create storage state with authentication token
+  await context.addCookies([
+    {
+      name: "sb-auth-token",
+      value: "test-auth-token",
+      domain: "localhost",
+      path: "/",
+      httpOnly: true,
+      secure: false,
+    },
+  ]);
+
+  // Set local storage for additional auth state if needed
+  await page.evaluate(() => {
+    localStorage.setItem(
+      "supabase.auth.token",
+      JSON.stringify({
+        access_token: "test-access-token",
+        refresh_token: "test-refresh-token",
+        expires_at: Date.now() + 3600000,
+      })
+    );
+  });
+});
 
 test.describe("Flash Card Generation E2E Tests", () => {
   // Use a single test case to verify the entire flow for all user stories
@@ -11,10 +39,16 @@ test.describe("Flash Card Generation E2E Tests", () => {
     const loginPage = new LoginPage(page);
     const generatePage = new GeneratePage(page);
     const reviewPage = new ReviewResultsPage(page);
+    const dashboardPage = new DashboardPage(page);
 
-    // Step 1: Log in (assumes auth is required)
-    await loginPage.goto();
-    await loginPage.login("test@example.com", "password123");
+    // Verify we're logged in
+    test.step("Verify authentication state", async () => {
+      await dashboardPage.goto();
+
+      // Verify we see the dashboard and not a login page
+      await expect(page).toHaveTitle(/Dashboard/);
+      await expect(page.locator(".user-profile")).toBeVisible();
+    });
 
     // Step 2: Navigate to generation page
     await generatePage.goto();
@@ -25,7 +59,17 @@ test.describe("Flash Card Generation E2E Tests", () => {
     // US-001: Automated flash card generation from text input
     test.step("US-001: Generate flash cards from text", async () => {
       // Submit text for flash card generation
-      await generatePage.submitText(TEST_DATA.sampleText, 5);
+      const response = await generatePage.submitText(TEST_DATA.sampleText, 5);
+
+      // Verify the API response contains expected data
+      expect(response.status()).toBe(202); // Accepted
+      const responseData = await response.json();
+      expect(responseData).toHaveProperty("generation_id");
+      expect(responseData).toHaveProperty("estimated_time_seconds");
+
+      // Store the generation ID for later steps
+      const generationId = responseData.generation_id;
+      page.evaluate((id) => sessionStorage.setItem("current_generation_id", id), generationId);
 
       // Verify generation process started
       await expect(generatePage.progressBar).toBeVisible();
@@ -40,14 +84,28 @@ test.describe("Flash Card Generation E2E Tests", () => {
       // Verify statistics are displayed
       await generatePage.verifyStatisticsDisplayed();
 
+      // Verify API calls to status endpoint
+      const statusRequests = await page.waitForResponse(
+        (response) => response.url().includes("/api/generation/") && response.url().includes("/status"),
+        { timeout: 5000 }
+      );
+      expect(statusRequests.status()).toBe(200);
+
       // Take a snapshot of the statistics panel for visual verification
-      await page.locator(".bg-muted").screenshot({ path: "generation-stats.png" });
+      await page.locator(".statistics-panel").screenshot({ path: "generation-stats.png" });
     });
 
     // US-008: Readability scoring for cards
     test.step("US-008: Verify readability scores", async () => {
       // Verify readability scores are shown on cards
       await reviewPage.verifyReadabilityScores();
+
+      // Verify the results API was called
+      const resultsRequest = await page.waitForResponse(
+        (response) => response.url().includes("/api/generation/") && response.url().includes("/results"),
+        { timeout: 5000 }
+      );
+      expect(resultsRequest.status()).toBe(200);
     });
 
     // US-006: Accepting, modifying, or rejecting AI-generated cards
@@ -66,21 +124,78 @@ test.describe("Flash Card Generation E2E Tests", () => {
         // Edit the card if specified
         if (response.edit) {
           await reviewPage.editCard(card, response.frontContent as string, response.backContent as string);
-        }
 
-        // Accept or reject the card
-        if (response.accept) {
+          // Verify the accept API is called with edit data
+          const acceptRequest = page.waitForRequest(
+            (request) => request.url().includes("/accept") && request.method() === "POST"
+          );
+
+          await reviewPage.acceptCard(card);
+          const request = await acceptRequest;
+          const postData = request.postDataJSON();
+          expect(postData).toHaveProperty("front_content");
+          expect(postData).toHaveProperty("back_content");
+        } else if (response.accept) {
+          // Just accept without editing
           await reviewPage.acceptCard(card);
         } else {
+          // Reject the card
+          const rejectRequest = page.waitForRequest(
+            (request) => request.url().includes("/reject") && request.method() === "POST"
+          );
+
           await reviewPage.rejectCard(card);
+          await rejectRequest;
         }
       }
+
+      // Monitor the finalize transaction API call
+      const finalizePromise = page.waitForResponse(
+        (response) => response.url().includes("/finalize") && response.method() === "POST"
+      );
 
       // Finalize the generation by creating a set
       await reviewPage.finalizeGeneration(TEST_DATA.setDetails.name, TEST_DATA.setDetails.description);
 
+      // Verify the transaction API was called successfully
+      const finalizeResponse = await finalizePromise;
+      expect(finalizeResponse.status()).toBe(200);
+      const finalizeData = await finalizeResponse.json();
+      expect(finalizeData).toHaveProperty("set_id");
+      expect(finalizeData).toHaveProperty("card_count");
+      expect(finalizeData.name).toBe(TEST_DATA.setDetails.name);
+
       // Verify completion message
       await expect(page.locator("text=Flashcards Created Successfully")).toBeVisible();
+
+      // Verify we get redirected to the newly created set
+      await expect(page.url()).toContain(`/sets/${finalizeData.set_id}`);
     });
+  });
+
+  // Additional test for authentication error cases
+  test("should handle authentication errors correctly", async ({ page, context }) => {
+    // Clear authentication
+    await context.clearCookies();
+    await page.evaluate(() => localStorage.clear());
+
+    // Try to access generation page
+    await page.goto("/generate");
+
+    // Should be redirected to login
+    await expect(page.url()).toContain("/login");
+
+    // Try direct API access without auth
+    const response = await page.request.post("/api/generation/process-text", {
+      data: {
+        text: "Test text without authentication",
+        target_count: 3,
+      },
+    });
+
+    // Verify authentication error
+    expect(response.status()).toBe(401);
+    const responseData = await response.json();
+    expect(responseData.code).toBe("UNAUTHORIZED");
   });
 });

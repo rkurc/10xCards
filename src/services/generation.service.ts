@@ -252,7 +252,8 @@ export class GenerationService extends BaseService {
       if (!generationExists) {
         throw {
           code: ErrorCode.NOT_FOUND,
-          message: "Generation not found or you don't have access to it"
+          message: "Generation not found or you don't have access to it",
+          status: 404,
         };
       }
       
