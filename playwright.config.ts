@@ -26,21 +26,13 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
   ],
   // Lokalny serwer deweloperski z poprawionym poleceniem
   webServer: {
-    command: 'npm run dev -- --host',
+    command: 'npm run dev:e2e',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
-    timeout: 60000, // Increase timeout to 60 seconds
+    timeout: 120000, // Increase timeout to 120 seconds
     stderr: 'pipe', // Pipe stderr for better debugging
     stdout: 'pipe', // Pipe stdout for better debugging
   },

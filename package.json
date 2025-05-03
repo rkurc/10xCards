@@ -16,7 +16,7 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "dev:e2e": "npm run astro dev -- --mode test"
+    "dev:e2e": "astro dev --host --port 3000 --mode test"
   },
   "dependencies": {
     "@astrojs/node": "^9.1.3",

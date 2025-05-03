@@ -6,7 +6,11 @@ import { handleDatabaseError, ErrorCode } from "../utils/db-error-handler";
  * All other services should extend this class
  */
 export class BaseService {
-  constructor(protected supabase: TypedSupabaseClient) {}
+  protected readonly supabase: TypedSupabaseClient;
+
+  constructor(supabase: TypedSupabaseClient) {
+    this.supabase = supabase;
+  }
 
   /**
    * Executes a database operation with error handling
@@ -17,12 +21,20 @@ export class BaseService {
    */
   protected async executeDbOperation<T>(operation: () => Promise<T>, errorMsg?: string): Promise<T> {
     try {
-      return await operation();
+      console.log(`[DEBUG] executeDbOperation: Starting database operation`);
+      const result = await operation();
+      console.log(`[DEBUG] executeDbOperation: Operation completed successfully`);
+      return result;
     } catch (error: any) {
-      console.error("Database operation error:", error);
+      console.error(`[DEBUG] executeDbOperation: Error encountered:`, error);
+      console.log(`[DEBUG] executeDbOperation: Error type:`, typeof error);
+      console.log(`[DEBUG] executeDbOperation: Error code:`, error?.code);
+      console.log(`[DEBUG] executeDbOperation: Error message:`, error?.message);
+      console.log(`[DEBUG] executeDbOperation: Custom error message:`, errorMsg);
 
       // Transform Postgres error codes
       if (error && error.code === "23505") {
+        console.log(`[DEBUG] executeDbOperation: Detected duplicate entry error (23505)`);
         throw {
           code: ErrorCode.DUPLICATE_ENTRY,
           message: error.message || "Duplicate entry",
@@ -32,10 +44,12 @@ export class BaseService {
 
       // If the error already has a code property and it's not a postgres code, preserve it
       if (error && error.code && !error.code.match(/^\d+/)) {
+        console.log(`[DEBUG] executeDbOperation: Preserving existing error code:`, error.code);
         throw error;
       }
 
       const formattedError = handleDatabaseError(error, errorMsg);
+      console.log(`[DEBUG] executeDbOperation: Formatted error:`, formattedError);
       throw formattedError;
     }
   }
@@ -132,13 +146,21 @@ export class BaseService {
    * @returns True if the record exists, false otherwise
    */
   protected async recordExists(table: string, column: string, value: any): Promise<boolean> {
+    console.log(`[DEBUG] recordExists: Checking if record exists in ${table} where ${column}=${value}`);
     try {
-      const { data } = await this.supabase.from(table).select("id").eq(column, value).maybeSingle();
+      const { data, error } = await this.supabase
+        .from(table)
+        .select(column)
+        .eq(column, value)
+        .limit(1);
 
-      return !!data;
+      console.log(`[DEBUG] recordExists: Query result - data:`, data);
+      console.log(`[DEBUG] recordExists: Query result - error:`, error);
+
+      return data && data.length > 0;
     } catch (error) {
-      console.error(`Error checking if record exists in ${table}:`, error);
-      return false;
+      console.error(`[DEBUG] recordExists: Unexpected error checking if record exists:`, error);
+      throw error;
     }
   }
 
@@ -150,19 +172,20 @@ export class BaseService {
    * @returns True if the record exists and belongs to the user, false otherwise
    */
   protected async verifyOwnership(table: string, id: string, userId: string): Promise<boolean> {
+    console.log(`[DEBUG] verifyOwnership: Checking if record exists in ${table} with id ${id} for user ${userId}`);
     try {
-      // First check if record exists at all
-      const recordExists = await this.recordExists(table, "id", id);
-      if (!recordExists) {
-        return false;
-      }
+      const { data, error } = await this.supabase
+        .from(table)
+        .select('id')
+        .eq('id', id)
+        .eq('user_id', userId)
+        .single();
 
-      // Then check if it belongs to the user
-      const { data } = await this.supabase.from(table).select("id").eq("id", id).eq("user_id", userId).maybeSingle();
-
-      return !!data;
+      const exists = !!data && !error;
+      console.log(`[DEBUG] verifyOwnership: User ownership check result for ${table}: ${exists}`);
+      return exists;
     } catch (error) {
-      console.error(`Error verifying ownership in ${table}:`, error);
+      console.error(`[DEBUG] verifyOwnership: Error verifying ownership in ${table}:`, error);
       return false;
     }
   }

@@ -245,51 +245,81 @@ export class GenerationService extends BaseService {
    * @returns The generation results including cards and stats
    */
   async getGenerationResults(userId: string, generationId: string): Promise<GenerationResultResponse> {
+    console.log(`[DEBUG] getGenerationResults: Called with userId=${userId}, generationId=${generationId}`);
     return this.executeDbOperation(async () => {
       // Check if generation exists and belongs to user
-      const generationExists = await this.verifyOwnership("generation_logs", generationId, userId);
-      
-      if (!generationExists) {
-        throw {
-          code: ErrorCode.NOT_FOUND,
-          message: "Generation not found or you don't have access to it",
-          status: 404,
-        };
+      console.log(`[DEBUG] getGenerationResults: About to verify ownership for generationId=${generationId}`);
+      try {
+        const generationExists = await this.verifyOwnership("generation_logs", generationId, userId);
+        console.log(`[DEBUG] getGenerationResults: Ownership verification result: ${generationExists}`);
+        
+        if (!generationExists) {
+          console.log(`[DEBUG] getGenerationResults: Generation not found or access denied`);
+          throw {
+            code: ErrorCode.NOT_FOUND,
+            message: "Generation not found or you don't have access to it",
+            status: 404,
+          };
+        }
+      } catch (error) {
+        console.error(`[DEBUG] getGenerationResults: Error in verifyOwnership:`, error);
+        throw error;
       }
       
       // Get the generation details
-      const { data: generationJob, error: jobError } = await this.supabase
-        .from("generation_logs")
-        .select("id, created_at, generated_count, source_text_length")
-        .eq("id", generationId)
-        .single();
-      
-      if (jobError) throw jobError;
-      
-      // Get the generated cards
-      const { data: cards, error: cardsError } = await this.supabase
-        .from("generation_results")
-        .select("id, front_content, back_content, readability_score")
-        .eq("generation_id", generationId);
-      
-      if (cardsError) throw cardsError;
-      
-      // Format the response
-      const cardDTOs: GenerationCardDTO[] = cards.map(card => ({
-        id: card.id,
-        front_content: card.front_content,
-        back_content: card.back_content,
-        readability_score: card.readability_score
-      }));
-      
-      return {
-        cards: cardDTOs,
-        stats: {
-          text_length: generationJob.source_text_length || 0,
-          generated_count: generationJob.generated_count || cardDTOs.length,
-          generation_time_ms: 0 // Would be calculated in production
+      console.log(`[DEBUG] getGenerationResults: Fetching generation job details`);
+      try {
+        const { data: generationJob, error: jobError } = await this.supabase
+          .from("generation_logs")
+          .select("id, created_at, generated_count, source_text_length")
+          .eq("id", generationId)
+          .single();
+        
+        console.log(`[DEBUG] getGenerationResults: Generation job data:`, JSON.stringify(generationJob));
+        console.log(`[DEBUG] getGenerationResults: Generation job error:`, jobError);
+        
+        if (jobError) {
+          console.log(`[DEBUG] getGenerationResults: Error fetching generation job: ${jobError.message}`);
+          throw jobError;
         }
-      };
+        
+        // Get the generated cards
+        console.log(`[DEBUG] getGenerationResults: Fetching generated cards`);
+        const { data: cards, error: cardsError } = await this.supabase
+          .from("generation_results")
+          .select("id, front_content, back_content, readability_score")
+          .eq("generation_id", generationId);
+        
+        console.log(`[DEBUG] getGenerationResults: Cards data:`, cards ? `Found ${cards.length} cards` : 'No cards found');
+        console.log(`[DEBUG] getGenerationResults: Cards error:`, cardsError);
+        
+        if (cardsError) {
+          console.log(`[DEBUG] getGenerationResults: Error fetching cards: ${cardsError.message}`);
+          throw cardsError;
+        }
+        
+        // Format the response
+        const cardDTOs: GenerationCardDTO[] = cards.map(card => ({
+          id: card.id,
+          front_content: card.front_content,
+          back_content: card.back_content,
+          readability_score: card.readability_score
+        }));
+        
+        console.log(`[DEBUG] getGenerationResults: Returning ${cardDTOs.length} formatted cards`);
+        
+        return {
+          cards: cardDTOs,
+          stats: {
+            text_length: generationJob.source_text_length || 0,
+            generated_count: generationJob.generated_count || cardDTOs.length,
+            generation_time_ms: 0 // Would be calculated in production
+          }
+        };
+      } catch (error) {
+        console.error(`[DEBUG] getGenerationResults: Unexpected error:`, error);
+        throw error;
+      }
     }, "Failed to get generation results");
   }
 

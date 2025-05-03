@@ -14,54 +14,78 @@ export const cookieOptions: CookieOptionsWithName = {
 
 // Helper function to parse cookie header
 function parseCookieHeader(cookieHeader: string): { name: string; value: string }[] {
-  return cookieHeader.split(';').map((cookie) => {
+  console.log('[DEBUG] parseCookieHeader: Parsing cookie header');
+  const cookies = cookieHeader.split(';').map((cookie) => {
     const [name, ...rest] = cookie.trim().split('=');
     return { name, value: rest.join('=') };
   });
+  console.log('[DEBUG] parseCookieHeader: Found cookies:', cookies.map(c => c.name).join(', '));
+  return cookies;
 }
 
 export const createSupabaseServerClient = (context: {
   headers: Headers;
   cookies: AstroCookies;
 }) => {
+  console.log('[DEBUG] createSupabaseServerClient: Initializing Supabase client');
+  
   const supabase = createServerClient<Database>(
     import.meta.env.PUBLIC_SUPABASE_URL,
     import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
     {
       cookieOptions,
       cookies: {
-        // Follow Supabase SSR best practices to avoid cookie conflicts
         get(name) {
-          const value = context.cookies.get(name)?.value;
-          return value ?? '';
+          console.log(`[DEBUG] cookie.get: Reading cookie ${name}`);
+          try {
+            const value = context?.cookies?.get(name)?.value;
+            console.log(`[DEBUG] cookie.get: Cookie ${name} ${value ? 'found' : 'not found'}`);
+            return value ?? '';
+          } catch (error) {
+            console.error(`[DEBUG] cookie.get: Error reading cookie ${name}:`, error);
+            return '';
+          }
         },
         set(name, value, options) {
-          // Log cookie operations for debugging
-          console.log(`Setting cookie: ${name} (expiry: ${options?.maxAge || 'session'})`);
-          context.cookies.set(name, value, options);
+          console.log(`[DEBUG] cookie.set: Setting cookie ${name}`);
+          try {
+            context?.cookies?.set(name, value, options);
+          } catch (error) {
+            console.error(`[DEBUG] cookie.set: Error setting cookie ${name}:`, error);
+          }
         },
         remove(name, options) {
-          console.log(`Removing cookie: ${name}`);
-          context.cookies.delete(name, options);
+          console.log(`[DEBUG] cookie.remove: Removing cookie ${name}`);
+          try {
+            context?.cookies?.delete(name, options);
+          } catch (error) {
+            console.error(`[DEBUG] cookie.remove: Error removing cookie ${name}:`, error);
+          }
         },
-        // The getAll method is used by Supabase for initial cookie reading
         getAll() {
-          const cookieHeader = context.headers.get('Cookie') ?? '';
-          return parseCookieHeader(cookieHeader);
+          console.log('[DEBUG] cookie.getAll: Getting all cookies from header');
+          try {
+            const cookieHeader = context?.headers?.get('Cookie') ?? '';
+            const cookies = parseCookieHeader(cookieHeader);
+            return cookies;
+          } catch (error) {
+            console.error('[DEBUG] cookie.getAll: Error getting cookies:', error);
+            return [];
+          }
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            context.cookies.set(name, value, options),
-          );
-        },
+          console.log('[DEBUG] cookie.setAll: Setting multiple cookies');
+          try {
+            cookiesToSet?.forEach(({ name, value, ...options }) => {
+              context?.cookies?.set(name, value, options);
+            });
+          } catch (error) {
+            console.error('[DEBUG] cookie.setAll: Error setting multiple cookies:', error);
+          }
+        }
       },
-      // Enable automatic token refresh for seamless user experience
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: false
-      }
-    },
+      detectSessionInUrl: false
+    }
   );
 
   return supabase;

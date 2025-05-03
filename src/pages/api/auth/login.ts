@@ -3,13 +3,14 @@ import { createSupabaseServerClient } from '../../../lib/supabase.server';
 
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   try {
-    console.debug("Login endpoint called");
+    console.log("[DEBUG] Login endpoint called");
     
     // Parse the request body with more robust error handling
     let email, password, redirectUrl;
     try {
       // Handle both JSON and form data requests
       const contentType = request.headers.get('content-type') || '';
+      console.log("[DEBUG] Login request content type:", contentType);
       
       if (contentType.includes('application/json')) {
         const body = await request.json();
@@ -26,7 +27,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
         throw new Error(`Unsupported content type: ${contentType}`);
       }
     } catch (parseError) {
-      console.error("Error parsing request body:", parseError);
+      console.error("[DEBUG] Error parsing request body:", parseError);
       return new Response(JSON.stringify({ 
         success: false, 
         error: "Invalid request format" 
@@ -37,8 +38,10 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
         }
       });
     }
-    
+
+    // Validate required fields
     if (!email || !password) {
+      console.log("[DEBUG] Missing required fields:", { hasEmail: !!email, hasPassword: !!password });
       return new Response(JSON.stringify({ 
         success: false, 
         error: "Email and password are required" 
@@ -50,12 +53,13 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       });
     }
 
-    // Create Supabase server client
+    // Create Supabase client
     let supabase;
     try {
+      console.log("[DEBUG] Creating Supabase client");
       supabase = createSupabaseServerClient({ cookies, headers: request.headers });
     } catch (error) {
-      console.error("Failed to create Supabase client:", error);
+      console.error("[DEBUG] Failed to create Supabase client:", error);
       return new Response(JSON.stringify({ 
         success: false, 
         error: "Authentication service initialization failed" 
@@ -70,6 +74,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     // Attempt login
     let data, error;
     try {
+      console.log("[DEBUG] Attempting login for email:", email);
       const result = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -77,7 +82,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       data = result.data;
       error = result.error;
     } catch (supabaseError) {
-      console.error("Supabase login error:", supabaseError);
+      console.error("[DEBUG] Supabase login error:", supabaseError);
       return new Response(JSON.stringify({ 
         success: false, 
         error: "Authentication service error" 
@@ -90,7 +95,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     }
 
     if (error) {
-      console.error(`Login failed:`, error);
+      console.error(`[DEBUG] Login failed for ${email}:`, error);
       return new Response(JSON.stringify({ 
         success: false, 
         error: error.message 
@@ -102,35 +107,34 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       });
     }
 
-    console.debug("Login successful for:", email);
+    console.log("[DEBUG] Login successful for:", email);
     
-    // IMPORTANT: For API requests, NEVER redirect - just return JSON
-    // Only redirect for form submissions that accept HTML responses
-    if (redirectUrl && request.headers.get('accept')?.includes('text/html')) {
-      return redirect(redirectUrl);
+    // Handle redirect for form submissions or return JSON for API calls
+    if (request.headers.get('accept')?.includes('application/json')) {
+      console.log("[DEBUG] Returning JSON response");
+      return new Response(
+        JSON.stringify({
+          success: true,
+          user: data.user
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json"
+          }
+        }
+      );
     }
 
-    // Return success response with user information
-    return new Response(JSON.stringify({ 
-      success: true,
-      redirectUrl: redirectUrl || '/dashboard',
-      user: data.user ? {
-        id: data.user.id,
-        email: data.user.email,
-        name: data.user.user_metadata?.name || data.user.email?.split('@')[0]
-      } : null
-    }), { 
-      status: 200,
-      headers: {
-        "Content-Type": "application/json"
-      }
-    });
+    // Redirect after successful login
+    console.log("[DEBUG] Redirecting to:", redirectUrl || '/dashboard');
+    return redirect(redirectUrl || '/dashboard');
+    
   } catch (error) {
-    // Make sure we always return JSON, even for unexpected errors
-    console.error("Unexpected error during login:", error);
+    console.error("[DEBUG] Unexpected login error:", error);
     return new Response(JSON.stringify({ 
       success: false, 
-      error: "An unexpected error occurred during login" 
+      error: error instanceof Error ? error.message : "Unknown error"
     }), { 
       status: 500,
       headers: {

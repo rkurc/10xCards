@@ -100,7 +100,76 @@ describe("GenerationService", () => {
 
   describe("getGenerationResults", () => {
     it("should return cards and stats for an existing generation", async () => {
-      const result = await service.getGenerationResults(testUserId, "test-gen-1");
+      // Mock the specific behavior for this test
+      (mockSupabase.from as any).mockImplementation((tableName: string) => {
+        if (tableName === "generation_logs") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockImplementation((column: string, value: any) => {
+                // This handles the recordExists and verifyOwnership calls
+                if (column === "id" && value === "test-gen-1") {
+                  return {
+                    // For recordExists check
+                    data: [{ id: "test-gen-1" }],
+                    error: null,
+                    // For the subsequent ownership check
+                    eq: vi.fn().mockImplementation((column2: string, value2: any) => {
+                      if (column2 === "user_id" && value2 === "test-user-id") {
+                        return {
+                          data: [{ id: "test-gen-1" }],
+                          error: null
+                        };
+                      }
+                      return { data: [], error: null };
+                    }),
+                    // For getting the generation details
+                    single: vi.fn().mockReturnValue({
+                      data: {
+                        id: "test-gen-1",
+                        user_id: "test-user-id",
+                        source_text_length: 100,
+                        generated_count: 2
+                      },
+                      error: null
+                    })
+                  };
+                }
+                return { 
+                  data: [], 
+                  error: null,
+                  eq: vi.fn().mockReturnValue({ data: [], error: null })
+                };
+              })
+            })
+          };
+        } else if (tableName === "generation_results") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                data: [
+                  {
+                    id: "test-card-1",
+                    front_content: "Test front content",
+                    back_content: "Test back content",
+                    readability_score: 0.8
+                  },
+                  {
+                    id: "test-card-2",
+                    front_content: "Test front content 2",
+                    back_content: "Test back content 2",
+                    readability_score: 0.7
+                  }
+                ],
+                error: null
+              })
+            })
+          };
+        }
+        return (mockSupabase.from as any).getMockImplementation()(tableName);
+      });
+
+      const generationId = "test-gen-1";
+      const result = await service.getGenerationResults(testUserId, generationId);
 
       expect(result).toMatchObject({
         cards: expect.arrayContaining([

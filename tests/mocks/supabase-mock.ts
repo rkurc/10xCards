@@ -86,16 +86,13 @@ export function createSupabaseTestClient(): TypedSupabaseClient {
       eq: vi.fn().mockImplementation((column: string, value: any) => {
         // Filter data based on equality
         const filtered = tableData.filter((row) => row[column] === value);
-
-        return {
-          ...selectMethods,
+        const methods = {
           data: filtered.length > 0 ? filtered : null,
-          maybeSingle: () => {
-            return {
-              data: filtered.length > 0 ? filtered[0] : null,
-              error: null,
-            };
-          },
+          count: filtered.length,
+          maybeSingle: () => ({
+            data: filtered.length > 0 ? filtered[0] : null,
+            error: null
+          }),
           single: () => {
             if (filtered.length === 0) {
               return { data: null, error: { message: "No rows found", code: "PGRST116" } };
@@ -103,53 +100,48 @@ export function createSupabaseTestClient(): TypedSupabaseClient {
             return { data: filtered[0], error: null };
           },
           eq: vi.fn().mockImplementation((column2: string, value2: any) => {
-            // Handle multiple conditions
             const doubleFiltered = filtered.filter(row => row[column2] === value2);
             return {
-              ...selectMethods,
               data: doubleFiltered.length > 0 ? doubleFiltered : null,
-              maybeSingle: () => {
-                return {
-                  data: doubleFiltered.length > 0 ? doubleFiltered[0] : null,
-                  error: null,
-                };
-              },
+              count: doubleFiltered.length,
+              maybeSingle: () => ({
+                data: doubleFiltered.length > 0 ? doubleFiltered[0] : null,
+                error: null
+              }),
               single: () => {
                 if (doubleFiltered.length === 0) {
                   return { data: null, error: { message: "No rows found", code: "PGRST116" } };
                 }
                 return { data: doubleFiltered[0], error: null };
-              },
+              }
             };
-          }),
+          })
         };
+        return methods;
       }),
-
-      // Handle IN condition
       in: vi.fn().mockImplementation((column: string, values: any[]) => {
         const filtered = tableData.filter((row) => values.includes(row[column]));
         return {
           ...selectMethods,
           data: filtered.length > 0 ? filtered : null,
-          error: null,
+          count: filtered.length,
+          error: null
         };
       }),
-
-      // Handle matching multiple conditions
       match: vi.fn().mockImplementation((conditions: Record<string, any>) => {
         const filtered = tableData.filter((row) => {
           return Object.entries(conditions).every(([key, value]) => row[key] === value);
         });
-
         return {
           ...selectMethods,
           data: filtered.length > 0 ? filtered : null,
+          count: filtered.length,
           single: () => {
             if (filtered.length === 0) {
               return { data: null, error: { message: "No rows found", code: "PGRST116" } };
             }
             return { data: filtered[0], error: null };
-          },
+          }
         };
       }),
     };
@@ -158,7 +150,13 @@ export function createSupabaseTestClient(): TypedSupabaseClient {
       select: vi.fn().mockImplementation((columns: string = "*") => {
         // Track the method call
         methodCalls.select[tableName] = { columns };
-        return selectMethods;
+        
+        return {
+          ...selectMethods,
+          data: tableData.length > 0 ? tableData : null,
+          error: null,
+          eq: selectMethods.eq,
+        };
       }),
 
       // Use spy for insert operation
