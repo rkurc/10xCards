@@ -1,3 +1,6 @@
+import type { MiddlewareHandler } from 'astro';
+import { createSupabaseClient } from './db/supabase.service';
+import { env, validateEnvironment } from './config/environment';
 import { defineMiddleware } from 'astro:middleware';
 import { createSupabaseServerClient } from './lib/supabase.server';
 
@@ -18,67 +21,55 @@ const PUBLIC_PATHS = [
 // Change this value to false to use real Supabase authentication
 const USE_MOCK_AUTH = false;
 
-export const onRequest = defineMiddleware(
-  async ({ locals, cookies, url, request, redirect }, next) => {
-    console.debug("Processing request for:", url.pathname);
-    
-    // Check for mock auth token first if in mock mode
-    if (USE_MOCK_AUTH && cookies.has('mock-auth-token')) {
-      locals.user = {
-        id: "mock-user-id",
-        email: "test@example.com",
-        name: "Test User"
-      };
-      return next();
-    }
+// Declare global variable to track environment validation
+declare global {
+  // eslint-disable-next-line no-var
+  var __ENV_VALIDATED__: boolean;
+}
 
-    // Initialize Supabase for each request to ensure fresh auth state
-    const supabase = createSupabaseServerClient({
-      cookies,
-      headers: request.headers,
-    });
-    
-    // Make Supabase available throughout the request lifecycle
-    locals.supabase = supabase;
-    
-    // Allow public access to certain paths without authentication
-    const isPublicPath = PUBLIC_PATHS.some(path => 
-      url.pathname === path || url.pathname.startsWith(`${path}/`)
-    );
-    
-    // Skip auth checks for public paths to avoid unnecessary redirects
-    if (isPublicPath) {
-      return next();
+export const onRequest: MiddlewareHandler = async ({ locals, request }, next) => {
+  try {
+    // Validate environment on first request in development
+    if (env.isDevelopment && !global.__ENV_VALIDATED__) {
+      validateEnvironment();
+      global.__ENV_VALIDATED__ = true;
     }
-
-    // SECURE: Always use getUser() which verifies with the auth server
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
     
-    // Handle auth errors
-    if (userError) {
-      console.debug("Auth error:", userError.message);
+    // Get auth token from request
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.split('Bearer ')[1];
+    
+    // Create Supabase client with or without auth token
+    locals.supabase = createSupabaseClient(token);
+    
+    // Extract user from token if present
+    if (token) {
+      const { data, error } = await locals.supabase.auth.getUser(token);
       
-      // Clear invalid auth state to force re-authentication
-      await supabase.auth.signOut();
-      
-      // Redirect to login with return URL
-      const returnUrl = encodeURIComponent(url.pathname + url.search);
-      return redirect(`/login?redirect=${returnUrl}`);
+      if (data.user && !error) {
+        locals.user = data.user;
+      }
     }
     
-    // Proceed with valid authentication
-    if (user) {
-      // Make user data available throughout the request lifecycle
-      locals.user = {
-        id: user.id,
-        email: user.email!,
-        name: user.user_metadata?.name || user.email?.split('@')[0],
-      };
-      return next();
-    } else {
-      // Ensure unauthenticated users are redirected with return path
-      const returnUrl = encodeURIComponent(url.pathname + url.search);
-      return redirect(`/login?redirect=${returnUrl}`);
+    // Check for session cookie if no token provided
+    if (!token) {
+      const { data, error } = await locals.supabase.auth.getSession();
+      
+      if (data.session && !error) {
+        locals.user = data.session.user;
+      }
     }
+    
+    // Add helper to check authentication
+    locals.isAuthenticated = !!locals.user;
+    
+    // Log for development
+    if (env.isDevelopment) {
+      console.log(`Request to ${request.url}${locals.user ? ` (authenticated as ${locals.user.email})` : ' (unauthenticated)'}`);
+    }
+  } catch (error) {
+    console.error('Middleware initialization error:', error);
   }
-);
+  
+  return next();
+};

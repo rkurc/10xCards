@@ -1,9 +1,10 @@
 import type { APIContext } from "astro";
 import { processTextSchema } from "../../../schemas/generation";
 import { GenerationService } from "../../../services/generation.service";
-
+import { requireAuth, createApiResponse, createApiError } from "../../../utils/api-auth";
 
 export const prerender = false;
+
 /**
  * Rate limit information by user
  */
@@ -19,65 +20,74 @@ const RATE_LIMIT = {
 
 export async function POST({ request, locals }: APIContext) {
   try {
-    // Use a valid UUID format for testing
-    // This is a sample UUID that follows the format expected by Supabase
-    const userId = "c26087da-dacc-4988-8bd1-e5449a1a4b9f"; // Test UUID in valid format
+    // Check authentication
+    const authResponse = requireAuth({ locals, request });
+    if (authResponse) return authResponse;
+
+    // Use the authenticated user's ID
+    const userId = locals.user.id;
 
     // Check rate limits
     if (!checkRateLimit(userId)) {
-      return new Response(JSON.stringify({ error: "Rate limit exceeded. Try again later." }), {
-        status: 429,
-        headers: { "Content-Type": "application/json" },
+      return createApiError({
+        code: "RATE_LIMIT_EXCEEDED",
+        message: "Rate limit exceeded. Try again later.",
+        status: 429
       });
     }
 
     // Parse and validate request body
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     const result = processTextSchema.safeParse(body);
 
     if (!result.success) {
-      return new Response(
-        JSON.stringify({
-          error: "Invalid request data",
-          details: result.error.format(),
-        }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+      return createApiError({
+        code: "INVALID_REQUEST",
+        message: "Invalid request data",
+        details: result.error.format(),
+        status: 400
+      });
     }
 
     // If set_id is provided, verify that it exists and belongs to the user
     if (result.data.set_id) {
-      const { data: cardSet, error } = await locals.supabase
-        .from("card_sets")
-        .select("id")
-        .eq("id", result.data.set_id)
-        .eq("user_id", userId)
-        .maybeSingle();
+      try {
+        const { data: cardSet, error } = await locals.supabase
+          .from("card_sets")
+          .select("id")
+          .eq("id", result.data.set_id)
+          .eq("user_id", userId)
+          .maybeSingle();
 
-      if (error || !cardSet) {
-        return new Response(
-          JSON.stringify({ error: "The specified card set does not exist or you do not have access to it" }),
-          { status: 403, headers: { "Content-Type": "application/json" } }
-        );
+        if (error) throw error;
+        
+        if (!cardSet) {
+          return createApiError({
+            code: "FORBIDDEN",
+            message: "The specified card set does not exist or you do not have access to it",
+            status: 403
+          });
+        }
+      } catch (error) {
+        console.error("Database error checking card set:", error);
+        return createApiError(error, 500);
       }
     }
 
     // Process the text
-    const generationService = new GenerationService(locals.supabase);
-    const processingResult = await generationService.startTextProcessing(userId, result.data);
+    try {
+      const generationService = new GenerationService(locals.supabase);
+      const processingResult = await generationService.startTextProcessing(userId, result.data);
 
-    // Return success response
-    return new Response(JSON.stringify(processingResult), {
-      status: 202, // Accepted
-      headers: { "Content-Type": "application/json" },
-    });
+      // Return success response
+      return createApiResponse(processingResult, 202); // Accepted
+    } catch (error) {
+      console.error("Error in generation service:", error);
+      return createApiError(error, 500);
+    }
   } catch (error) {
-    console.error("Error processing request:", error);
-
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    console.error("Unhandled error processing request:", error);
+    return createApiError("Internal server error", 500);
   }
 }
 
