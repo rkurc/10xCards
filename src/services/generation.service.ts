@@ -11,7 +11,7 @@ import type {
   GenerationResultResponse,
   GenerationStatusResponse,
   GenerationFinalizeCommand,
-  GenerationFinalizeResponse
+  GenerationFinalizeResponse,
 } from "../types";
 import { ErrorCode } from "../utils/db-error-handler";
 
@@ -30,7 +30,7 @@ export class GenerationService extends BaseService {
     return this.executeDbOperation(async () => {
       // Create a record in generation_logs
       const generationId = this.generateUUID();
-      
+
       // Insert the generation log
       const { error } = await this.supabase.from("generation_logs").insert({
         id: generationId,
@@ -40,23 +40,23 @@ export class GenerationService extends BaseService {
         target_count: command.target_count || this.calculateDefaultCardCount(command.text),
         status: "pending",
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       });
-      
+
       if (error) throw error;
-      
+
       // Start async processing (would be a queue/worker in production)
       // We don't await this as it's meant to run in the background
-      this.processTextAsync(generationId).catch(err => {
+      this.processTextAsync(generationId).catch((err) => {
         console.error("Background processing error:", err);
       });
-      
+
       // Calculate estimated time based on text length
       const estimatedTimeSeconds = Math.max(3, Math.min(30, Math.ceil(command.text.length / 500)));
-      
+
       return {
         generation_id: generationId,
-        estimated_time_seconds: estimatedTimeSeconds
+        estimated_time_seconds: estimatedTimeSeconds,
       };
     }, "Failed to start text processing");
   }
@@ -245,16 +245,13 @@ export class GenerationService extends BaseService {
    * @returns The generation results including cards and stats
    */
   async getGenerationResults(userId: string, generationId: string): Promise<GenerationResultResponse> {
-    console.log(`[DEBUG] getGenerationResults: Called with userId=${userId}, generationId=${generationId}`);
     return this.executeDbOperation(async () => {
       // Check if generation exists and belongs to user
-      console.log(`[DEBUG] getGenerationResults: About to verify ownership for generationId=${generationId}`);
+
       try {
         const generationExists = await this.verifyOwnership("generation_logs", generationId, userId);
-        console.log(`[DEBUG] getGenerationResults: Ownership verification result: ${generationExists}`);
-        
+
         if (!generationExists) {
-          console.log(`[DEBUG] getGenerationResults: Generation not found or access denied`);
           throw {
             code: ErrorCode.NOT_FOUND,
             message: "Generation not found or you don't have access to it",
@@ -265,56 +262,46 @@ export class GenerationService extends BaseService {
         console.error(`[DEBUG] getGenerationResults: Error in verifyOwnership:`, error);
         throw error;
       }
-      
+
       // Get the generation details
-      console.log(`[DEBUG] getGenerationResults: Fetching generation job details`);
+
       try {
         const { data: generationJob, error: jobError } = await this.supabase
           .from("generation_logs")
           .select("id, created_at, generated_count, source_text_length")
           .eq("id", generationId)
           .single();
-        
-        console.log(`[DEBUG] getGenerationResults: Generation job data:`, JSON.stringify(generationJob));
-        console.log(`[DEBUG] getGenerationResults: Generation job error:`, jobError);
-        
+
         if (jobError) {
-          console.log(`[DEBUG] getGenerationResults: Error fetching generation job: ${jobError.message}`);
           throw jobError;
         }
-        
+
         // Get the generated cards
-        console.log(`[DEBUG] getGenerationResults: Fetching generated cards`);
+
         const { data: cards, error: cardsError } = await this.supabase
           .from("generation_results")
           .select("id, front_content, back_content, readability_score")
           .eq("generation_id", generationId);
-        
-        console.log(`[DEBUG] getGenerationResults: Cards data:`, cards ? `Found ${cards.length} cards` : 'No cards found');
-        console.log(`[DEBUG] getGenerationResults: Cards error:`, cardsError);
-        
+
         if (cardsError) {
-          console.log(`[DEBUG] getGenerationResults: Error fetching cards: ${cardsError.message}`);
           throw cardsError;
         }
-        
+
         // Format the response
-        const cardDTOs: GenerationCardDTO[] = cards.map(card => ({
+        const cardDTOs: GenerationCardDTO[] = cards.map((card) => ({
           id: card.id,
           front_content: card.front_content,
           back_content: card.back_content,
-          readability_score: card.readability_score
+          readability_score: card.readability_score,
         }));
-        
-        console.log(`[DEBUG] getGenerationResults: Returning ${cardDTOs.length} formatted cards`);
-        
+
         return {
           cards: cardDTOs,
           stats: {
             text_length: generationJob.source_text_length || 0,
             generated_count: generationJob.generated_count || cardDTOs.length,
-            generation_time_ms: 0 // Would be calculated in production
-          }
+            generation_time_ms: 0, // Would be calculated in production
+          },
         };
       } catch (error) {
         console.error(`[DEBUG] getGenerationResults: Unexpected error:`, error);
@@ -598,10 +585,10 @@ export class GenerationService extends BaseService {
       // Status generacji zależy od stanu danych w bazie
       // Tutaj dodałbym rzeczywistą logikę sprawdzania statusu, np. czy istnieją już wyniki
       // W przykładzie zakładamy, że jeśli proces istnieje, to jest już ukończony
-      
+
       return {
         status: "completed", // W rzeczywistości status byłby dynamiczny
-        progress: 100        // W rzeczywistości postęp byłby dynamiczny
+        progress: 100, // W rzeczywistości postęp byłby dynamiczny
       };
     }, "Failed to get generation status");
   }
@@ -609,27 +596,27 @@ export class GenerationService extends BaseService {
   /**
    * Finalizes the generation process by creating a new card set
    * Uses a database transaction to ensure all operations succeed or fail together
-   * 
+   *
    * @param userId The ID of the requesting user
    * @param generationId The ID of the generation job
    * @param command The finalize command containing set information and accepted cards
    * @returns Information about the created set
    */
   async finalizeGeneration(
-    userId: string, 
-    generationId: string, 
+    userId: string,
+    generationId: string,
     command: GenerationFinalizeCommand
   ): Promise<GenerationFinalizeResponse> {
     return this.executeTransaction<GenerationFinalizeResponse>(
-      'finalize_generation',
+      "finalize_generation",
       {
         p_user_id: userId,
         p_generation_id: generationId,
         p_name: command.name,
-        p_description: command.description || '',
-        p_accepted_cards: command.accepted_cards
+        p_description: command.description || "",
+        p_accepted_cards: command.accepted_cards,
       },
-      'Failed to finalize generation'
+      "Failed to finalize generation"
     );
   }
 }

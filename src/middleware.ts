@@ -1,6 +1,20 @@
 import type { MiddlewareHandler } from "astro";
 import { env, validateEnvironment } from "./config/environment";
 import { createSupabaseServerClient } from "./lib/supabase.server";
+import type { AstroCookies } from "astro";
+import type { User } from "@supabase/supabase-js";
+
+// Extend Astro's Locals interface
+declare module "astro" {
+  interface AstroGlobal {
+    locals: {
+      cookies: AstroCookies;
+      isAuthenticated: boolean;
+      user?: User;
+      supabase: ReturnType<typeof createSupabaseServerClient>;
+    };
+  }
+}
 
 // Define endpoints that don't require authentication
 const PUBLIC_PATHS = [
@@ -25,11 +39,13 @@ declare global {
   var __ENV_VALIDATED__: boolean;
 }
 
-export const onRequest: MiddlewareHandler = async ({ locals, request }, next) => {
+export const onRequest: MiddlewareHandler = async ({ locals, request, cookies }, next) => {
   try {
+    // Set cookies in locals
+    locals.cookies = cookies;
+
     // Validate environment on first request in development
     if (env.isDevelopment && !global.__ENV_VALIDATED__) {
-      console.log("[DEBUG] Middleware: Validating environment in development");
       validateEnvironment();
       global.__ENV_VALIDATED__ = true;
     }
@@ -37,7 +53,6 @@ export const onRequest: MiddlewareHandler = async ({ locals, request }, next) =>
     // Check if path is public
     const url = new URL(request.url);
     const isPublicPath = PUBLIC_PATHS.includes(url.pathname);
-    console.log(`[DEBUG] Middleware: Request to ${url.pathname} (Public: ${isPublicPath})`);
 
     // Create Supabase client
     try {
@@ -45,7 +60,6 @@ export const onRequest: MiddlewareHandler = async ({ locals, request }, next) =>
         cookies: locals.cookies,
         headers: request.headers,
       });
-      console.log("[DEBUG] Middleware: Supabase client created successfully");
     } catch (error) {
       console.error("[DEBUG] Middleware: Failed to create Supabase client:", error);
       throw error;
@@ -54,62 +68,57 @@ export const onRequest: MiddlewareHandler = async ({ locals, request }, next) =>
     // Get auth token from request
     const authHeader = request.headers.get("Authorization");
     const token = authHeader?.split("Bearer ")[1];
-    console.log(`[DEBUG] Middleware: Auth header present: ${!!authHeader}, Bearer token present: ${!!token}`);
 
-    // Extract user from token if present
-    if (token) {
-      console.log("[DEBUG] Middleware: Attempting to get user from token");
-      const { data, error } = await locals.supabase.auth.getUser(token);
-
-      if (data.user && !error) {
-        console.log("[DEBUG] Middleware: User found in token");
-        locals.user = data.user;
-        locals.isAuthenticated = true;
+    // Authenticate user securely with getUser()
+    try {
+      // If token exists in Authorization header, use it explicitly
+      if (token) {
+        const { data, error } = await locals.supabase.auth.getUser(token);
+        if (data.user && !error) {
+          locals.user = data.user;
+          locals.isAuthenticated = true;
+        }
       } else {
-        console.log("[DEBUG] Middleware: Invalid or expired token:", error?.message);
+        // Otherwise let getUser() use the session from cookies
+        const { data, error } = await locals.supabase.auth.getUser();
+        if (data.user && !error) {
+          locals.user = data.user;
+          locals.isAuthenticated = true;
+        }
       }
+    } catch (authError) {
+      console.error("[DEBUG] Authentication error:", authError);
+      locals.isAuthenticated = false;
     }
-
-    // Check for session cookie if no token provided
-    if (!token) {
-      console.log("[DEBUG] Middleware: No token, checking session cookie");
-      const {
-        data: { session },
-        error,
-      } = await locals.supabase.auth.getSession();
-
-      if (session && !error) {
-        console.log("[DEBUG] Middleware: Valid session found");
-        locals.user = session.user;
-        locals.isAuthenticated = true;
-      } else if (error) {
-        console.log("[DEBUG] Middleware: Session error:", error.message);
-      } else {
-        console.log("[DEBUG] Middleware: No valid session found");
-      }
-    }
-
-    // Add helper to check authentication
-    locals.isAuthenticated = !!locals.user;
 
     // Block access to protected routes for unauthenticated users
     if (!isPublicPath && !locals.isAuthenticated) {
-      console.log("[DEBUG] Middleware: Blocking access to protected route");
-      return new Response(
-        JSON.stringify({
-          error: "Authentication required",
-        }),
-        {
-          status: 401,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+      // Check if this is an API route or a page route
+      const isApiRoute = url.pathname.startsWith('/api/');
+      
+      if (isApiRoute) {
+        // For API routes: return a JSON 401 response
+        return new Response(
+          JSON.stringify({
+            error: "Authentication required",
+          }),
+          {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      } else {
+        // For page routes: redirect to login page with the return URL
+        const redirectUrl = new URL('/login', url.origin);
+        redirectUrl.searchParams.set('redirect', url.pathname);
+        return Response.redirect(redirectUrl.toString(), 302);
+      }
     }
 
     // Log request details in development
     if (env.isDevelopment) {
       const userEmail = locals.user?.email || "unauthenticated";
-      console.log(`[DEBUG] Middleware: ${request.method} ${url.pathname} (User: ${userEmail})`);
+      console.log(`[DEBUG] Request: ${url.pathname} - User: ${userEmail}`);
     }
 
     return next();

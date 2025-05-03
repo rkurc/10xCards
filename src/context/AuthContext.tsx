@@ -30,37 +30,40 @@ const defaultContextValue: AuthContextType = {
 
 export const AuthContext = createContext<AuthContextType>(defaultContextValue);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: User }> = ({ 
+export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: User }> = ({
   children,
-  initialUser 
+  initialUser,
 }) => {
   const [user, setUser] = useState<User | null>(initialUser || null);
   const [loading, setLoading] = useState(!initialUser);
   const [error, setError] = useState<Error | null>(null);
-  
+
   // Only create Supabase client in browser environment
-  const supabase = typeof window !== 'undefined' ? createBrowserSupabaseClient() : null;
+  const supabase = typeof window !== "undefined" ? createBrowserSupabaseClient() : null;
 
   useEffect(() => {
     // Skip server-side execution
-    if (typeof window === 'undefined' || !supabase) return;
-    
+    if (typeof window === "undefined" || !supabase) return;
+
     const checkUser = async () => {
       try {
         // SECURE: Always use getUser() which verifies with the auth server
-        const { data: { user: supabaseUser }, error } = await supabase.auth.getUser();
-        
+        const {
+          data: { user: supabaseUser },
+          error,
+        } = await supabase.auth.getUser();
+
         if (error) {
           console.debug("Error verifying user:", error.message);
           setUser(null);
           return;
         }
-        
+
         if (supabaseUser) {
           setUser({
             id: supabaseUser.id,
             email: supabaseUser.email!,
-            name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0],
+            name: supabaseUser.user_metadata?.name || supabaseUser.email?.split("@")[0],
           });
         }
       } catch (error) {
@@ -70,18 +73,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
         setLoading(false);
       }
     };
-    
+
     if (!initialUser) {
       checkUser();
     }
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         setUser({
           id: session.user.id,
           email: session.user.email!,
-          name: session.user.user_metadata?.name || session.user.email?.split('@')[0],
+          name: session.user.user_metadata?.name || session.user.email?.split("@")[0],
         });
       } else {
         setUser(null);
@@ -97,44 +102,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
     try {
       // Use direct API call
       try {
-        const response = await fetch('/api/auth/login', {
-          method: 'POST',
+        console.log("Attempting API login call to /api/auth/login");
+        const response = await fetch("/api/auth/login", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            "Content-Type": "application/json",
+            Accept: "application/json",
           },
           body: JSON.stringify({ email, password }),
         });
-        
+
+        console.log("Login API response status:", response.status);
+
         // Handle response
         const responseText = await response.text();
+        console.log("Login API raw response:", responseText);
         let result;
-        
+
         try {
           result = JSON.parse(responseText);
         } catch (parseError) {
           console.error("Failed to parse response as JSON");
           return { success: false, error: "Invalid server response format" };
         }
-        
+
         if (!response.ok) {
           return { success: false, error: result.error || "Authentication failed" };
         }
-        
+
         // Update user state if we have user data
         if (result.user) {
           setUser({
             id: result.user.id,
             email: result.user.email,
-            name: result.user.name || result.user.email.split('@')[0],
+            name: result.user.name || result.user.email.split("@")[0],
           });
         }
-        
+
         return { success: true };
-        
       } catch (apiError) {
         console.debug("API login error, falling back to Supabase client");
-        
+
         // Fallback to Supabase client
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
@@ -157,46 +165,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
     try {
       // Use API endpoint for registration
       try {
-        const response = await fetch('/api/auth/register', {
-          method: 'POST',
+        const response = await fetch("/api/auth/register", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            "Content-Type": "application/json",
+            Accept: "application/json",
           },
-          body: JSON.stringify({ 
-            email, 
-            password, 
-            userData: options 
+          body: JSON.stringify({
+            email,
+            password,
+            userData: options,
           }),
         });
-        
+
         // Parse response
         const responseText = await response.text();
         let result;
-        
+
         try {
           result = JSON.parse(responseText);
         } catch (parseError) {
           console.error("Failed to parse response as JSON");
           return { success: false, error: "Invalid server response format" };
         }
-        
+
         return {
           success: result.success,
           error: result.error,
-          requiresEmailConfirmation: result.requiresEmailConfirmation
+          requiresEmailConfirmation: result.requiresEmailConfirmation,
         };
       } catch (apiError) {
         console.debug("API registration error, falling back to direct Supabase");
-        
+
         // Fallback to direct Supabase client
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: options,
-            emailRedirectTo: `${window.location.origin}/auth-callback`
-          }
+            emailRedirectTo: `${window.location.origin}/auth-callback`,
+          },
         });
 
         if (error) {
@@ -207,9 +215,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
         if (data.session) {
           return { success: true };
         } else {
-          return { 
+          return {
             success: true,
-            requiresEmailConfirmation: true 
+            requiresEmailConfirmation: true,
           };
         }
       }
@@ -234,9 +242,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
   const resetPassword = async (email: string) => {
     try {
       if (!supabase) throw new Error("Supabase client not available");
-      
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`
+        redirectTo: `${window.location.origin}/reset-password`,
       });
 
       if (error) {
@@ -271,7 +279,7 @@ export const useAuth = () => {
   const context = useContext(AuthContext);
   // Since we're now providing a default context value, we can simplify this check
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

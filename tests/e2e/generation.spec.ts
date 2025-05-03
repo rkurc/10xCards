@@ -5,38 +5,38 @@ import { TEST_DATA } from "./fixtures/test-data";
 import { LoginPage } from "./models/LoginPage";
 import { DashboardPage } from "./models/DashboardPage";
 
-// Test setup to ensure we have a logged-in user
-test.beforeEach(async ({ page, context }) => {
-  // Create storage state with authentication token
-  await context.addCookies([
-    {
-      name: "sb-auth-token",
-      value: "test-auth-token",
-      domain: "localhost",
-      path: "/",
-      httpOnly: true,
-      secure: false,
-    },
-  ]);
-
-  // Set local storage for additional auth state if needed
-  await page.evaluate(() => {
-    localStorage.setItem(
-      "supabase.auth.token",
-      JSON.stringify({
-        access_token: "test-access-token",
-        refresh_token: "test-refresh-token",
-        expires_at: Date.now() + 3600000,
-      })
-    );
-  });
-});
+const TEST_USER = {
+  email: process.env.E2E_USERNAME || "piotr.supa@test.org",
+  password: process.env.E2E_PASSWORD || "@T3stP4ssw0rd!@#",
+};
 
 test.describe("Flash Card Generation E2E Tests", () => {
-  // Use a single test case to verify the entire flow for all user stories
-  test("should support the complete flash card generation workflow", async ({ page, context }) => {
-    // Create page objects
+  test.beforeEach(async ({ page, context }) => {
+    // First navigate to login page
     const loginPage = new LoginPage(page);
+    await loginPage.goto();
+
+    // Listen for the login response to capture auth token
+    const loginResponsePromise = page.waitForResponse(
+      (response) => response.url().includes("/api/auth/login") && response.status() === 200
+    );
+
+    // Perform login
+    await loginPage.login(TEST_USER.email, TEST_USER.password);
+
+    // Wait for login response
+    const loginResponse = await loginResponsePromise;
+    const responseData = await loginResponse.json();
+
+    // Wait for auth cookies to be set
+    await page.waitForTimeout(1000);
+
+    // Verify successful login
+    await expect(page).toHaveURL(/.*dashboard/);
+  });
+
+  test("should support the complete flash card generation workflow", async ({ page }) => {
+    // Create page objects
     const generatePage = new GeneratePage(page);
     const reviewPage = new ReviewResultsPage(page);
     const dashboardPage = new DashboardPage(page);
@@ -44,10 +44,7 @@ test.describe("Flash Card Generation E2E Tests", () => {
     // Verify we're logged in
     test.step("Verify authentication state", async () => {
       await dashboardPage.goto();
-
-      // Verify we see the dashboard and not a login page
-      await expect(page).toHaveTitle(/Dashboard/);
-      await expect(page.locator(".user-profile")).toBeVisible();
+      await expect(dashboardPage.userProfile).toBeVisible({ timeout: 10000 });
     });
 
     // Step 2: Navigate to generation page

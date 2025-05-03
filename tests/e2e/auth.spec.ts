@@ -9,60 +9,57 @@ test.describe('Autentykacja', () => {
   };
 
   test('Poprawne logowanie przekierowuje do dashboard', async ({ page }) => {
-    // Arrange
     const loginPage = new LoginPage(page);
     const dashboardPage = new DashboardPage(page);
     
-    // Act
+    // Navigate to login
     await loginPage.goto();
     
-    // Wait for the form to be loaded
+    // Wait for the login form to be ready
     await expect(loginPage.emailInput).toBeVisible();
     await expect(loginPage.passwordInput).toBeVisible();
     await expect(loginPage.loginButton).toBeEnabled();
     
-    // Listen for response from login endpoint
-    const loginResponsePromise = page.waitForResponse(response => 
-      response.url().includes('/api/auth/login') && response.status() === 200
+    // Listen for successful login response
+    const loginResponsePromise = page.waitForResponse(
+      response => response.url().includes('/api/auth/login') && response.status() === 200
     );
     
+    // Perform login
     await loginPage.login(TEST_USER.email, TEST_USER.password);
     
-    // Wait for login response and verify it
+    // Wait for successful login response
     const loginResponse = await loginResponsePromise;
     const responseData = await loginResponse.json();
     expect(responseData.success).toBeTruthy();
     
-    // Assert navigation and dashboard content
-    await expect(page).toHaveURL(/.*dashboard/);
-    await expect(dashboardPage.welcomeMessage).toBeVisible();
+    // Wait for navigation and dashboard content
+    await expect(page).toHaveURL(/.*dashboard/, { timeout: 10000 });
+    await dashboardPage.waitForPageLoad();
+    await expect(dashboardPage.welcomeMessage).toBeVisible({ timeout: 10000 });
   });
-  
+
   test('Błędne dane logowania pokazują komunikat błędu', async ({ page }) => {
-    // Arrange
     const loginPage = new LoginPage(page);
     
-    // Act
     await loginPage.goto();
     
-    // Wait for the form to be loaded
-    await expect(loginPage.emailInput).toBeVisible();
-    await expect(loginPage.passwordInput).toBeVisible();
-    await expect(loginPage.loginButton).toBeEnabled();
-    
-    // Listen for response from login endpoint
-    const loginResponsePromise = page.waitForResponse(response => 
-      response.url().includes('/api/auth/login')
+    // Listen for failed login response
+    const loginResponsePromise = page.waitForResponse(
+      response => response.url().includes('/api/auth/login')
     );
     
+    // Try to login with invalid credentials
     await loginPage.login('invalid@example.com', 'wrongpassword');
     
-    // Wait for login response and verify error
+    // Verify error response
     const loginResponse = await loginResponsePromise;
     expect(loginResponse.status()).toBe(401);
     
-    // Assert error message is shown
-    await expect(loginPage.errorMessage).toBeVisible();
+    // Wait for error toast to appear
+    await expect(loginPage.errorMessage).toBeVisible({ timeout: 10000 });
+    
+    // Verify we stay on login page
     await expect(page).toHaveURL(/.*login/);
   });
 });
