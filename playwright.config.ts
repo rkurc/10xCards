@@ -1,4 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
+import path from 'path';
 
 /**
  * Konfiguracja dla testów Playwright E2E.
@@ -30,7 +32,7 @@ export default defineConfig({
   // Lokalny serwer deweloperski z poprawionym poleceniem
   webServer: {
     command: 'npm run dev:e2e',
-    url: 'http://localhost:3000',
+    url: 'http://localhost:3001',
     reuseExistingServer: !process.env.CI,
     timeout: 120000, // Increase timeout to 120 seconds
     stderr: 'pipe', // Pipe stderr for better debugging

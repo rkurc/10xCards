@@ -17,12 +17,14 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
         email = body.email;
         password = body.password;
         redirectUrl = body.redirectUrl;
+        console.log("[DEBUG] Parsed JSON request body");
       } else if (contentType.includes('application/x-www-form-urlencoded') || 
                 contentType.includes('multipart/form-data')) {
         const formData = await request.formData();
         email = formData.get('email')?.toString();
         password = formData.get('password')?.toString();
         redirectUrl = formData.get('redirectUrl')?.toString();
+        console.log("[DEBUG] Parsed form data request body");
       } else {
         throw new Error(`Unsupported content type: ${contentType}`);
       }
@@ -75,10 +77,19 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     let data, error;
     try {
       console.log("[DEBUG] Attempting login for email:", email);
+      console.log("[DEBUG] Supabase URL:", import.meta.env.PUBLIC_SUPABASE_URL);
+      console.log("[DEBUG] Anon key present:", !!import.meta.env.PUBLIC_SUPABASE_ANON_KEY);
+      
       const result = await supabase.auth.signInWithPassword({
         email,
         password,
       });
+      console.log("[DEBUG] Login result:", { 
+        success: !!result.data.user,
+        error: result.error?.message,
+        userId: result.data.user?.id
+      });
+      
       data = result.data;
       error = result.error;
     } catch (supabaseError) {
@@ -95,7 +106,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     }
 
     if (error) {
-      console.error(`[DEBUG] Login failed for ${email}:`, error);
+      console.log("[DEBUG] Login failed for", email + ":", error.message);
       return new Response(JSON.stringify({ 
         success: false, 
         error: error.message 
