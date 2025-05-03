@@ -1,176 +1,124 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
-import { GenerationService } from "@/services/generation.service";
-import { supabaseClient } from "@/db/supabase.client";
-
-// Initialize services
-const generationService = new GenerationService(supabaseClient);
-
-// Form schema using zod
-const formSchema = z.object({
-  text: z
-    .string()
-    .min(100, "Tekst musi zawierać co najmniej 100 znaków")
-    .max(10000, "Tekst nie może przekraczać 10000 znaków"),
-  target_count: z.coerce
-    .number()
-    .int()
-    .min(5, "Minimalna liczba fiszek to 5")
-    .max(50, "Maksymalna liczba fiszek to 50")
-    .default(10),
-  set_id: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../ui/card";
+import { Textarea } from "../ui/textarea";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Alert, AlertDescription } from "../ui/alert";
+import { useGenerationContext } from "../../contexts/generation-context";
+import { useToast } from "../ui/use-toast";
 
 export function GenerateForm() {
+  const { toast } = useToast();
+  const { text, setText, targetCount, setTargetCount, setGenerationId, setCurrentStep } = useGenerationContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [charsCount, setCharsCount] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
-  // Initialize react-hook-form with zod validation
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      text: "",
-      target_count: 10,
-      set_id: undefined,
-    },
-  });
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  // Mock sets data - in a real app this would come from an API
-  const cardSets = [
-    { id: "set1", name: "Historia" },
-    { id: "set2", name: "Biologia" },
-    { id: "set3", name: "Matematyka" },
-  ];
+    if (!text.trim()) {
+      setError("Please enter some text to generate flashcards.");
+      return;
+    }
 
-  // Handle form submission
-  async function onSubmit(data: FormValues) {
+    if (text.length < 100) {
+      setError("Please enter at least 100 characters for better results.");
+      return;
+    }
+
+    setError(null);
     setIsSubmitting(true);
-    console.log("Submitting form for generation...");
 
     try {
-      const mockUserId = "user-1";
-      const response = await generationService.startTextProcessing(mockUserId, {
-        text: data.text,
-        target_count: data.target_count,
-        set_id: data.set_id
+      const response = await fetch("/api/generation/process-text", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text,
+          target_count: targetCount,
+        }),
       });
 
-      console.log(`Generation successful, got ID: ${response.generation_id}`);
-      toast.success("Tekst przesłany do analizy");
-      
-      // Add delay to ensure the toast is visible
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Create the URL and log it
-      const reviewUrl = `/generate/review/${response.generation_id}`;
-      console.log(`Redirecting to: ${reviewUrl}`);
-      
-      // Use direct browser navigation
-      window.location.href = reviewUrl;
+      if (!response.ok) {
+        throw new Error("Failed to start generation process");
+      }
+
+      const data = await response.json();
+      setGenerationId(data.generation_id);
+      setCurrentStep("processing");
+
+      toast({
+        title: "Generation started",
+        description: `Estimated time: ${data.estimated_time_seconds} seconds`,
+      });
     } catch (error) {
-      console.error("Error submitting form:", error);
-      toast.error("Wystąpił błąd podczas przesyłania tekstu");
+      console.error("Error starting generation:", error);
+      setError("An error occurred while starting the generation process. Please try again.");
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to start generation process. Please try again.",
+      });
     } finally {
       setIsSubmitting(false);
     }
-  }
-
-  // Handle text change to update character count
-  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    setCharsCount(value.length);
-    form.setValue("text", value);
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="text"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Tekst źródłowy</FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <Textarea
-                    placeholder="Wklej tekst, z którego chcesz wygenerować fiszki..."
-                    className="min-h-[250px] resize-y"
-                    {...field}
-                    onChange={handleTextChange}
-                  />
-                  <div className="absolute bottom-2 right-2 text-xs text-muted-foreground">{charsCount}/10000</div>
-                </div>
-              </FormControl>
-              <FormDescription>
-                Wklej tekst, który chcesz przekształcić w fiszki (minimum 100, maksimum 10000 znaków).
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
+    <form onSubmit={handleSubmit}>
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Generate New Flashcards</CardTitle>
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           )}
-        />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="target_count"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Liczba fiszek</FormLabel>
-                <FormControl>
-                  <Input type="number" min={5} max={50} {...field} />
-                </FormControl>
-                <FormDescription>Docelowa liczba fiszek (5-50)</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="space-y-2">
+            <Label htmlFor="text">Paste your text below</Label>
+            <Textarea
+              id="text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Paste the text you want to generate flashcards from..."
+              rows={10}
+              required
+              className="min-h-[200px]"
+            />
+            <p className="text-xs text-muted-foreground">
+              Character count: {text.length}
+              {text.length < 100 && text.length > 0 && " (minimum 100 characters required)"}
+            </p>
+          </div>
 
-          <FormField
-            control={form.control}
-            name="set_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Zestaw (opcjonalnie)</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Wybierz istniejący zestaw" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {cardSets.map((set) => (
-                      <SelectItem key={set.id} value={set.id}>
-                        {set.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormDescription>Możesz dodać fiszki do istniejącego zestawu</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+          <div className="space-y-2">
+            <Label htmlFor="target-count">Target number of flashcards</Label>
+            <Input
+              id="target-count"
+              type="number"
+              min={1}
+              max={50}
+              value={targetCount}
+              onChange={(e) => setTargetCount(parseInt(e.target.value) || 10)}
+              className="w-32"
+            />
+            <p className="text-xs text-muted-foreground">You can generate up to 50 flashcards at once</p>
+          </div>
+        </CardContent>
 
-        <div className="flex justify-end">
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Generuj fiszki
+        <CardFooter className="flex justify-end space-x-2">
+          <Button type="submit" disabled={isSubmitting || text.length < 100} className="min-w-[120px]">
+            {isSubmitting ? "Processing..." : "Generate Cards"}
           </Button>
-        </div>
-      </form>
-    </Form>
+        </CardFooter>
+      </Card>
+    </form>
   );
 }
