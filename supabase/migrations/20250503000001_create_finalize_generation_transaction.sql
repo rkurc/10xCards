@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION public.finalize_generation(
   p_generation_id UUID,
   p_name TEXT,
   p_description TEXT DEFAULT '',
-  p_accepted_cards UUID[]
+  p_accepted_cards UUID[] DEFAULT '{}'::UUID[]
 )
 RETURNS JSON
 LANGUAGE plpgsql
