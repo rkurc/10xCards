@@ -93,7 +93,7 @@ export class GenerationService extends BaseService {
 
       // Store the generated cards in the database
       const cardInserts = generatedCards.map((card) => ({
-        id: this.generateUUID(),
+        id: this.generateNumericId(), // Use numeric ID instead of UUID
         generation_id: generationId,
         front_content: card.front_content,
         back_content: card.back_content,
@@ -139,7 +139,6 @@ export class GenerationService extends BaseService {
 
     // Generate up to targetCount cards, but limited by available content
     const actualCount = Math.min(targetCount, Math.floor(sentences.length / 2));
-    // print actualCount
     console.log("Actual card count:", actualCount);
     for (let i = 0; i < actualCount; i++) {
       // Create a card with front and back content
@@ -147,7 +146,7 @@ export class GenerationService extends BaseService {
       const backSentence = sentences[i * 2 + 1] || "No additional context available.";
 
       cards.push({
-        id: this.generateUUID(),
+        id: this.generateNumericId().toString(), // Convert to string for the DTO
         front_content: this.createFrontContent(frontSentence, i),
         back_content: this.createBackContent(backSentence, i),
         readability_score: this.calculateReadabilityScore(frontSentence + " " + backSentence),
@@ -236,6 +235,15 @@ export class GenerationService extends BaseService {
         v = c === "x" ? r : (r & 0x3) | 0x8;
       return v.toString(16);
     });
+  }
+
+  /**
+   * Generates a numeric ID suitable for bigint columns
+   */
+  private generateNumericId(): number {
+    // Generate a large pseudo-random numeric ID that fits in a bigint
+    // This is a simple implementation - in production you'd want a better strategy
+    return Math.floor(Date.now() + Math.random() * 1000000);
   }
 
   /**
@@ -474,7 +482,7 @@ export class GenerationService extends BaseService {
           front_content: command.front_content || generatedCard.front_content,
           back_content: command.back_content || generatedCard.back_content,
           source_type: command.front_content || command.back_content ? "ai_edited" : "ai",
-          readability_score: generatedCard.readability_score,
+          readability_score: generatedCard.readability_score || 0,
         })
         .select()
         .single();
