@@ -1,5 +1,5 @@
 import { ErrorBoundary } from "react-error-boundary";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { GenerateForm } from "./GenerateForm";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -10,12 +10,18 @@ import { useGenerationContext } from "../../contexts/generation-context";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
 
-function ErrorFallback({ error }: { error: Error }) {
+// Replace the existing ErrorFallback component with this enhanced version
+function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
   return (
     <Alert variant="destructive">
       <AlertCircle className="h-4 w-4" />
-      <AlertTitle>Błąd</AlertTitle>
-      <AlertDescription>Wystąpił problem podczas ładowania komponentu: {error.message}</AlertDescription>
+      <AlertTitle>Error</AlertTitle>
+      <AlertDescription>
+        <p>{error.message}</p>
+        <Button variant="outline" size="sm" onClick={resetErrorBoundary} className="mt-2">
+          Try Again
+        </Button>
+      </AlertDescription>
     </Alert>
   );
 }
@@ -23,13 +29,28 @@ function ErrorFallback({ error }: { error: Error }) {
 export default function GenerateContent() {
   const { currentStep, setCurrentStep, generationId, cards, setCards, stats, setStats, resetGeneration } =
     useGenerationContext();
-    
+
+  // Add force update mechanism
+  const [, forceUpdate] = useState({});
+
+  // Listen for context changes that might require a forced update
+  useEffect(() => {
+    console.log("[GENERATE-CONTENT] Critical state change detected:", { currentStep, generationId });
+    // Force re-render to ensure UI responds to state changes
+    forceUpdate({});
+
+    // If we're in processing state, make sure status UI is displayed
+    if (currentStep === "processing" && generationId) {
+      console.log("[GENERATE-CONTENT] In processing state with ID:", generationId);
+    }
+  }, [currentStep, generationId]);
+
   // Add this to debug component updates
   useEffect(() => {
-    console.log("[GENERATE-CONTENT] Rendering with state:", { 
-      currentStep, 
-      generationId, 
-      cardsCount: cards.length 
+    console.log("[GENERATE-CONTENT] Rendering with state:", {
+      currentStep,
+      generationId,
+      cardsCount: cards.length,
     });
   }, [currentStep, generationId, cards.length]);
 
@@ -129,27 +150,67 @@ export default function GenerateContent() {
     resetGeneration();
   }, [resetGeneration]);
 
+  // Add this function to manually navigate to the review page if needed
+  const manualNavigateToReview = useCallback(() => {
+    if (generationId) {
+      console.log("[GENERATE-CONTENT] Manual navigation to review page triggered");
+      window.location.href = `/generate/review/${generationId}?source=manual_navigation`;
+    }
+  }, [generationId]);
+
   console.info("[DEBUG] generationId:", generationId);
   console.info("[DEBUG] currentStep:", currentStep);
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback}>
       <div className="container mx-auto py-8 space-y-8">
         <h1 className="text-3xl font-bold tracking-tight">Generate Flashcards</h1>
-        
+
         {/* Debug info */}
         <div className="text-xs p-2 bg-gray-100 rounded mb-4">
-          Debug: Step={currentStep} | ID={generationId || 'none'} | Cards={cards.length}
+          Debug: Step={currentStep} | ID={generationId || "none"} | Cards={cards.length}
         </div>
-        
+
         {currentStep === "input" && <GenerateForm />}
-        {currentStep === "processing" && generationId && (
-          <Card>
-            <h2 className="text-2xl font-bold mb-4">Processing Your Request...</h2>
+
+        {currentStep === "processing" && (
+          <Card className="border-2 border-blue-500 shadow-lg">
             <CardContent className="p-6">
-              <GenerationStatus generationId={generationId} onComplete={handleProcessingComplete} />
+              <h2 className="text-2xl font-bold mb-4">Processing Your Request...</h2>
+              <p className="mb-4">Generation ID: {generationId || "Unknown"}</p>
+              {generationId && (
+                <ErrorBoundary
+                  FallbackComponent={({ error }) => (
+                    <div className="p-4 border border-red-500 rounded">
+                      <p>Error with status component: {error.message}</p>
+                      <Button onClick={() => (window.location.href = `/generate/review/${generationId}`)}>
+                        Go to Review
+                      </Button>
+                    </div>
+                  )}
+                >
+                  <GenerationStatus generationId={generationId} onComplete={handleProcessingComplete} />
+                </ErrorBoundary>
+              )}
             </CardContent>
           </Card>
         )}
+
+        {currentStep === "processing" && generationId && (
+          <div className="mt-4">
+            <Card className="border border-gray-200">
+              <CardContent className="p-4">
+                <h3 className="text-sm font-medium mb-2">Having trouble?</h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  If processing is taking too long, you can manually continue to the review page.
+                </p>
+                <Button variant="outline" onClick={manualNavigateToReview} className="w-full">
+                  Go to Review Page
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {currentStep === "review" && generationId && cards.length > 0 && stats && (
           <GenerationResults
             generationId={generationId}
@@ -158,6 +219,7 @@ export default function GenerateContent() {
             onComplete={handleGenerationComplete}
           />
         )}
+
         {currentStep === "complete" && (
           <Card>
             <CardContent className="p-6 text-center">
