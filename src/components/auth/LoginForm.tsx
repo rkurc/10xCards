@@ -1,25 +1,18 @@
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
+import { showAuthError } from "@/utils/auth-error-handler";
 
-// Define LoginResult interface directly in this file to avoid import issues
-interface LoginResult {
-  success: boolean;
-  error?: string;
-  user?: {
-    id: string;
-    name?: string;
-    email: string;
-  };
-}
+// Import the AuthService for direct use
+import { AuthService } from "@/services/auth.service";
+import { createBrowserSupabaseClient } from "@/lib/supabase.client";
 
 // Form schema using zod
 const formSchema = z.object({
@@ -35,7 +28,12 @@ interface LoginFormProps {
 
 export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { login, user } = useAuth();
+
+  // Create an instance of the auth service for direct use if needed
+  const authService = typeof window !== "undefined" ? new AuthService(createBrowserSupabaseClient()) : null;
 
   // Initialize react-hook-form with zod validation
   const form = useForm<FormValues>({
@@ -49,55 +47,73 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
   // Check if user is already authenticated and redirect if needed
   useEffect(() => {
     if (user) {
-      window.location.href = redirectUrl;
+      navigateToUrl(redirectUrl);
     }
   }, [user, redirectUrl]);
+
+  // Safe navigation function that works more reliably
+  const navigateToUrl = (url: string) => {
+    try {
+      // Always reset loading state before navigation
+      setIsSubmitting(false);
+
+      if (typeof window !== "undefined") {
+        // Use direct location change for reliability
+        window.location.href = url;
+      }
+    } catch (_) {
+      // Ensure loading state is reset even if navigation fails
+      setIsSubmitting(false);
+    }
+  };
 
   // Handle form submission
   async function onSubmit(data: FormValues) {
     setIsSubmitting(true);
+    setMessage(null);
+    setError(null);
 
     try {
-      // Attempt login through context
+      // First try the context login
       const result = await login(data.email, data.password);
 
       if (result.success) {
+        setMessage("Logowanie udane! Przekierowywanie...");
         toast.success("Logowanie udane");
 
-        // Verify authentication was successful by making a protected API call
+        // Short delay before redirect to ensure toast is visible
+        setTimeout(() => {
+          navigateToUrl(redirectUrl);
+        }, 800);
+      } else if (authService) {
+        // If context login fails, try direct auth service as fallback
         try {
-          const authCheckResponse = await fetch("/api/debug/auth-state");
-          if (authCheckResponse.ok) {
-            const authCheckResult = await authCheckResponse.json();
+          const directResult = await authService.login(data.email, data.password);
 
-            if (authCheckResult.user) {
-              // Redirect after delay to let state update
-              setTimeout(() => {
-                window.location.href = redirectUrl;
-              }, 1000);
-            } else {
-              toast.error("Problem z uwierzytelnianiem. Spróbuj ponownie.");
-            }
+          if (directResult.success) {
+            setMessage("Logowanie udane! Przekierowywanie...");
+            toast.success("Logowanie udane");
+
+            setTimeout(() => {
+              navigateToUrl(redirectUrl);
+            }, 800);
           } else {
-            // Auth check failed - don't redirect
-            toast.error("Próba weryfikacji uwierzytelnienia nie powiodła się");
+            setError(directResult.error || "Niepoprawny email lub hasło");
+            toast.error(directResult.error || "Niepoprawny email lub hasło");
           }
-        } catch (error) {
-          // Error checking auth status
-          toast.error("Problem z weryfikacją uwierzytelnienia");
+        } catch (directError) {
+          showAuthError(directError, "Wystąpił błąd podczas logowania");
+          setError(directError instanceof Error ? directError.message : "Wystąpił błąd podczas logowania");
         }
       } else {
-        toast.error(result.error || "Niepoprawny email lub hasło");
+        setError("Nie można użyć usługi uwierzytelniania");
       }
-    } catch (error) {
-      toast.error("Wystąpił błąd podczas logowania");
+    } catch (submitError) {
+      showAuthError(submitError, "Wystąpił błąd podczas logowania");
+      setError(submitError instanceof Error ? submitError.message : "Wystąpił błąd podczas logowania");
     } finally {
       setIsSubmitting(false);
     }
-  }
-
-  function handleFormError(errors: any) {
-    // Silent handling of form validation errors
   }
 
   return (
@@ -107,58 +123,63 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
         <CardDescription>Zaloguj się, aby kontynuować naukę z 10xCards</CardDescription>
       </CardHeader>
       <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit, handleFormError)} className="space-y-4">
-            <FormField
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="email">
+              Email
+            </label>
+            <Controller
               control={form.control}
               name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input type="email" placeholder="twoj@email.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              render={({ field, fieldState }) => (
+                <div>
+                  <Input type="email" placeholder="twoj@email.com" id="email" {...field} />
+                  {fieldState.error && <div className="text-sm text-red-500 mt-1">{fieldState.error.message}</div>}
+                </div>
               )}
             />
+          </div>
 
-            <FormField
+          <div className="space-y-2">
+            <label className="text-sm font-medium" htmlFor="password">
+              Hasło
+            </label>
+            <Controller
               control={form.control}
               name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Hasło</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              render={({ field, fieldState }) => (
+                <div>
+                  <Input type="password" placeholder="••••••••" id="password" {...field} />
+                  {fieldState.error && <div className="text-sm text-red-500 mt-1">{fieldState.error.message}</div>}
+                </div>
               )}
             />
+          </div>
 
-            <div className="text-sm text-right">
-              <a href="/forgot-password" className="text-primary hover:underline">
-                Zapomniałeś hasła?
-              </a>
-            </div>
+          <div className="text-sm text-right">
+            <a href="/forgot-password" className="text-primary hover:underline">
+              Zapomniałeś hasła?
+            </a>
+          </div>
 
-            <Button
-              type="submit"
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Logowanie...
-                </>
-              ) : (
-                "Zaloguj się"
-              )}
-            </Button>
-          </form>
-        </Form>
+          {message && <div className="text-sm p-3 bg-green-50 text-green-700 rounded-md">{message}</div>}
+          {error && <div className="text-sm p-3 bg-red-50 text-red-500 rounded-md">{error}</div>}
+
+          <Button
+            type="submit"
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Logowanie...
+              </>
+            ) : (
+              "Zaloguj się"
+            )}
+          </Button>
+        </form>
       </CardContent>
       <CardFooter className="flex justify-center">
         <div className="text-sm text-muted-foreground">
