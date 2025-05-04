@@ -29,7 +29,7 @@ export class GenerationService extends BaseService {
   async startTextProcessing(userId: string, command: GenerationStartCommand): Promise<GenerationStartResponse> {
     return this.executeDbOperation(async () => {
       // Create a record in generation_logs
-      const generationId = this.generateUUID();
+      const generationId = this.generateNumericId();
 
       // Insert the generation log
       const { error } = await this.supabase.from("generation_logs").insert({
@@ -93,7 +93,7 @@ export class GenerationService extends BaseService {
 
       // Store the generated cards in the database
       const cardInserts = generatedCards.map((card) => ({
-        id: this.generateNumericId(), // Use numeric ID instead of UUID
+        id: this.generateUUID(), // Use numeric ID instead of UUID
         generation_id: generationId,
         front_content: card.front_content,
         back_content: card.back_content,
@@ -146,7 +146,7 @@ export class GenerationService extends BaseService {
       const backSentence = sentences[i * 2 + 1] || "No additional context available.";
 
       cards.push({
-        id: this.generateNumericId().toString(), // Convert to string for the DTO
+        id: this.generateUUID(), // Convert to string for the DTO
         front_content: this.createFrontContent(frontSentence, i),
         back_content: this.createBackContent(backSentence, i),
         readability_score: this.calculateReadabilityScore(frontSentence + " " + backSentence),
