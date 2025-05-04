@@ -31,19 +31,38 @@ export class GenerationService extends BaseService {
       // Create a record in generation_logs
       const generationId = this.generateNumericId();
 
-      // Insert the generation log
-      const { error } = await this.supabase.from("generation_logs").insert({
+      console.log(`[DEBUG] startTextProcessing - Starting generation with ID: ${generationId}`);
+      console.log(`[DEBUG] startTextProcessing - User ID: ${userId}`);
+      console.log(`[DEBUG] startTextProcessing - Input text length: ${command.text.length}`);
+      console.log(
+        `[DEBUG] startTextProcessing - Target count provided: ${command.target_count || "Not provided, using default"}`
+      );
+
+      const defaultCardCount = this.calculateDefaultCardCount(command.text);
+      console.log(`[DEBUG] startTextProcessing - Calculated default card count: ${defaultCardCount}`);
+
+      const insertData = {
         id: generationId,
         user_id: userId,
         source_text: command.text,
         source_text_length: command.text.length,
-        target_count: command.target_count || this.calculateDefaultCardCount(command.text),
+        target_count: command.target_count || defaultCardCount,
         status: "pending",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      });
+      };
 
-      if (error) throw error;
+      console.log(`[DEBUG] startTextProcessing - Data to be inserted:`, JSON.stringify(insertData, null, 2));
+
+      // Insert the generation log
+      const { error, data } = await this.supabase.from("generation_logs").insert(insertData).select();
+
+      if (error) {
+        console.error(`[DEBUG] startTextProcessing - Error inserting to generation_logs:`, error);
+        throw error;
+      }
+
+      console.log(`[DEBUG] startTextProcessing - Successfully inserted generation_logs record:`, data);
 
       // Start async processing (would be a queue/worker in production)
       // We don't await this as it's meant to run in the background
@@ -67,8 +86,19 @@ export class GenerationService extends BaseService {
    */
   private async processTextAsync(generationId: string): Promise<void> {
     try {
+      console.log(`[DEBUG] processTextAsync - Starting processing for generation ID: ${generationId}`);
+
       // Update status to processing
-      await this.supabase.from("generation_logs").update({ status: "processing" }).eq("id", generationId);
+      const { error: updateStatusError } = await this.supabase
+        .from("generation_logs")
+        .update({ status: "processing" })
+        .eq("id", generationId);
+
+      if (updateStatusError) {
+        console.error(`[DEBUG] processTextAsync - Error updating status to processing:`, updateStatusError);
+      } else {
+        console.log(`[DEBUG] processTextAsync - Status updated to processing`);
+      }
 
       // Get the generation log to access text and options
       const { data: generationLog, error: logError } = await this.supabase
@@ -78,18 +108,24 @@ export class GenerationService extends BaseService {
         .single();
 
       if (logError || !generationLog) {
+        console.error(`[DEBUG] processTextAsync - Error retrieving generation log:`, logError);
         throw new Error(`Failed to retrieve generation log: ${logError?.message || "Record not found"}`);
       }
 
+      console.log(`[DEBUG] processTextAsync - Retrieved generation log:`, JSON.stringify(generationLog, null, 2));
+
       // Simulate processing delay based on text length
       const processingDelay = Math.min(5000, Math.max(2000, generationLog.source_text.length / 100));
+      console.log(`[DEBUG] processTextAsync - Processing delay: ${processingDelay}ms`);
       await new Promise((resolve) => setTimeout(resolve, processingDelay));
 
       // Generate mock flashcards
-      const generatedCards = this.generateMockFlashcards(
-        generationLog.source_text,
-        generationLog.target_count || this.calculateDefaultCardCount(generationLog.source_text)
-      );
+      const targetCount = generationLog.target_count || this.calculateDefaultCardCount(generationLog.source_text);
+      console.log(`[DEBUG] processTextAsync - Target card count: ${targetCount}`);
+
+      const generatedCards = this.generateMockFlashcards(generationLog.source_text, targetCount);
+
+      console.log(`[DEBUG] processTextAsync - Generated ${generatedCards.length} flashcards`);
 
       // Store the generated cards in the database
       const cardInserts = generatedCards.map((card) => ({
@@ -100,32 +136,65 @@ export class GenerationService extends BaseService {
         readability_score: card.readability_score,
       }));
 
-      const { error: insertError } = await this.supabase.from("generation_results").insert(cardInserts);
+      console.log(`[DEBUG] processTextAsync - Inserting ${cardInserts.length} cards into generation_results`);
+
+      const { error: insertError, data: insertData } = await this.supabase
+        .from("generation_results")
+        .insert(cardInserts)
+        .select();
 
       if (insertError) {
+        console.error(`[DEBUG] processTextAsync - Error inserting cards:`, insertError);
         throw new Error(`Failed to store generated cards: ${insertError.message}`);
       }
 
-      // Update generation log with completion status
-      await this.supabase
+      console.log(`[DEBUG] processTextAsync - Successfully inserted ${insertData?.length || 0} cards`);
+
+      // Update generation log with completion status and generated count
+      const updateData = {
+        status: "completed",
+        updated_at: new Date().toISOString(),
+        generated_count: generatedCards.length,
+      };
+
+      console.log(`[DEBUG] processTextAsync - Updating generation_logs with:`, JSON.stringify(updateData, null, 2));
+
+      const { error: completeError, data: completeData } = await this.supabase
         .from("generation_logs")
-        .update({
-          status: "completed",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", generationId);
+        .update(updateData)
+        .eq("id", generationId)
+        .select();
+
+      if (completeError) {
+        console.error(`[DEBUG] processTextAsync - Error updating completion status:`, completeError);
+      } else {
+        console.log(`[DEBUG] processTextAsync - Successfully updated completion status:`, completeData);
+      }
+
+      console.log(`[DEBUG] processTextAsync - Processing completed for generation ID: ${generationId}`);
     } catch (error) {
-      console.error("Error processing text:", error);
+      console.error(`[DEBUG] processTextAsync - Error processing text:`, error);
 
       // Update status to failed
-      await this.supabase
+      const failedUpdateData = {
+        status: "failed",
+        error_message: error instanceof Error ? error.message : "Unknown error",
+        updated_at: new Date().toISOString(),
+      };
+
+      console.log(
+        `[DEBUG] processTextAsync - Updating generation_logs with failed status:`,
+        JSON.stringify(failedUpdateData, null, 2)
+      );
+
+      const { error: failedError } = await this.supabase
         .from("generation_logs")
-        .update({
-          status: "failed",
-          error_message: error instanceof Error ? error.message : "Unknown error",
-          updated_at: new Date().toISOString(),
-        })
+        .update(failedUpdateData)
         .eq("id", generationId);
+
+      if (failedError) {
+        console.error(`[DEBUG] processTextAsync - Error updating to failed status:`, failedError);
+      }
     }
   }
 
@@ -140,6 +209,8 @@ export class GenerationService extends BaseService {
     // Generate up to targetCount cards, but limited by available content
     const actualCount = Math.min(targetCount, Math.floor(sentences.length / 2));
     console.log("Actual card count:", actualCount);
+    console.log("Sentences:", sentences);
+    console.log("Target count:", targetCount);
     for (let i = 0; i < actualCount; i++) {
       // Create a card with front and back content
       const frontSentence = sentences[i * 2];
