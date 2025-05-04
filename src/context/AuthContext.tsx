@@ -8,11 +8,17 @@ export type User = {
   email: string;
 };
 
+export interface LoginResult {
+  success: boolean;
+  error?: string;
+  user?: User;
+}
+
 export type AuthContextType = {
   user: User | null;
   loading: boolean;
   error: Error | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<LoginResult>;
   register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   resetPassword?: (email: string) => Promise<any>;
@@ -23,7 +29,7 @@ const defaultContextValue: AuthContextType = {
   user: null,
   loading: false,
   error: null,
-  login: async () => {},
+  login: async () => ({ success: false }),
   register: async () => {},
   logout: async () => {},
 };
@@ -98,11 +104,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
     };
   }, [initialUser]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<LoginResult> => {
+    console.log("LOGIN FUNCTION STARTED with email:", email);
+    let loginResult: LoginResult = { success: false };
+
     try {
+      if (!supabase) {
+        console.error("Supabase client not available");
+        loginResult = { success: false, error: "Authentication service unavailable" };
+        return loginResult;
+      }
+
       // Use direct API call
       try {
-        console.log("Attempting API login call to /api/auth/login");
+        console.log("Making fetch request to /api/auth/login");
         const response = await fetch("/api/auth/login", {
           method: "POST",
           headers: {
@@ -110,6 +125,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
             Accept: "application/json",
           },
           body: JSON.stringify({ email, password }),
+          credentials: "include", // Important for cookies
         });
 
         console.log("Login API response status:", response.status);
@@ -117,47 +133,70 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
         // Handle response
         const responseText = await response.text();
         console.log("Login API raw response:", responseText);
-        let result;
 
+        if (!responseText) {
+          console.error("Empty response from server");
+          loginResult = { success: false, error: "Empty server response" };
+          return loginResult;
+        }
+
+        let result;
         try {
           result = JSON.parse(responseText);
         } catch (parseError) {
-          console.error("Failed to parse response as JSON");
-          return { success: false, error: "Invalid server response format" };
+          console.error("Failed to parse response as JSON:", parseError);
+          loginResult = { success: false, error: "Invalid server response format" };
+          return loginResult;
         }
 
         if (!response.ok) {
-          return { success: false, error: result.error || "Authentication failed" };
+          loginResult = { success: false, error: result.error || "Authentication failed" };
+          return loginResult;
         }
 
         // Update user state if we have user data
         if (result.user) {
-          setUser({
+          const userData = {
             id: result.user.id,
             email: result.user.email,
             name: result.user.name || result.user.email.split("@")[0],
-          });
+          };
+
+          console.log("Setting user state with:", userData);
+          setUser(userData);
+          loginResult = { success: true, user: userData };
+        } else {
+          console.log("Login successful but no user data returned");
+          loginResult = { success: true };
         }
 
-        return { success: true };
+        return loginResult;
       } catch (apiError) {
-        console.debug("API login error, falling back to Supabase client");
+        console.error("API login error, falling back to Supabase client:", apiError);
 
         // Fallback to Supabase client
+        console.log("Attempting direct Supabase login");
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
         if (error) {
-          return { success: false, error: error.message };
+          console.error("Supabase login error:", error);
+          loginResult = { success: false, error: error.message };
+          return loginResult;
         }
 
-        return { success: true };
+        console.log("Supabase login successful");
+        loginResult = { success: true };
+        return loginResult;
       }
     } catch (error) {
-      console.error("Login error:", error);
-      return { success: false, error: "Wystąpił błąd podczas logowania." };
+      console.error("Unhandled login error:", error);
+      loginResult = { success: false, error: "Wystąpił błąd podczas logowania." };
+      return loginResult;
+    } finally {
+      console.log("LOGIN FUNCTION COMPLETED with result:", loginResult);
     }
   };
 

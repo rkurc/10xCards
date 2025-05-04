@@ -1,8 +1,13 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { LoginForm } from "../components/auth/LoginForm";
+import { TestLoginForm } from "../components/auth/TestLoginForm";
+import { DevTools } from "../components/auth/DevTools";
 import { AuthProvider } from "../context/AuthContext";
 import { createSupabaseServerClient } from "../lib/supabase.server";
+
+// Only show dev tools in development
+const isDev = import.meta.env.DEV;
 
 // Disable pre-rendering to ensure auth state is always current
 export const prerender = false;
@@ -68,16 +73,40 @@ const error = Astro.url.searchParams.get('error');
     <div class="max-w-md mx-auto">
       <h1 class="text-3xl font-bold tracking-tight mb-6 text-center">Logowanie</h1>
       
+      <!-- Debug element to test JavaScript -->
+      <div id="js-test" class="bg-yellow-100 p-3 mb-4 text-sm">
+        Jeśli JavaScript działa, ten tekst zmieni się.
+      </div>
+      
       {error && (
         <div class="bg-destructive/10 text-destructive rounded-md p-3 mb-4 text-sm">
           {decodeURIComponent(error)}
         </div>
       )}
       
-      <!-- Interactive login form for JavaScript-enabled browsers -->
-      <AuthProvider client:load>
-        <LoginForm client:load redirectUrl={redirectUrl} />
-      </AuthProvider>
+      <!-- Development tools, only shown in dev mode -->
+      {isDev && (
+        <div class="mb-8">
+          <h2 class="text-xl font-semibold mb-4">Dev Tools</h2>
+          <DevTools client:load />
+        </div>
+      )}
+      
+      <!-- Simplified test form without AuthContext -->
+      <div class="mb-8">
+        <h2 class="text-xl font-semibold mb-4">Test Login Form</h2>
+        <TestLoginForm client:load />
+      </div>
+      
+      <hr class="my-8" />
+      
+      <!-- Standard form with AuthContext -->
+      <div>
+        <h2 class="text-xl font-semibold mb-4">Standard Login Form</h2>
+        <AuthProvider client:load>
+          <LoginForm client:load redirectUrl={redirectUrl} />
+        </AuthProvider>
+      </div>
       
       <!-- Fallback for users with JavaScript disabled -->
       <noscript>
@@ -103,4 +132,16 @@ const error = Astro.url.searchParams.get('error');
       </noscript>
     </div>
   </div>
+
+  <script>
+    // Simple script to verify JavaScript is running
+    document.addEventListener('DOMContentLoaded', () => {
+      console.log('JavaScript is running on login page');
+      const testElement = document.getElementById('js-test');
+      if (testElement) {
+        testElement.textContent = 'JavaScript działa poprawnie! ✅';
+        testElement.style.backgroundColor = '#d1fae5';
+      }
+    });
+  </script>
 </BaseLayout>

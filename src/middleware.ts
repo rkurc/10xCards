@@ -28,6 +28,8 @@ const PUBLIC_PATHS = [
   "/api/auth/register",
   "/api/auth/reset-password",
   "/api/auth/logout",
+  "/api/auth/create-test-user", // Add the test user creation endpoint
+  "/api/auth/confirm-test-user", // Add the test user confirmation endpoint
 ];
 
 // Change this value to false to use real Supabase authentication
