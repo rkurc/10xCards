@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import type { ReactNode } from "react";
 
 export type GenerationStep = "input" | "processing" | "review" | "complete";
@@ -32,27 +32,20 @@ interface GenerationContextType {
   stats: GenerationStats | null;
   setStats: (stats: GenerationStats | null) => void;
   resetGeneration: () => void;
+  updateGenerationState: (id: string, step?: GenerationStep) => void;
 }
 
-const defaultContext: GenerationContextType = {
-  currentStep: "input",
-  setCurrentStep: () => {},
-  generationId: null,
-  setGenerationId: () => {},
-  text: "",
-  setText: () => {},
-  targetCount: 10,
-  setTargetCount: () => {},
-  cards: [],
-  setCards: () => {},
-  stats: null,
-  setStats: () => {},
-  resetGeneration: () => {},
+const GenerationContext = createContext<GenerationContextType | undefined>(undefined);
+
+export const useGenerationContext = () => {
+  const context = useContext(GenerationContext);
+
+  if (context === undefined) {
+    throw new Error("useGenerationContext must be used within a GenerationProvider");
+  }
+
+  return context;
 };
-
-const GenerationContext = createContext<GenerationContextType>(defaultContext);
-
-export const useGenerationContext = () => useContext(GenerationContext);
 
 export const GenerationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentStep, setCurrentStep] = useState<GenerationStep>("input");
@@ -62,42 +55,73 @@ export const GenerationProvider: React.FC<{ children: ReactNode }> = ({ children
   const [cards, setCards] = useState<GenerationCard[]>([]);
   const [stats, setStats] = useState<GenerationStats | null>(null);
 
-  // Add this effect to log state changes
+  const updateGenerationState = useCallback((id: string, step?: GenerationStep) => {
+    console.log(`[CONTEXT] Atomic update - ID: ${id}, Step: ${step || "unchanged"}`);
+
+    setGenerationId(id);
+
+    if (step) {
+      setCurrentStep(step);
+    }
+
+    try {
+      sessionStorage.setItem("flashcard_generation_id", id);
+      if (step) {
+        sessionStorage.setItem("flashcard_generation_step", step);
+      }
+    } catch (e) {
+      console.error("[CONTEXT] Failed to persist to session storage", e);
+    }
+  }, []);
+
   useEffect(() => {
-    console.log("[CONTEXT] Generation context state updated:", { 
-      currentStep, 
+    console.log("[CONTEXT] Generation context state updated:", {
+      currentStep,
       generationId,
-      cardsCount: cards.length 
+      cardsCount: cards.length,
     });
+
+    if (!generationId) {
+      const storedId = sessionStorage.getItem("flashcard_generation_id");
+      if (storedId) {
+        console.log(`[CONTEXT] Recovering generation ID from session storage: ${storedId}`);
+        setGenerationId(storedId);
+      }
+    }
   }, [currentStep, generationId, cards.length]);
 
-  const resetGeneration = () => {
+  const resetGeneration = useCallback(() => {
+    console.log("[CONTEXT] Resetting generation state");
     setCurrentStep("input");
     setGenerationId(null);
     setText("");
     setCards([]);
     setStats(null);
+
+    try {
+      sessionStorage.removeItem("flashcard_generation_id");
+      sessionStorage.removeItem("flashcard_generation_step");
+    } catch (e) {
+      console.error("[CONTEXT] Failed to clear session storage", e);
+    }
+  }, []);
+
+  const contextValue: GenerationContextType = {
+    currentStep,
+    setCurrentStep,
+    generationId,
+    setGenerationId,
+    text,
+    setText,
+    targetCount,
+    setTargetCount,
+    cards,
+    setCards,
+    stats,
+    setStats,
+    resetGeneration,
+    updateGenerationState,
   };
 
-  return (
-    <GenerationContext.Provider
-      value={{
-        currentStep,
-        setCurrentStep,
-        generationId,
-        setGenerationId,
-        text,
-        setText,
-        targetCount,
-        setTargetCount,
-        cards,
-        setCards,
-        stats,
-        setStats,
-        resetGeneration,
-      }}
-    >
-      {children}
-    </GenerationContext.Provider>
-  );
+  return <GenerationContext.Provider value={contextValue}>{children}</GenerationContext.Provider>;
 };

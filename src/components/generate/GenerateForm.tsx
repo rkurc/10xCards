@@ -10,7 +10,9 @@ import { useToast } from "../ui/use-toast";
 
 export function GenerateForm() {
   const { toast } = useToast();
-  const { text, setText, targetCount, setTargetCount, setGenerationId, setCurrentStep } = useGenerationContext();
+  const { text, setText, targetCount, setTargetCount, setGenerationId, setCurrentStep, updateGenerationState } =
+    useGenerationContext();
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [localText, setLocalText] = useState(text);
@@ -24,6 +26,10 @@ export function GenerateForm() {
   useEffect(() => {
     setText(localText);
   }, [localText, setText]);
+
+  useEffect(() => {
+    console.log("[GENERATE-FORM] Context setters:", { setCurrentStep, setGenerationId, updateGenerationState });
+  }, [setCurrentStep, setGenerationId, updateGenerationState]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +48,7 @@ export function GenerateForm() {
     setIsSubmitting(true);
 
     try {
-      console.log("[GENERATE-FORM] Form submitted, starting processing");
+      console.log("[GENERATE-FORM] Submitting form with:", { text: localText, targetCount });
 
       const response = await fetch("/api/generation/process-text", {
         method: "POST",
@@ -54,16 +60,18 @@ export function GenerateForm() {
           target_count: targetCount,
         }),
       });
-
+      console.log("[GENERATE-FORM] API response status:", response.status);
       if (!response.ok) {
         throw new Error("Failed to start generation process");
       }
 
       const data = await response.json();
-      console.log("[GENERATE-FORM] Setting state to processing with ID:", data.generation_id);
-      setGenerationId(data.generation_id);
-      setCurrentStep("processing");
-      console.log("[GENERATE-FORM] State updated to processing");
+      console.log("[GENERATE-FORM] API response data:", data);
+
+      // Use the new combined state update function instead of separate setters
+      console.log("[GENERATE-FORM] Updating generation state with:", data.generation_id);
+      updateGenerationState(data.generation_id, "processing");
+      console.log("[GENERATE-FORM] State update complete");
 
       toast({
         title: "Generation started",

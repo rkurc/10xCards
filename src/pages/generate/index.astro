@@ -3,6 +3,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import GenerateContent from "../../components/generate/GenerateContent";
 import Breadcrumb from "../../components/navigation/Breadcrumb.astro";
 import { checkAuth } from "../../utils/auth";
+import { GenerationProvider } from "@/contexts/generation-context";
 
 // Authentication check
 const user = await checkAuth(Astro);
@@ -19,6 +20,8 @@ if (!user) {
         { label: "Generuj fiszki", href: "/generate" },
       ]}
     />
-    <GenerateContent client:load />
+    <GenerationProvider>
+      <GenerateContent client:load />
+    </GenerationProvider>
   </div>
 </BaseLayout>

@@ -7,6 +7,7 @@ import { GenerationProvider } from "../contexts/generation-context";
 export function App() {
   const { isAuthenticated, login } = useContext(AuthContext);
 
+
   const handleGetStarted = () => {
     if (isAuthenticated) {
       window.location.href = "/dashboard";

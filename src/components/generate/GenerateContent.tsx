@@ -11,15 +11,50 @@ import {
   ErrorFallback,
 } from "./components";
 import { useGenerationActions } from "./hooks";
+import { useToast } from "../ui/use-toast";
+import { GenerationWrapper } from "./GenerationWrapper";
 
-export default function GenerateContent() {
-  const { currentStep, generationId, cards } = useGenerationContext();
+function GenerateContentInner() {
+  const { currentStep, generationId, cards, updateGenerationState } = useGenerationContext();
+  const { toast } = useToast();
+  
+  // Get URL parameters without using react-router-dom
+  const getUrlParams = () => {
+    const searchParams = new URLSearchParams(window.location.search);
+    return {
+      id: searchParams.get('id'),
+      state: searchParams.get('state')
+    };
+  };
 
-  const { handleProcessingComplete, handleGenerationComplete, handleStartNewGeneration, manualNavigateToReview } =
-    useGenerationActions();
+  const { 
+    handleProcessingComplete, 
+    handleGenerationComplete, 
+    handleStartNewGeneration, 
+    manualNavigateToReview 
+  } = useGenerationActions();
 
   // Add force update mechanism for potential UI sync issues
   const [, forceUpdate] = useState({});
+
+  // Check URL query parameters for possible state recovery
+  useEffect(() => {
+    const { id: idFromUrl, state: stateFromUrl } = getUrlParams();
+    
+    if (idFromUrl && !generationId) {
+      console.log(`[GENERATE-CONTENT] Recovering state from URL: id=${idFromUrl}, state=${stateFromUrl}`);
+      
+      if (stateFromUrl && (stateFromUrl === 'processing' || stateFromUrl === 'review')) {
+        updateGenerationState(idFromUrl, stateFromUrl);
+        toast({
+          title: "State Recovered",
+          description: `Continuing from ${stateFromUrl} state with ID: ${idFromUrl}`,
+        });
+      } else {
+        updateGenerationState(idFromUrl);
+      }
+    }
+  }, [generationId, updateGenerationState, toast]);
 
   // Listen for context changes that might require a forced update
   useEffect(() => {
@@ -30,6 +65,7 @@ export default function GenerateContent() {
     }
 
     // Force re-render to ensure UI responds to state changes
+    console.log("[GENERATE-CONTENT] Forcing update due to state change");
     forceUpdate({});
 
     // If we're in processing state, make sure status UI is displayed
@@ -59,14 +95,23 @@ export default function GenerateContent() {
 
         {currentStep === "input" && <InputStage />}
 
-        {currentStep === "processing" && (
+        {currentStep === "processing" && generationId && (
           <ProcessingStage onProcessingComplete={handleProcessingComplete} onManualNavigate={manualNavigateToReview} />
         )}
 
-        {currentStep === "review" && <ReviewStage onComplete={handleGenerationComplete} />}
+        {currentStep === "review" && generationId && <ReviewStage onComplete={handleGenerationComplete} />}
 
         {currentStep === "complete" && <CompleteStage onStartNewGeneration={handleStartNewGeneration} />}
       </div>
     </ErrorBoundary>
+  );
+}
+
+// Export a wrapped version that ensures the context is available
+export default function GenerateContent() {
+  return (
+    <GenerationWrapper>
+      <GenerateContentInner />
+    </GenerationWrapper>
   );
 }

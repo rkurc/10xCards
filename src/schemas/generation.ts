@@ -13,7 +13,7 @@ export const processTextSchema = z.object({
 });
 
 export const generationIdSchema = z.object({
-  generation_id: z.string().uuid("Identyfikator generacji musi być prawidłowym UUID"),
+  generation_id: z.string(),
 });
 
 export const finalizeGenerationSchema = z.object({
@@ -26,7 +26,7 @@ export const finalizeGenerationSchema = z.object({
 
 export const acceptCardSchema = z.object({
   card_id: z.string().uuid("Identyfikator fiszki musi być prawidłowym UUID"),
-  generation_id: z.string().uuid("Identyfikator generacji musi być prawidłowym UUID"),
+  generation_id: z.string(),
   front_content: z.string().max(200, "Treść przednia nie może przekraczać 200 znaków").optional(),
   back_content: z.string().max(500, "Treść tylna nie może przekraczać 500 znaków").optional(),
 });

@@ -3,6 +3,7 @@ import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { useState, createContext, type ReactNode } from "react";
+import { GenerationProvider } from "@/contexts/generation-context";
 
 // Create a simple auth context
 interface AuthContextType {
@@ -42,21 +43,21 @@ export function RootLayout({ children }: { children: ReactNode }) {
 
   return (
     <ThemeProvider defaultTheme="light" storageKey="10xcards-theme">
-      <AuthContext.Provider 
-        value={{ 
-          ...authState, 
-          login, 
-          logout 
+      <AuthContext.Provider
+        value={{
+          ...authState,
+          login,
+          logout,
         }}
       >
-        <div className="flex flex-col min-h-screen">
-          <Header />
-          <main className="flex-1">
-            {children}
-          </main>
-          <Footer />
-          <Toaster position="top-right" richColors />
-        </div>
+        <GenerationProvider>
+          <div className="flex flex-col min-h-screen">
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+            <Toaster position="top-right" richColors />
+          </div>
+        </GenerationProvider>
       </AuthContext.Provider>
     </ThemeProvider>
   );
