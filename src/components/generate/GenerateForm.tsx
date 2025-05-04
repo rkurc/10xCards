@@ -14,12 +14,12 @@ export function GenerateForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [localText, setLocalText] = useState(text);
-  
+
   // Sync local state with context when context changes
   useEffect(() => {
     setLocalText(text);
   }, [text]);
-  
+
   // Update context after local state changes
   useEffect(() => {
     setText(localText);
@@ -42,6 +42,8 @@ export function GenerateForm() {
     setIsSubmitting(true);
 
     try {
+      console.log("[GENERATE-FORM] Form submitted, starting processing");
+
       const response = await fetch("/api/generation/process-text", {
         method: "POST",
         headers: {
@@ -58,13 +60,22 @@ export function GenerateForm() {
       }
 
       const data = await response.json();
+      console.log("[GENERATE-FORM] Setting state to processing with ID:", data.generation_id);
       setGenerationId(data.generation_id);
       setCurrentStep("processing");
+      console.log("[GENERATE-FORM] State updated to processing");
 
       toast({
         title: "Generation started",
         description: `Estimated time: ${data.estimated_time_seconds} seconds`,
       });
+
+      // Check if the API response includes a redirect URL
+      if (data.redirect_url) {
+        console.log(`[DEBUG] Will redirect to: ${data.redirect_url} after processing completes`);
+        // Store the redirect URL to be used after processing completes
+        sessionStorage.setItem("flashcard_redirect_url", data.redirect_url);
+      }
     } catch (error) {
       console.error("Error starting generation:", error);
       setError("An error occurred while starting the generation process. Please try again.");

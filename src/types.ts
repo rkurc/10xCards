@@ -121,6 +121,7 @@ export interface GenerationStartCommand {
 export interface GenerationStartResponse {
   generation_id: string;
   estimated_time_seconds: number;
+  redirect_url?: string; // URL to redirect to when generation is complete
 }
 
 /**

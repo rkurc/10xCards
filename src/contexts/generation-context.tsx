@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import type { ReactNode } from "react";
 
 export type GenerationStep = "input" | "processing" | "review" | "complete";
@@ -61,6 +61,15 @@ export const GenerationProvider: React.FC<{ children: ReactNode }> = ({ children
   const [targetCount, setTargetCount] = useState(10);
   const [cards, setCards] = useState<GenerationCard[]>([]);
   const [stats, setStats] = useState<GenerationStats | null>(null);
+
+  // Add this effect to log state changes
+  useEffect(() => {
+    console.log("[CONTEXT] Generation context state updated:", { 
+      currentStep, 
+      generationId,
+      cardsCount: cards.length 
+    });
+  }, [currentStep, generationId, cards.length]);
 
   const resetGeneration = () => {
     setCurrentStep("input");

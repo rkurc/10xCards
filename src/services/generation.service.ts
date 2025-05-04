@@ -76,6 +76,7 @@ export class GenerationService extends BaseService {
       return {
         generation_id: generationId,
         estimated_time_seconds: estimatedTimeSeconds,
+        redirect_url: `/generate/review/${generationId}`, // Add redirect URL for client-side redirection
       };
     }, "Failed to start text processing");
   }
@@ -642,32 +643,54 @@ export class GenerationService extends BaseService {
   }
 
   /**
-   * Pobiera status procesu generacji fiszek
-   * @param userId ID użytkownika
-   * @param generationId ID procesu generacji
-   * @returns Status procesu generacji
+   * Gets the status of a generation job
+   * @param userId The ID of the requesting user
+   * @param generationId The ID of the generation job
+   * @returns The status of the generation job
    */
   async getGenerationStatus(userId: string, generationId: string): Promise<GenerationStatusResponse | null> {
     return this.executeDbOperation(async () => {
-      // Sprawdzenie czy proces generacji istnieje i należy do użytkownika
-      const { data: generationJob, error } = await this.supabase
+      console.log(`[DEBUG] getGenerationStatus - Checking status for generation ID: ${generationId}`);
+      
+      // Check if the generation exists and belongs to the user
+      const { data: generationLog, error } = await this.supabase
         .from("generation_logs")
-        .select("id, created_at, generated_count")
+        .select("id, status, error_message, generated_count")
         .eq("id", generationId)
         .eq("user_id", userId)
         .single();
 
-      if (error || !generationJob) {
+      if (error || !generationLog) {
+        console.log(`[DEBUG] getGenerationStatus - Generation not found: ${error?.message || "No data"}`);
         return null;
       }
+      
+      console.log(`[DEBUG] getGenerationStatus - Retrieved status: ${generationLog.status}`);
 
-      // Status generacji zależy od stanu danych w bazie
-      // Tutaj dodałbym rzeczywistą logikę sprawdzania statusu, np. czy istnieją już wyniki
-      // W przykładzie zakładamy, że jeśli proces istnieje, to jest już ukończony
+      // Map database status to response status
+      let progress = 0;
+      
+      switch (generationLog.status) {
+        case "pending":
+          progress = 10;
+          break;
+        case "processing":
+          progress = 50;
+          break;
+        case "completed":
+          progress = 100;
+          break;
+        case "failed":
+          progress = 0;
+          break;
+        default:
+          progress = 0;
+      }
 
       return {
-        status: "completed", // W rzeczywistości status byłby dynamiczny
-        progress: 100, // W rzeczywistości postęp byłby dynamiczny
+        status: generationLog.status,
+        progress: progress,
+        error: generationLog.error_message || undefined,
       };
     }, "Failed to get generation status");
   }

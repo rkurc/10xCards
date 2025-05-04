@@ -96,8 +96,8 @@ export const onRequest: MiddlewareHandler = async ({ locals, request, cookies },
     // Block access to protected routes for unauthenticated users
     if (!isPublicPath && !locals.isAuthenticated) {
       // Check if this is an API route or a page route
-      const isApiRoute = url.pathname.startsWith('/api/');
-      
+      const isApiRoute = url.pathname.startsWith("/api/");
+
       if (isApiRoute) {
         // For API routes: return a JSON 401 response
         return new Response(
@@ -111,8 +111,8 @@ export const onRequest: MiddlewareHandler = async ({ locals, request, cookies },
         );
       } else {
         // For page routes: redirect to login page with the return URL
-        const redirectUrl = new URL('/login', url.origin);
-        redirectUrl.searchParams.set('redirect', url.pathname);
+        const redirectUrl = new URL("/login", url.origin);
+        redirectUrl.searchParams.set("redirect", url.pathname);
         return Response.redirect(redirectUrl.toString(), 302);
       }
     }
