@@ -12,10 +12,32 @@ export const processTextSchema = z.object({
   set_id: z.string().uuid("Invalid set ID format").optional(),
 });
 
+/**
+ * Schema for validating generation ID in path parameters
+ * Allows both numeric timestamp IDs and UUIDs
+ */
 export const generationIdSchema = z.object({
   generation_id: z.string(),
 });
 
+/**
+ * Schema for validating card ID in path parameters
+ */
+export const cardIdSchema = z.object({
+  card_id: z.string().uuid("Identyfikator fiszki musi być prawidłowym UUID"),
+});
+
+/**
+ * Schema for validating both generation ID and card ID in path parameters
+ */
+export const generationCardParamsSchema = z.object({
+  generation_id: z.string(),
+  card_id: z.string().uuid("Identyfikator fiszki musi być prawidłowym UUID"),
+});
+
+/**
+ * Schema for validating the finalize generation command
+ */
 export const finalizeGenerationSchema = z.object({
   name: z.string().min(1, "Nazwa zestawu jest wymagana").max(100, "Nazwa zestawu nie może przekraczać 100 znaków"),
   description: z.string().max(500, "Opis nie może przekraczać 500 znaków").optional(),
@@ -24,22 +46,26 @@ export const finalizeGenerationSchema = z.object({
     .min(1, "Przynajmniej jedna fiszka musi być zaakceptowana"),
 });
 
+/**
+ * Schema for validating the accept card command
+ */
 export const acceptCardSchema = z.object({
-  card_id: z.string().uuid("Identyfikator fiszki musi być prawidłowym UUID"),
-  generation_id: z.string(),
+  set_id: z.string().uuid("Identyfikator zestawu musi być prawidłowym UUID").optional(),
   front_content: z.string().max(200, "Treść przednia nie może przekraczać 200 znaków").optional(),
   back_content: z.string().max(500, "Treść tylna nie może przekraczać 500 znaków").optional(),
 });
 
+/**
+ * Schema for validating the accept all cards command
+ */
 export const acceptAllSchema = z.object({
-  set_id: z.string().uuid("Identyfikator zestawu musi być prawidłowym UUID"),
-});
-
-export const cardPathParamsSchema = z.object({
-  card_id: z.string().uuid("Identyfikator fiszki musi być prawidłowym UUID"),
+  set_id: z.string().uuid("Identyfikator zestawu musi być prawidłowym UUID").optional(),
 });
 
 /**
  * Type for the validated process text request
  */
 export type ProcessTextRequest = z.infer<typeof processTextSchema>;
+
+// Add aliases for backward compatibility
+export const cardPathParamsSchema = cardIdSchema;
