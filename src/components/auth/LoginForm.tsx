@@ -120,15 +120,11 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Zaloguj się</CardTitle>
-        <CardDescription>Zaloguj się, aby kontynuować naukę z 10xCards</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <div data-testid="login-form-container">
+      <form onSubmit={form.handleSubmit(onSubmit)} data-testid="login-form">
+        <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="email">
+            <label className="text-sm font-medium" htmlFor="email" data-testid="login-email-label">
               Email
             </label>
             <Controller
@@ -136,15 +132,25 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
               name="email"
               render={({ field, fieldState }) => (
                 <div>
-                  <Input type="email" placeholder="twoj@email.com" id="email" {...field} />
-                  {fieldState.error && <div className="text-sm text-red-500 mt-1">{fieldState.error.message}</div>}
+                  <Input
+                    type="email"
+                    placeholder="twoj@email.com"
+                    id="email"
+                    data-testid="login-email-input"
+                    {...field}
+                  />
+                  {fieldState.error && (
+                    <div className="text-sm text-red-500 mt-1" data-testid="login-email-error">
+                      {fieldState.error.message}
+                    </div>
+                  )}
                 </div>
               )}
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="password">
+            <label className="text-sm font-medium" htmlFor="password" data-testid="login-password-label">
               Hasło
             </label>
             <Controller
@@ -152,26 +158,45 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
               name="password"
               render={({ field, fieldState }) => (
                 <div>
-                  <Input type="password" placeholder="••••••••" id="password" {...field} />
-                  {fieldState.error && <div className="text-sm text-red-500 mt-1">{fieldState.error.message}</div>}
+                  <Input
+                    type="password"
+                    placeholder="••••••••"
+                    id="password"
+                    data-testid="login-password-input"
+                    {...field}
+                  />
+                  {fieldState.error && (
+                    <div className="text-sm text-red-500 mt-1" data-testid="login-password-error">
+                      {fieldState.error.message}
+                    </div>
+                  )}
                 </div>
               )}
             />
           </div>
 
           <div className="text-sm text-right">
-            <a href="/forgot-password" className="text-primary hover:underline">
+            <a href="/forgot-password" className="text-primary hover:underline" data-testid="login-forgot-password-link">
               Zapomniałeś hasła?
             </a>
           </div>
 
-          {message && <div className="text-sm p-3 bg-green-50 text-green-700 rounded-md" data-testid="success-message">{message}</div>}
-          {error && <div className="text-sm p-3 bg-red-50 text-red-500 rounded-md" data-testid="error-message" aria-live="polite">{error}</div>}
+          {message && (
+            <div className="text-sm p-3 bg-green-50 text-green-700 rounded-md" data-testid="success-message">
+              {message}
+            </div>
+          )}
+          {error && (
+            <div className="text-sm p-3 bg-red-50 text-red-500 rounded-md" data-testid="error-message" aria-live="polite">
+              {error}
+            </div>
+          )}
 
           <Button
             type="submit"
             className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
             disabled={isSubmitting}
+            data-testid="login-submit-button"
           >
             {isSubmitting ? (
               <>
@@ -182,16 +207,14 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
               "Zaloguj się"
             )}
           </Button>
-        </form>
-      </CardContent>
-      <CardFooter className="flex justify-center">
-        <div className="text-sm text-muted-foreground">
-          Nie masz konta?{" "}
-          <a href="/register" className="text-primary hover:underline">
-            Zarejestruj się
-          </a>
         </div>
-      </CardFooter>
-    </Card>
+      </form>
+
+      <div className="mt-4 text-center" data-testid="login-links">
+        <a href="/register" className="text-sm text-primary hover:underline" data-testid="login-register-link">
+          Nie masz konta? Zarejestruj się
+        </a>
+      </div>
+    </div>
   );
 }

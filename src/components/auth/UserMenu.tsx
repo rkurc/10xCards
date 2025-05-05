@@ -57,46 +57,33 @@ export function UserMenu({ user }: UserMenuProps) {
   };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
-            {user.name ? user.name[0].toUpperCase() : "U"}
-          </div>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end">
-        <DropdownMenuLabel>Moje konto</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="flex items-center gap-2">
-          <UserIcon className="h-4 w-4" />
-          <span>{user.name || user.email}</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <a href="/account" className="flex items-center gap-2 cursor-pointer">
-            <Settings className="h-4 w-4" />
-            <span>Ustawienia konta</span>
-          </a>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          onClick={handleLogout} 
-          className="flex items-center gap-2 cursor-pointer"
-          disabled={isLoggingOut}
-        >
-          {isLoggingOut ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Wylogowywanie...</span>
-            </>
-          ) : (
-            <>
-              <LogOut className="h-4 w-4" />
-              <span>Wyloguj się</span>
-            </>
-          )}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div data-testid="user-menu">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm" data-testid="user-menu-button">
+            <Avatar className="h-8 w-8" data-testid="user-avatar">
+              <AvatarFallback data-testid="user-avatar-initials">{user?.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" data-testid="user-menu-dropdown">
+          <DropdownMenuLabel data-testid="user-menu-email">{user?.email}</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild data-testid="user-menu-profile-link">
+            <Link href="/profile">Profile</Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild data-testid="user-menu-settings-link">
+            <Link href="/settings">Settings</Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem 
+            onClick={handleLogout}
+            data-testid="user-menu-logout-button"
+          >
+            Log out
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   );
 }

@@ -95,15 +95,21 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       <CardContent>
         {!isSubmitted ? (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" data-testid="reset-password-form">
               <FormField
                 control={form.control}
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nowe hasło</FormLabel>
+                    <FormLabel htmlFor="password" data-testid="reset-password-label">Nowe hasło</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input 
+                        id="password" 
+                        type="password" 
+                        placeholder="••••••••" 
+                        data-testid="reset-password-input"
+                        {...field} 
+                      />
                     </FormControl>
                     <FormDescription>
                       Minimum 8 znaków, w tym jedna litera i jedna cyfra
@@ -118,16 +124,27 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
                 name="passwordConfirm"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Powtórz hasło</FormLabel>
+                    <FormLabel htmlFor="confirmPassword" data-testid="reset-password-confirm-label">Powtórz hasło</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input 
+                        id="confirmPassword" 
+                        type="password" 
+                        placeholder="••••••••" 
+                        data-testid="reset-password-confirm-input"
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <Button 
+                type="submit" 
+                className="w-full" 
+                disabled={isSubmitting}
+                data-testid="reset-password-submit-button"
+              >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

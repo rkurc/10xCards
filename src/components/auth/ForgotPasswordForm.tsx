@@ -46,32 +46,40 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto" data-testid="forgot-password-container">
       <CardHeader>
         <CardTitle>Odzyskaj dostęp do konta</CardTitle>
-        <CardDescription>
-          Podaj swój adres email, aby otrzymać instrukcję resetowania hasła
-        </CardDescription>
+        <CardDescription>Podaj swój adres email, aby otrzymać instrukcję resetowania hasła</CardDescription>
       </CardHeader>
       <CardContent>
         {!isSubmitted ? (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" data-testid="forgot-password-form">
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel data-testid="forgot-password-email-label">Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="twoj@email.com" {...field} />
+                      <Input
+                        type="email"
+                        placeholder="twoj@email.com"
+                        {...field}
+                        data-testid="forgot-password-email-input"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isSubmitting}
+                data-testid="forgot-password-submit-button"
+              >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -93,12 +101,17 @@ export function ForgotPasswordForm() {
         )}
       </CardContent>
       <CardFooter className="flex justify-center">
-        <div className="text-sm text-muted-foreground">
-          <a href="/login" className="text-primary hover:underline">
+        <div className="text-sm text-muted-foreground" data-testid="forgot-password-links">
+          <a href="/login" className="text-primary hover:underline" data-testid="forgot-password-login-link">
             Powrót do strony logowania
           </a>
         </div>
       </CardFooter>
+      {isSubmitted && (
+        <div className="mt-4 p-3 bg-green-50 text-green-800 rounded-md" data-testid="forgot-password-success-message">
+          Check your email for instructions to reset your password.
+        </div>
+      )}
     </Card>
   );
 }
