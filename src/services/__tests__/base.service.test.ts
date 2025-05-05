@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { BaseService } from "../../src/services/base.service";
-import { createSupabaseTestClient } from "../mocks/supabase-mock";
-import { ErrorCode, handleDatabaseError } from "../../src/utils/db-error-handler";
+import { BaseService } from "../base.service";
+import { createSupabaseTestClient } from "../../../tests/mocks/supabase-mock";
+import { ErrorCode, handleDatabaseError } from "../../utils/db-error-handler";
 
 // Create a TestService class that extends BaseService for testing
 class TestService extends BaseService {

@@ -74,7 +74,7 @@ export class GenerationService extends BaseService {
       const estimatedTimeSeconds = Math.max(3, Math.min(30, Math.ceil(command.text.length / 500)));
 
       return {
-        generation_id: generationId,
+        generation_id: generationId.toString(), // Convert to string to match expected type
         estimated_time_seconds: estimatedTimeSeconds,
         redirect_url: `/generate/review/${generationId}`, // Add redirect URL for client-side redirection
       };

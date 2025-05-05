@@ -70,7 +70,7 @@ export function createSupabaseTestClient(): TypedSupabaseClient {
       }));
 
       return {
-        select: vi.fn().mockImplementation(() => {
+        select: vi.fn().mockImplementation((columns = "*") => {
           return {
             single: () => ({ data: insertedIds[0], error: null }),
             data: insertedIds,
@@ -113,6 +113,20 @@ export function createSupabaseTestClient(): TypedSupabaseClient {
                   return { data: null, error: { message: "No rows found", code: "PGRST116" } };
                 }
                 return { data: doubleFiltered[0], error: null };
+              }
+            };
+          }),
+          // Add limit method
+          limit: vi.fn().mockImplementation((limitCount: number) => {
+            const limitedData = filtered.slice(0, limitCount);
+            return {
+              data: limitedData.length > 0 ? limitedData : [],
+              error: null,
+              single: () => {
+                if (limitedData.length === 0) {
+                  return { data: null, error: { message: "No rows found", code: "PGRST116" } };
+                }
+                return { data: limitedData[0], error: null };
               }
             };
           })

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { requireAuth, createApiError, createApiResponse } from "../../src/utils/api-auth";
-import { ErrorCode } from "../../src/utils/db-error-handler";
+import { requireAuth, createApiError, createApiResponse } from "../api-auth";
+import { ErrorCode } from "../db-error-handler";
 
 describe("API Authentication Utilities", () => {
   // Mock APIContext
