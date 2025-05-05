@@ -25,29 +25,29 @@ export function UserMenu({ user }: UserMenuProps) {
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
-    
+
     try {
       // First try direct API call
       console.log("Sending logout request to API");
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
       });
-      
+
       if (response.ok) {
         // After successful logout, forcefully reload the page to reset all state
         console.log("Logout successful, reloading page");
-        window.location.href = '/';
+        window.location.href = "/";
         return;
       }
-      
+
       // Fallback to context logout if API call fails
       console.log("API logout failed, using context logout");
       await logout();
-      window.location.href = '/';
+      window.location.href = "/";
     } catch (error) {
       console.error("Logout error:", error);
       toast.error("Failed to log out. Please try again.");
@@ -60,26 +60,23 @@ export function UserMenu({ user }: UserMenuProps) {
     <div data-testid="user-menu">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" data-testid="user-menu-button">
-            <Avatar className="h-8 w-8" data-testid="user-avatar">
-              <AvatarFallback data-testid="user-avatar-initials">{user?.email?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
-            </Avatar>
+          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
+              {user.name ? user.name[0].toUpperCase() : "U"}
+            </div>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" data-testid="user-menu-dropdown">
           <DropdownMenuLabel data-testid="user-menu-email">{user?.email}</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild data-testid="user-menu-profile-link">
-            <Link href="/profile">Profile</Link>
+            <a href="/profile">Profile</a>
           </DropdownMenuItem>
           <DropdownMenuItem asChild data-testid="user-menu-settings-link">
-            <Link href="/settings">Settings</Link>
+            <a href="/settings">Settings</a>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem 
-            onClick={handleLogout}
-            data-testid="user-menu-logout-button"
-          >
+          <DropdownMenuItem onClick={handleLogout} data-testid="user-menu-logout-button">
             Log out
           </DropdownMenuItem>
         </DropdownMenuContent>
