@@ -13,8 +13,8 @@ export class LoginPage {
     this.emailInput = page.getByPlaceholder("twoj@email.com");
     this.passwordInput = page.locator("#password");
     this.loginButton = page.getByRole("button", { name: "Zaloguj się" });
-    // Update the error selector to match the actual implementation
-    this.errorMessage = page.locator('.text-red-500, .bg-red-50, div[class*="text-red"], [data-type="error"]');
+    // Updated error selector to match our implementation with data-testid
+    this.errorMessage = page.locator('.text-red-500, .bg-red-50, div[class*="text-red"], [data-testid="error-message"]');
     this.form = page.locator("form");
   }
 

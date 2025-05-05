@@ -98,19 +98,22 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
               navigateToUrl(redirectUrl);
             }, 800);
           } else {
-            setError(directResult.error || "Niepoprawny email lub hasło");
-            toast.error(directResult.error || "Niepoprawny email lub hasło");
+            const errorMessage = directResult.error || "Niepoprawny email lub hasło";
+            setError(errorMessage);
+            toast.error(errorMessage);
           }
         } catch (directError) {
+          const errorMessage = directError instanceof Error ? directError.message : "Wystąpił błąd podczas logowania";
           showAuthError(directError, "Wystąpił błąd podczas logowania");
-          setError(directError instanceof Error ? directError.message : "Wystąpił błąd podczas logowania");
+          setError(errorMessage);
         }
       } else {
         setError("Nie można użyć usługi uwierzytelniania");
       }
     } catch (submitError) {
+      const errorMessage = submitError instanceof Error ? submitError.message : "Wystąpił błąd podczas logowania";
       showAuthError(submitError, "Wystąpił błąd podczas logowania");
-      setError(submitError instanceof Error ? submitError.message : "Wystąpił błąd podczas logowania");
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -162,8 +165,8 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
             </a>
           </div>
 
-          {message && <div className="text-sm p-3 bg-green-50 text-green-700 rounded-md">{message}</div>}
-          {error && <div className="text-sm p-3 bg-red-50 text-red-500 rounded-md">{error}</div>}
+          {message && <div className="text-sm p-3 bg-green-50 text-green-700 rounded-md" data-testid="success-message">{message}</div>}
+          {error && <div className="text-sm p-3 bg-red-50 text-red-500 rounded-md" data-testid="error-message" aria-live="polite">{error}</div>}
 
           <Button
             type="submit"

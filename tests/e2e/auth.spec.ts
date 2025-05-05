@@ -37,7 +37,7 @@ test.describe("Autentykacja", () => {
       await expect(dashboardPage.welcomeMessage).toBeVisible({ timeout: 10000 });
     } else {
       // If we're still on login page, check for any API error response
-      const errorText = (await page.locator(".bg-red-50, .text-red-500").textContent()) || "";
+      const errorText = (await page.locator(".bg-red-50, .text-red-500, [data-testid='error-message']").textContent()) || "";
       console.log("Error message on page:", errorText);
 
       // Take a screenshot for debugging
@@ -64,7 +64,8 @@ test.describe("Autentykacja", () => {
     await page.screenshot({ path: "test-results/login-error.png" });
 
     // Check for any visible error message with a more flexible approach
-    const errorElements = await page.locator('div[class*="text-red"], div[class*="bg-red"], [data-type="error"]').all();
+    // Updated to include our data-testid attribute from the implementation
+    const errorElements = await page.locator('div[class*="text-red"], div[class*="bg-red"], [data-testid="error-message"]').all();
 
     if (errorElements.length === 0) {
       console.log("HTML of page after failed login:", await page.content());
