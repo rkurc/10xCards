@@ -1,4 +1,4 @@
-import { Page, Locator, expect } from '@playwright/test';
+import { Page, Locator, expect } from "@playwright/test";
 
 export class LoginPage {
   readonly page: Page;
@@ -6,17 +6,20 @@ export class LoginPage {
   readonly passwordInput: Locator;
   readonly loginButton: Locator;
   readonly errorMessage: Locator;
+  readonly form: Locator;
 
   constructor(page: Page) {
     this.page = page;
-    this.emailInput = page.getByPlaceholder('twoj@email.com');
-    this.passwordInput = page.getByPlaceholder('••••••••');
-    this.loginButton = page.getByRole('button', { name: 'Zaloguj się' });
-    this.errorMessage = page.locator('.sonner-toast[data-type="error"]');
+    this.emailInput = page.getByPlaceholder("twoj@email.com");
+    this.passwordInput = page.locator("#password");
+    this.loginButton = page.getByRole("button", { name: "Zaloguj się" });
+    // Update the error selector to match the actual implementation
+    this.errorMessage = page.locator('.text-red-500, .bg-red-50, div[class*="text-red"], [data-type="error"]');
+    this.form = page.locator("form");
   }
 
   async goto() {
-    await this.page.goto('/login');
+    await this.page.goto("/login");
     await expect(this.emailInput).toBeVisible();
   }
 
@@ -30,12 +33,22 @@ export class LoginPage {
     await this.emailInput.fill(email);
     await this.passwordInput.fill(password);
 
-    // Click login and wait for navigation or response
-    await Promise.all([
-      this.page.waitForResponse(
-        response => response.url().includes('/api/auth/login')
-      ),
-      this.loginButton.click()
-    ]);
+    // Submit the form properly to ensure POST request
+    // First try to use the form's submit method
+    try {
+      await this.page.evaluate(() => {
+        const form = document.querySelector("form");
+        if (form) {
+          const submitEvent = new Event("submit", { cancelable: true });
+          form.dispatchEvent(submitEvent);
+          if (!submitEvent.defaultPrevented) {
+            form.submit();
+          }
+        }
+      });
+    } catch (e) {
+      // If direct form submission fails, fall back to clicking the button
+      await this.loginButton.click();
+    }
   }
 }
