@@ -74,10 +74,43 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
     setError(null);
 
     try {
-      // First try the context login
-      const result = await login(data.email, data.password);
+      // First try direct API call to ensure proper error handling for tests
+      try {
+        console.debug("Making login API call directly");
 
-      if (result.success) {
+        const response = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            email: data.email,
+            password: data.password,
+            redirectUrl,
+          }),
+        });
+
+        // Get the response and parse it
+        const responseText = await response.text();
+        let result;
+
+        try {
+          result = JSON.parse(responseText);
+        } catch (jsonError) {
+          console.error(`Failed to parse response as JSON: ${jsonError.message}`);
+          setError("Invalid server response format");
+          toast.error("Nieprawidłowa odpowiedź serwera");
+          return;
+        }
+
+        if (!result.success) {
+          setError(result.error || "Niepoprawny email lub hasło");
+          toast.error(result.error || "Niepoprawny email lub hasło");
+          return;
+        }
+
+        // Handle success
         setMessage("Logowanie udane! Przekierowywanie...");
         toast.success("Logowanie udane");
 
@@ -85,30 +118,24 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
         setTimeout(() => {
           navigateToUrl(redirectUrl);
         }, 800);
-      } else if (authService) {
-        // If context login fails, try direct auth service as fallback
-        try {
-          const directResult = await authService.login(data.email, data.password);
+      } catch (fetchError) {
+        // Fallback to context login
+        console.debug("Falling back to context login");
+        const result = await login(data.email, data.password);
 
-          if (directResult.success) {
-            setMessage("Logowanie udane! Przekierowywanie...");
-            toast.success("Logowanie udane");
+        if (result.success) {
+          setMessage("Logowanie udane! Przekierowywanie...");
+          toast.success("Logowanie udane");
 
-            setTimeout(() => {
-              navigateToUrl(redirectUrl);
-            }, 800);
-          } else {
-            const errorMessage = directResult.error || "Niepoprawny email lub hasło";
-            setError(errorMessage);
-            toast.error(errorMessage);
-          }
-        } catch (directError) {
-          const errorMessage = directError instanceof Error ? directError.message : "Wystąpił błąd podczas logowania";
-          showAuthError(directError, "Wystąpił błąd podczas logowania");
+          // Short delay before redirect to ensure toast is visible
+          setTimeout(() => {
+            navigateToUrl(redirectUrl);
+          }, 800);
+        } else {
+          const errorMessage = result.error || "Niepoprawny email lub hasło";
           setError(errorMessage);
+          toast.error(errorMessage);
         }
-      } else {
-        setError("Nie można użyć usługi uwierzytelniania");
       }
     } catch (submitError) {
       const errorMessage = submitError instanceof Error ? submitError.message : "Wystąpił błąd podczas logowania";
@@ -178,7 +205,11 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
           </div>
 
           <div className="text-sm text-right">
-            <a href="/forgot-password" className="text-primary hover:underline" data-testid="login-forgot-password-link">
+            <a
+              href="/forgot-password"
+              className="text-primary hover:underline"
+              data-testid="login-forgot-password-link"
+            >
               Zapomniałeś hasła?
             </a>
           </div>
@@ -189,7 +220,11 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
             </div>
           )}
           {error && (
-            <div className="text-sm p-3 bg-red-50 text-red-500 rounded-md" data-testid="error-message" aria-live="polite">
+            <div
+              className="text-sm p-3 bg-red-50 text-red-500 rounded-md"
+              data-testid="error-message"
+              aria-live="polite"
+            >
               {error}
             </div>
           )}

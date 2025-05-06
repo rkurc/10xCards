@@ -1,10 +1,15 @@
 import type { APIRoute } from "astro";
 import { createSupabaseServerClient } from "../../../lib/supabase.server";
+import { 
+  createAuthErrorResponse, 
+  createAuthSuccessResponse,
+  handleAuthResponse
+} from "../../../utils/auth/responses";
 
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
-  try {
-    console.debug("Register endpoint called");
+  console.log("[AUTH] Register endpoint called - " + new Date().toISOString());
 
+  try {
     // Parse the request body
     let email, password, userData, redirectUrl;
     try {
@@ -30,35 +35,12 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
         throw new Error(`Unsupported content type: ${contentType}`);
       }
     } catch (parseError) {
-      console.error("Error parsing register request:", parseError);
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "Invalid request format",
-        }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      return createAuthErrorResponse("Invalid request format", 400);
     }
 
     // Validate required fields
     if (!email || !password) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "Email and password are required",
-        }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      return createAuthErrorResponse("Email and password are required", 400);
     }
 
     // Create Supabase client
@@ -66,38 +48,19 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     try {
       supabase = createSupabaseServerClient({ cookies, headers: request.headers });
     } catch (error) {
-      console.error("Failed to create Supabase client:", error);
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "Authentication service initialization failed",
-        }),
-        {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      return createAuthErrorResponse("Authentication service initialization failed", 500);
     }
 
     // First check if the email already exists
-    const { data: existingUser } = await supabase.from("profiles").select("email").eq("email", email).maybeSingle();
-
+    const { data: existingUser } = await supabase
+      .from("profiles")
+      .select("email")
+      .eq("email", email)
+      .maybeSingle();
+      
     if (existingUser) {
-      console.log("Attempted registration with existing email:", email);
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: "Email already registered",
-        }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      console.log("[AUTH] Attempted registration with existing email:", email);
+      return createAuthErrorResponse("Email already registered", 400);
     }
 
     // Attempt registration with metadata for user's name
@@ -111,77 +74,32 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     });
 
     if (error) {
-      console.error("Registration error:", error);
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: error.message,
-        }),
-        {
-          status: 400,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      return createAuthErrorResponse(error.message, 400);
     }
 
     // Check if email confirmation is required
     const emailConfirmationRequired = !data.session;
 
     if (emailConfirmationRequired) {
-      return new Response(
-        JSON.stringify({
-          success: true,
-          requiresEmailConfirmation: true,
-        }),
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      return createAuthSuccessResponse({
+        requiresEmailConfirmation: true
+      });
     }
 
-    // Handle redirect for form submissions or return JSON for API calls
-    // Using same pattern as login.ts for consistency
-    if (request.headers.get("accept")?.includes("application/json")) {
-      console.log("[DEBUG] Returning JSON response for successful registration");
-      return new Response(
-        JSON.stringify({
-          success: true,
-          user: {
-            id: data.user?.id,
-            email: data.user?.email,
-            name: data.user?.user_metadata?.name || data.user?.email?.split("@")[0],
-          },
-        }),
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-          },
+    // Handle successful registration response
+    return handleAuthResponse({
+      request,
+      redirect,
+      data: {
+        user: {
+          id: data.user?.id,
+          email: data.user?.email,
+          name: data.user?.user_metadata?.name || data.user?.email?.split("@")[0],
         }
-      );
-    }
-
-    // Redirect after successful registration
-    console.log("[DEBUG] Redirecting to:", redirectUrl || "/dashboard");
-    return redirect(redirectUrl || "/dashboard");
+      },
+      redirectUrl: redirectUrl || "/dashboard"
+    });
   } catch (error) {
-    console.error("Unexpected registration error:", error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: "An unexpected error occurred during registration",
-      }),
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    return createAuthErrorResponse("An unexpected error occurred during registration", 500);
   }
 };

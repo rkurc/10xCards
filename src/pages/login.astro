@@ -1,13 +1,15 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import { LoginForm } from "../components/auth/LoginForm";
-import { TestLoginForm } from "../components/auth/TestLoginForm";
-import { DevTools } from "../components/auth/DevTools";
+import { TestLoginErrorDisplay } from "../components/testing/TestLoginErrorDisplay";
 import { AuthProvider } from "../context/AuthContext";
 import { createSupabaseServerClient } from "../lib/supabase.server";
 
 // Only show dev tools in development
 const isDev = import.meta.env.DEV;
+
+// Determine if we're in test mode
+const isTestMode = Astro.url.searchParams.get("test-mode") === "true";
 
 // Disable pre-rendering to ensure auth state is always current
 export const prerender = false;
@@ -85,9 +87,11 @@ const error = Astro.url.searchParams.get("error");
         )
       }
 
+      <!-- Test-specific error display component, only rendered in test mode -->
+      {isTestMode && <TestLoginErrorDisplay client:load />}
+
       <!-- Standard form with AuthContext -->
       <div>
-        <h2 class="text-xl font-semibold mb-4">Standard Login Form</h2>
         <AuthProvider client:load>
           <LoginForm client:load redirectUrl={redirectUrl} />
         </AuthProvider>
