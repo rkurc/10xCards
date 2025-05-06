@@ -13,22 +13,24 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 
 // Form schema using zod with enhanced validation
-const formSchema = z.object({
-  name: z.string().min(2, "Imię musi zawierać co najmniej 2 znaki").max(50, "Imię nie może przekraczać 50 znaków"),
-  email: z.string().email("Podaj poprawny adres email"),
-  password: z
-    .string()
-    .min(8, "Hasło musi mieć co najmniej 8 znaków")
-    .regex(/[a-zA-Z]/, "Hasło musi zawierać co najmniej jedną literę")
-    .regex(/[0-9]/, "Hasło musi zawierać co najmniej jedną cyfrę"),
-  passwordConfirm: z.string().min(1, "Powtórz hasło"),
-  termsAccepted: z.literal(true, {
-    errorMap: () => ({ message: "Musisz zaakceptować regulamin" }),
-  }),
-}).refine((data) => data.password === data.passwordConfirm, {
-  message: "Hasła nie są identyczne",
-  path: ["passwordConfirm"],
-});
+const formSchema = z
+  .object({
+    name: z.string().min(2, "Imię musi zawierać co najmniej 2 znaki").max(50, "Imię nie może przekraczać 50 znaków"),
+    email: z.string().email("Podaj poprawny adres email"),
+    password: z
+      .string()
+      .min(8, "Hasło musi mieć co najmniej 8 znaków")
+      .regex(/[a-zA-Z]/, "Hasło musi zawierać co najmniej jedną literę")
+      .regex(/[0-9]/, "Hasło musi zawierać co najmniej jedną cyfrę"),
+    passwordConfirm: z.string().min(1, "Powtórz hasło"),
+    termsAccepted: z.boolean().refine((val) => val === true, {
+      message: "Musisz zaakceptować regulamin",
+    }),
+  })
+  .refine((data) => data.password === data.passwordConfirm, {
+    message: "Hasła nie są identyczne",
+    path: ["passwordConfirm"],
+  });
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -41,6 +43,7 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
   const [emailConfirmationSent, setEmailConfirmationSent] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [commonErrors, setCommonErrors] = useState<string[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null); // Added state for error message
   const { register } = useAuth();
 
   // Initialize react-hook-form with zod validation
@@ -74,14 +77,13 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
     ];
 
     // Calculate how many criteria are met
-    const passedCriteria = criteria.filter(criterion => criterion.test.test(password));
+    const passedCriteria = criteria.filter((criterion) => criterion.test.test(password));
     const strength = Math.round((passedCriteria.length / criteria.length) * 100);
     setPasswordStrength(strength);
 
     // Update errors list
-    setCommonErrors(criteria
-      .filter(criterion => !criterion.test.test(password))
-      .map(criterion => criterion.message)
+    setCommonErrors(
+      criteria.filter((criterion) => !criterion.test.test(password)).map((criterion) => criterion.message)
     );
   }, [form.watch("password")]);
 
@@ -96,88 +98,97 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
   async function onSubmit(data: FormValues) {
     console.debug(`Registration attempt: ${data.email}`);
     setIsSubmitting(true);
+    setErrorMessage(null); // Clear any previous error messages
 
     try {
       // Try using direct fetch first
       try {
         console.debug("Making registration API call");
-        
-        const response = await fetch('/api/auth/register', {
-          method: 'POST',
+
+        const response = await fetch("/api/auth/register", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            "Content-Type": "application/json",
+            Accept: "application/json",
           },
           body: JSON.stringify({
             email: data.email,
             password: data.password,
             userData: {
-              name: data.name
-            }
+              name: data.name,
+            },
           }),
         });
-        
+
         // Get the response and parse it
         const responseText = await response.text();
         let result;
-        
+
         try {
           result = JSON.parse(responseText);
         } catch (jsonError) {
           console.error(`Failed to parse response as JSON: ${jsonError.message}`);
           toast.error("Invalid server response format");
+          setErrorMessage("Invalid server response format");
           return;
         }
-        
+
         if (!response.ok) {
           toast.error(result.error || "Registration failed");
+          setErrorMessage(result.error || "Registration failed");
           return;
         }
-        
+
         // Handle success
         if (result.requiresEmailConfirmation) {
           setEmailConfirmationSent(true);
           toast.success("Wysłano link aktywacyjny na podany adres email");
         } else {
           toast.success("Konto zostało utworzone pomyślnie");
-          
+
           setTimeout(() => {
             window.location.href = redirectUrl;
           }, 1500);
         }
       } catch (fetchError) {
         // Fallback to context register function
-        console.debug('Falling back to context register');
-        
+        console.debug("Falling back to context register");
+
         const result = await register(data.email, data.password, {
-          name: data.name
+          name: data.name,
         });
-        
+
         if (result.success) {
           if (result.requiresEmailConfirmation) {
             setEmailConfirmationSent(true);
             toast.success("Wysłano link aktywacyjny na podany adres email");
           } else {
             toast.success("Konto zostało utworzone pomyślnie");
-            
+
             setTimeout(() => {
               window.location.href = redirectUrl;
             }, 1500);
           }
         } else {
           // Handle common registration errors with user-friendly messages
+          let errorText = "Nie udało się utworzyć konta";
+          
           if (result.error?.includes("already registered")) {
-            toast.error("Ten adres email jest już zarejestrowany");
+            errorText = "Ten adres email jest już zarejestrowany";
           } else if (result.error?.includes("weak password")) {
-            toast.error("Hasło jest zbyt słabe. Użyj silniejszego hasła.");
-          } else {
-            toast.error(result.error || "Nie udało się utworzyć konta");
+            errorText = "Hasło jest zbyt słabe. Użyj silniejszego hasła.";
+          } else if (result.error) {
+            errorText = result.error;
           }
+          
+          toast.error(errorText);
+          setErrorMessage(errorText); // Set the error message to be displayed in the UI
         }
       }
     } catch (error) {
       console.error("Registration error:", error);
       toast.error("Wystąpił błąd podczas rejestracji");
+      setErrorMessage("Wystąpił błąd podczas rejestracji");
     } finally {
       setIsSubmitting(false);
     }
@@ -186,7 +197,7 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
   // Show email confirmation message if email verification is required
   if (emailConfirmationSent) {
     return (
-      <Card className="w-full max-w-md mx-auto">
+      <Card className="w-full max-w-md mx-auto" data-testid="register-confirmation-container">
         <CardHeader>
           <CardTitle className="text-center">
             <Check className="w-12 h-12 text-emerald-500 mx-auto mb-4" />
@@ -198,25 +209,25 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
         </CardHeader>
         <CardContent>
           <div className="space-y-4 text-center">
-            <p>
-              Aby dokończyć proces rejestracji, kliknij w link aktywacyjny, który wysłaliśmy na podany adres email.
-            </p>
+            <p>Aby dokończyć proces rejestracji, kliknij w link aktywacyjny, który wysłaliśmy na podany adres email.</p>
             <p className="text-sm text-muted-foreground">
-              Link aktywacyjny jest ważny przez 24 godziny. Jeśli nie otrzymałeś wiadomości, sprawdź folder spam lub kliknij przycisk poniżej, aby wysłać link ponownie.
+              Link aktywacyjny jest ważny przez 24 godziny. Jeśli nie otrzymałeś wiadomości, sprawdź folder spam lub
+              kliknij przycisk poniżej, aby wysłać link ponownie.
             </p>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col items-center space-y-4">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="w-full"
             onClick={() => {
               toast.success("Link aktywacyjny został wysłany ponownie");
             }}
+            data-testid="resend-confirmation-button"
           >
             Wyślij link ponownie
           </Button>
-          <a href="/login" className="text-primary hover:underline text-sm">
+          <a href="/login" className="text-primary hover:underline text-sm" data-testid="register-to-login-link">
             Powrót do strony logowania
           </a>
         </CardFooter>
@@ -225,44 +236,43 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full max-w-md mx-auto" data-testid="register-form-container">
       <CardHeader>
         <CardTitle>Zarejestruj się</CardTitle>
-        <CardDescription>
-          Utwórz konto, aby korzystać z pełnej funkcjonalności 10xCards
-        </CardDescription>
+        <CardDescription>Utwórz konto, aby korzystać z pełnej funkcjonalności 10xCards</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form 
-            onSubmit={form.handleSubmit(onSubmit)} 
-            className="space-y-4"
-          >
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" data-testid="register-form">
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Imię</FormLabel>
+                  <FormLabel data-testid="register-name-label">Imię</FormLabel>
                   <FormControl>
-                    <Input placeholder="Jan Kowalski" {...field} />
+                    <Input placeholder="Jan Kowalski" {...field} name="name" data-testid="register-name-input" />
                   </FormControl>
-                  <FormDescription>
-                    Imię będzie wyświetlane w aplikacji
-                  </FormDescription>
+                  <FormDescription>Imię będzie wyświetlane w aplikacji</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel data-testid="register-email-label">Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="twoj@email.com" {...field} />
+                    <Input
+                      type="email"
+                      placeholder="twoj@email.com"
+                      {...field}
+                      name="email"
+                      data-testid="register-email-input"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -274,23 +284,42 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Hasło</FormLabel>
+                  <FormLabel data-testid="register-password-label">Hasło</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      {...field}
+                      name="password"
+                      data-testid="register-password-input"
+                    />
                   </FormControl>
-                  
+
                   {/* Password strength indicator */}
                   {field.value && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-xs">Siła hasła</span>
-                        <span className="text-xs font-semibold">{passwordStrength < 40 ? "Słabe" : passwordStrength < 80 ? "Średnie" : "Silne"}</span>
+                        <span className="text-xs font-semibold" data-testid="password-strength-text">
+                          {passwordStrength < 40 ? "Słabe" : passwordStrength < 80 ? "Średnie" : "Silne"}
+                        </span>
                       </div>
-                      <Progress value={passwordStrength} className={`h-1 ${getStrengthColor()}`} />
-                      
+                      <div className="progress-bar weak" role="progressbar">
+                        <Progress
+                          value={passwordStrength}
+                          className={`h-1 ${getStrengthColor()} ${
+                            passwordStrength < 40 ? "weak" : passwordStrength < 80 ? "medium" : "strong"
+                          }`}
+                          data-testid="password-strength-bar"
+                        />
+                      </div>
+
                       {/* Password requirements */}
                       {commonErrors.length > 0 && (
-                        <ul className="text-xs text-muted-foreground space-y-1 mt-2">
+                        <ul
+                          className="text-xs text-muted-foreground space-y-1 mt-2"
+                          data-testid="password-requirements"
+                        >
                           {commonErrors.map((error, i) => (
                             <li key={i} className="flex items-center">
                               <AlertCircle className="h-3 w-3 mr-1 text-destructive" />
@@ -301,7 +330,7 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
                       )}
                     </div>
                   )}
-                  
+
                   <FormMessage />
                 </FormItem>
               )}
@@ -312,9 +341,15 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
               name="passwordConfirm"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Powtórz hasło</FormLabel>
+                  <FormLabel data-testid="register-confirm-password-label">Powtórz hasło</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
+                    <Input
+                      type="password"
+                      placeholder="••••••••"
+                      {...field}
+                      name="passwordConfirm"
+                      data-testid="register-confirm-password-input"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -330,21 +365,29 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
                     <Checkbox
                       checked={field.value}
                       onCheckedChange={field.onChange}
+                      name="termsAccepted"
+                      data-testid="register-terms-checkbox"
+                      role="checkbox"
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel>Akceptuję <a href="/terms" className="text-primary hover:underline">regulamin</a> i <a href="/privacy" className="text-primary hover:underline">politykę prywatności</a></FormLabel>
+                    <FormLabel>
+                      Akceptuję{" "}
+                      <a href="/terms" className="text-primary hover:underline">
+                        regulamin
+                      </a>{" "}
+                      i{" "}
+                      <a href="/privacy" className="text-primary hover:underline">
+                        politykę prywatności
+                      </a>
+                    </FormLabel>
                     <FormMessage />
                   </div>
                 </FormItem>
               )}
             />
 
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isSubmitting}
-            >
+            <Button type="submit" className="w-full" disabled={isSubmitting} data-testid="register-submit-button">
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -356,11 +399,18 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
             </Button>
           </form>
         </Form>
+
+        {/* Updated error message container to display the error */}
+        {errorMessage && (
+          <div data-testid="error-message" className="mt-4 text-destructive p-3 bg-red-50 rounded-md" id="register-error-container">
+            {errorMessage}
+          </div>
+        )}
       </CardContent>
       <CardFooter className="flex justify-center">
         <div className="text-sm text-muted-foreground">
           Masz już konto?{" "}
-          <a href="/login" className="text-primary hover:underline">
+          <a href="/login" className="text-primary hover:underline" data-testid="register-login-link">
             Zaloguj się
           </a>
         </div>

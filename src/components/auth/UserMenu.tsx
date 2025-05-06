@@ -60,8 +60,11 @@ export function UserMenu({ user }: UserMenuProps) {
     <div data-testid="user-menu">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
+          <Button variant="ghost" className="relative h-8 w-8 rounded-full" data-testid="user-menu-button">
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground"
+              data-testid="user-avatar"
+            >
               {user.name ? user.name[0].toUpperCase() : "U"}
             </div>
           </Button>
@@ -77,7 +80,14 @@ export function UserMenu({ user }: UserMenuProps) {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleLogout} data-testid="user-menu-logout-button">
-            Log out
+            {isLoggingOut ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Logging out...
+              </>
+            ) : (
+              "Log out"
+            )}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

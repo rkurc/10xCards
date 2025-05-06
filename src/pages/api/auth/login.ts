@@ -4,16 +4,16 @@ import { createSupabaseServerClient } from "../../../lib/supabase.server";
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   console.log("LOGIN API ENDPOINT CALLED - " + new Date().toISOString());
   console.log("Request headers:", Object.fromEntries(request.headers.entries()));
-  
+
   // Fix: Astro cookies object doesn't have a getAll() method
   // Log cookies in a safe way
   try {
-    const cookieHeader = request.headers.get('cookie') || '';
+    const cookieHeader = request.headers.get("cookie") || "";
     console.log("Cookies header:", cookieHeader);
   } catch (error) {
     console.error("Error accessing cookies:", error);
   }
-  
+
   try {
     // Parse the request body with more robust error handling
     console.log("[DEBUG] Parsing request body...");
@@ -85,7 +85,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       return new Response(
         JSON.stringify({
           success: false,
-          error: "Authentication service initialization failed: " + (error instanceof Error ? error.message : String(error)),
+          error:
+            "Authentication service initialization failed: " + (error instanceof Error ? error.message : String(error)),
         }),
         {
           status: 500,
@@ -106,30 +107,31 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
         email,
         password,
       });
-      
+
       console.log("[DEBUG] Supabase auth result received");
-      
+
       // Store result data and error for further processing
       data = result.data;
       error = result.error;
-      
+
       // Add detailed debug logging
-      console.log("[DEBUG] Login attempt result:", { 
+      console.log("[DEBUG] Login attempt result:", {
         hasData: !!data,
-        hasUser: !!data?.user, 
+        hasUser: !!data?.user,
         hasSession: !!data?.session,
         userId: data?.user?.id,
-        email: data?.user?.email?.substring(0, 3) + '...',
+        email: data?.user?.email?.substring(0, 3) + "...",
         error: error?.message,
-        errorCode: error?.status
+        errorCode: error?.status,
       });
-      
     } catch (supabaseError) {
       console.error("[DEBUG] Supabase login error:", supabaseError);
       return new Response(
         JSON.stringify({
           success: false,
-          error: "Authentication service error: " + (supabaseError instanceof Error ? supabaseError.message : String(supabaseError)),
+          error:
+            "Authentication service error: " +
+            (supabaseError instanceof Error ? supabaseError.message : String(supabaseError)),
         }),
         {
           status: 500,
@@ -147,7 +149,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
         JSON.stringify({
           success: false,
           error: error.message,
-          status: error.status
+          status: error.status,
         }),
         {
           status: 401,
@@ -162,7 +164,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     if (!data.user || !data.session) {
       console.error("[DEBUG] No user or session returned:", {
         hasUser: !!data.user,
-        hasSession: !!data.session
+        hasSession: !!data.session,
       });
       return new Response(
         JSON.stringify({
@@ -189,8 +191,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
           user: {
             id: data.user.id,
             email: data.user.email,
-            name: data.user.user_metadata?.name || data.user.email?.split('@')[0]
-          }
+            name: data.user.user_metadata?.name || data.user.email?.split("@")[0],
+          },
         }),
         {
           status: 200,

@@ -33,8 +33,8 @@ export function AuthGuard({
   // If not authenticated, navigate to login
   if (!isAuthenticated) {
     useEffect(() => {
-      router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`);
-    }, [pathname, router]);
+      router.push(`${redirectUrl}?redirect=${pathname}`);
+    }, [pathname, router, redirectUrl]);
     
     return (
       <div className="flex justify-center items-center h-screen" data-testid="auth-guard-redirecting">

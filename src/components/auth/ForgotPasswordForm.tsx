@@ -92,7 +92,7 @@ export function ForgotPasswordForm() {
             </form>
           </Form>
         ) : (
-          <div className="text-center py-4">
+          <div className="text-center py-4" data-testid="forgot-password-success-message">
             <p className="mb-4">Instrukcja resetowania hasła została wysłana na podany adres email.</p>
             <p className="text-muted-foreground text-sm">
               Sprawdź swoją skrzynkę odbiorczą oraz folder spam. Link do resetowania hasła jest ważny przez 24 godziny.
@@ -107,11 +107,6 @@ export function ForgotPasswordForm() {
           </a>
         </div>
       </CardFooter>
-      {isSubmitted && (
-        <div className="mt-4 p-3 bg-green-50 text-green-800 rounded-md" data-testid="forgot-password-success-message">
-          Check your email for instructions to reset your password.
-        </div>
-      )}
     </Card>
   );
 }

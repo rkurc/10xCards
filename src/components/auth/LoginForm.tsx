@@ -136,6 +136,7 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
                     type="email"
                     placeholder="twoj@email.com"
                     id="email"
+                    name="email"
                     data-testid="login-email-input"
                     {...field}
                   />
@@ -162,6 +163,7 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
                     type="password"
                     placeholder="••••••••"
                     id="password"
+                    name="password"
                     data-testid="login-password-input"
                     {...field}
                   />

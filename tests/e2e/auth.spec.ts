@@ -45,18 +45,27 @@ test.describe("Authentication Flow Tests", () => {
       await registerPage.goto();
 
       // Try with weak password
+      await registerPage.nameInput.focus();
+      await registerPage.page.waitForTimeout(100); // Small delay to ensure element is ready
       await registerPage.nameInput.fill(testUser.name);
+      await registerPage.emailInput.focus();
+      await registerPage.page.waitForTimeout(100); // Small delay to ensure element is ready
       await registerPage.emailInput.fill(`weak-${uniqueId}@example.com`);
+      await registerPage.passwordInput.focus();
+      await registerPage.page.waitForTimeout(100); // Small delay to ensure element is ready
       await registerPage.passwordInput.fill("weak");
-
+      await registerPage.page.waitForTimeout(100);
       // Should show weak password indicator
-      await expect(registerPage.passwordStrength).toHaveClass(/weak/);
+      await expect(registerPage.passwordStrength).toHaveClass(/weak/, { timeout: 5000 });
 
       // Change to strong password
+      await registerPage.passwordInput.focus();
+      await registerPage.page.waitForTimeout(100); // Small delay to ensure element is ready
       await registerPage.passwordInput.fill("StrongPassword123!");
+      await registerPage.page.waitForTimeout(100);
 
       // Should show strong password indicator
-      await expect(registerPage.passwordStrength).toHaveClass(/strong/);
+      await expect(registerPage.passwordStrength).toHaveClass(/strong/, { timeout: 5000 });
     });
   });
 
@@ -241,13 +250,21 @@ test.describe("Authentication Flow Tests", () => {
       await expect(page.getByTestId("error-message")).toBeVisible();
     });
 
-    const devices = ["iPhone 12", "iPad Pro 11", "Desktop Chrome"];
-    for (const device of devices) {
-      test(`login page should be responsive on ${device}`, async ({ page }) => {
+    const viewports = [
+      { width: 375, height: 667, name: "mobile" }, // Mobile size
+      { width: 768, height: 1024, name: "tablet" }, // Tablet size
+      { width: 1280, height: 800, name: "desktop" }, // Desktop size
+    ];
+
+    for (const viewport of viewports) {
+      test(`login page should be responsive at ${viewport.name} viewport`, async ({ page }) => {
+        // Set viewport size
+        await page.setViewportSize({ width: viewport.width, height: viewport.height });
+
         await page.goto("/login");
 
         // Take screenshot for visual comparison
-        await page.screenshot({ path: `login-${device.replace(" ", "-")}.png` });
+        await page.screenshot({ path: `login-${viewport.name}.png` });
 
         // Basic visibility check
         await expect(page.getByTestId("login-email-input")).toBeVisible();

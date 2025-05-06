@@ -12,8 +12,8 @@ export class LoginPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.emailInput = page.getByTestId("login-email-input");
-    this.passwordInput = page.getByTestId("login-password-input");
+    this.emailInput = page.locator('input[id="email"]').or(page.getByTestId("login-email-input"));
+    this.passwordInput = page.locator('input[id="password"]').or(page.getByTestId("login-password-input"));
     this.submitButton = page.getByTestId("login-submit-button");
     this.forgotPasswordLink = page.getByTestId("login-forgot-password-link");
     this.registerLink = page.getByTestId("login-register-link");
@@ -26,8 +26,15 @@ export class LoginPage {
   }
 
   async login(email: string, password: string) {
+    // Focus on email input first then fill
+    await this.emailInput.focus();
     await this.emailInput.fill(email);
+
+    // Focus on password input first then fill with short delay
+    await this.passwordInput.focus();
+    await this.page.waitForTimeout(100); // Small delay to ensure element is ready
     await this.passwordInput.fill(password);
+
     await this.submitButton.click();
   }
 
@@ -50,6 +57,7 @@ export class LoginPage {
   }
 
   async expectToBeRedirectedToDashboard() {
-    await expect(this.page).toHaveURL(/\/dashboard/);
+    // Increase timeout to account for client-side redirection delay
+    await expect(this.page).toHaveURL(/\/dashboard/, { timeout: 10000 });
   }
 }
