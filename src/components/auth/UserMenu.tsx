@@ -1,3 +1,8 @@
+import { useState } from "react";
+import { useDirectAuth } from "@/hooks/useDirectAuth";
+import { logout } from "@/services/auth.direct";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -6,91 +11,106 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { LogOut, Settings, User as UserIcon, Loader2 } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
-import { useState } from "react";
-import { toast } from "sonner"; // Changed from react-toastify to sonner
+import { useToast } from "@/components/ui/use-toast";
 
-interface UserMenuProps {
-  user: {
-    name?: string;
-    email: string;
-  };
-}
-
-export function UserMenu({ user }: UserMenuProps) {
-  const { logout } = useAuth();
+export function UserMenu() {
+  const { user, loading } = useDirectAuth();
+  const { toast } = useToast();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  // Handle logout
   const handleLogout = async () => {
     setIsLoggingOut(true);
-
     try {
-      // First try direct API call
-      console.log("Sending logout request to API");
-      const response = await fetch("/api/auth/logout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      });
-
-      if (response.ok) {
-        // After successful logout, forcefully reload the page to reset all state
-        console.log("Logout successful, reloading page");
-        window.location.href = "/";
-        return;
+      const result = await logout();
+      
+      if (result.success) {
+        toast({
+          title: "Wylogowano",
+          description: "Zostałeś wylogowany z systemu",
+        });
+        
+        // Redirect to login page after logout
+        window.location.href = "/login";
+      } else {
+        toast({
+          title: "Błąd",
+          description: result.error || "Nie udało się wylogować",
+          variant: "destructive",
+        });
+        setIsLoggingOut(false);
       }
-
-      // Fallback to context logout if API call fails
-      console.log("API logout failed, using context logout");
-      await logout();
-      window.location.href = "/";
     } catch (error) {
-      console.error("Logout error:", error);
-      toast.error("Failed to log out. Please try again.");
-    } finally {
+      toast({
+        title: "Błąd",
+        description: "Wystąpił nieoczekiwany błąd",
+        variant: "destructive",
+      });
       setIsLoggingOut(false);
     }
   };
 
+  // Show login button when not authenticated
+  if (!user && !loading) {
+    return (
+      <Button variant="outline" asChild>
+        <a href="/login">Zaloguj się</a>
+      </Button>
+    );
+  }
+
+  // Show loading state
+  if (loading) {
+    return <div className="h-10 w-10 rounded-full bg-muted animate-pulse"></div>;
+  }
+
+  // Get user initials for avatar
+  const getInitials = () => {
+    if (!user) return "?";
+    
+    if (user.name) {
+      return user.name
+        .split(" ")
+        .map(name => name[0])
+        .join("")
+        .toUpperCase()
+        .substring(0, 2);
+    }
+    
+    return user.email.substring(0, 2).toUpperCase();
+  };
+
   return (
-    <div data-testid="user-menu">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-8 w-8 rounded-full" data-testid="user-menu-button">
-            <div
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground"
-              data-testid="user-avatar"
-            >
-              {user.name ? user.name[0].toUpperCase() : "U"}
-            </div>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" data-testid="user-menu-dropdown">
-          <DropdownMenuLabel data-testid="user-menu-email">{user?.email}</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem asChild data-testid="user-menu-profile-link">
-            <a href="/profile">Profile</a>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild data-testid="user-menu-settings-link">
-            <a href="/settings">Settings</a>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleLogout} data-testid="user-menu-logout-button">
-            {isLoggingOut ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Logging out...
-              </>
-            ) : (
-              "Log out"
-            )}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+          <Avatar>
+            <AvatarFallback>{getInitials()}</AvatarFallback>
+          </Avatar>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Moje konto</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <a href="/account" className="cursor-pointer w-full">
+            Profil
+          </a>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <a href="/dashboard" className="cursor-pointer w-full">
+            Dashboard
+          </a>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem 
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          className="cursor-pointer"
+        >
+          {isLoggingOut ? "Wylogowywanie..." : "Wyloguj się"}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
