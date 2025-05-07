@@ -21,7 +21,7 @@ export interface RegisterResult {
 }
 
 /**
- * Service for handling authentication operations
+ * Service for handling authentication operations using Supabase directly
  */
 export class AuthService extends BaseService {
   /**
@@ -32,67 +32,32 @@ export class AuthService extends BaseService {
    */
   async login(email: string, password: string): Promise<LoginResult> {
     try {
-      // Use API endpoint for login
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-        credentials: "include", // Important for cookies
+      if (!this.supabase) {
+        return { success: false, error: "Authentication service unavailable" };
+      }
+
+      const { data, error: supabaseError } = await this.supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
-      // Handle response
-      const responseText = await response.text();
-      
-      if (!responseText) {
-        return { success: false, error: "Empty server response" };
+      if (supabaseError) {
+        return { success: false, error: supabaseError.message };
       }
 
-      let result;
-      try {
-        result = JSON.parse(responseText);
-      } catch (parseError) {
-        return { success: false, error: "Invalid server response format" };
-      }
-
-      if (!response.ok) {
-        return { success: false, error: result.error || "Authentication failed" };
-      }
-
-      // Return success with user data if available
-      if (result.user) {
+      if (data.user) {
         const userData = {
-          id: result.user.id,
-          email: result.user.email,
-          name: result.user.name || result.user.email.split("@")[0],
+          id: data.user.id,
+          email: data.user.email!,
+          name: data.user.user_metadata?.name || data.user.email?.split("@")[0],
         };
 
         return { success: true, user: userData };
       }
-      
+
       return { success: true };
     } catch (error) {
-      // Fall back to Supabase client if API call fails
-      try {
-        if (!this.supabase) {
-          return { success: false, error: "Authentication service unavailable" };
-        }
-
-        const { data, error: supabaseError } = await this.supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (supabaseError) {
-          return { success: false, error: supabaseError.message };
-        }
-
-        return { success: true };
-      } catch (fallbackError) {
-        return { success: false, error: "Wystąpił błąd podczas logowania." };
-      }
+      return { success: false, error: "Wystąpił błąd podczas logowania." };
     }
   }
 
@@ -105,67 +70,34 @@ export class AuthService extends BaseService {
    */
   async register(email: string, password: string, options?: { name?: string }): Promise<RegisterResult> {
     try {
-      // Use API endpoint for registration
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
+      if (!this.supabase) {
+        return { success: false, error: "Authentication service unavailable" };
+      }
+
+      const { data, error: supabaseError } = await this.supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: options,
+          emailRedirectTo: `${window.location.origin}/auth-callback`,
         },
-        body: JSON.stringify({
-          email,
-          password,
-          userData: options,
-        }),
       });
 
-      // Parse response
-      const responseText = await response.text();
-      let result;
-
-      try {
-        result = JSON.parse(responseText);
-      } catch (parseError) {
-        return { success: false, error: "Invalid server response format" };
+      if (supabaseError) {
+        return { success: false, error: supabaseError.message };
       }
 
-      return {
-        success: result.success,
-        error: result.error,
-        requiresEmailConfirmation: result.requiresEmailConfirmation,
-      };
+      // Check if email confirmation is required
+      if (data.session) {
+        return { success: true };
+      } else {
+        return {
+          success: true,
+          requiresEmailConfirmation: true,
+        };
+      }
     } catch (error) {
-      // Fall back to direct Supabase client
-      try {
-        if (!this.supabase) {
-          return { success: false, error: "Authentication service unavailable" };
-        }
-
-        const { data, error: supabaseError } = await this.supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: options,
-            emailRedirectTo: `${window.location.origin}/auth-callback`,
-          },
-        });
-
-        if (supabaseError) {
-          return { success: false, error: supabaseError.message };
-        }
-
-        // Check if email confirmation is required
-        if (data.session) {
-          return { success: true };
-        } else {
-          return {
-            success: true,
-            requiresEmailConfirmation: true,
-          };
-        }
-      } catch (fallbackError) {
-        return { success: false, error: "An error occurred during registration." };
-      }
+      return { success: false, error: "An error occurred during registration." };
     }
   }
 
@@ -176,10 +108,8 @@ export class AuthService extends BaseService {
     try {
       if (this.supabase) {
         await this.supabase.auth.signOut();
-        toast.success("Wylogowano pomyślnie");
       }
     } catch (error) {
-      toast.error("Wystąpił błąd podczas wylogowywania");
       throw error;
     }
   }
@@ -210,18 +140,39 @@ export class AuthService extends BaseService {
   }
 
   /**
+   * Get the current user
+   * @returns The current authenticated user or null
+   */
+  async getCurrentUser(): Promise<User | null> {
+    try {
+      if (!this.supabase) {
+        return null;
+      }
+
+      const { data, error } = await this.supabase.auth.getUser();
+      
+      if (error || !data.user) {
+        return null;
+      }
+
+      return {
+        id: data.user.id,
+        email: data.user.email!,
+        name: data.user.user_metadata?.name || data.user.email?.split("@")[0],
+      };
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
    * Verify if the user is authenticated
    * @returns Promise that resolves to true if authenticated, false otherwise
    */
   async verifyAuthentication(): Promise<boolean> {
     try {
-      const response = await fetch("/api/debug/auth-state");
-      if (!response.ok) {
-        return false;
-      }
-      
-      const result = await response.json();
-      return !!result.user;
+      const user = await this.getCurrentUser();
+      return !!user;
     } catch (error) {
       return false;
     }

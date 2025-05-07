@@ -10,10 +10,6 @@ import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { showAuthError } from "@/utils/auth-error-handler";
 
-// Import the AuthService for direct use
-import { AuthService } from "@/services/auth.service";
-import { createBrowserSupabaseClient } from "@/lib/supabase.client";
-
 // Form schema using zod
 const formSchema = z.object({
   email: z.string().email("Podaj poprawny adres email"),
@@ -31,9 +27,6 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { login, user } = useAuth();
-
-  // Create an instance of the auth service for direct use if needed
-  const authService = typeof window !== "undefined" ? new AuthService(createBrowserSupabaseClient()) : null;
 
   // Initialize react-hook-form with zod validation
   const form = useForm<FormValues>({
@@ -74,68 +67,20 @@ export function LoginForm({ redirectUrl = "/dashboard" }: LoginFormProps) {
     setError(null);
 
     try {
-      // First try direct API call to ensure proper error handling for tests
-      try {
-        console.debug("Making login API call directly");
+      // Use AuthContext's login method
+      const result = await login(data.email, data.password);
 
-        const response = await fetch("/api/auth/login", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            email: data.email,
-            password: data.password,
-            redirectUrl,
-          }),
-        });
-
-        // Get the response and parse it
-        const responseText = await response.text();
-        let result;
-
-        try {
-          result = JSON.parse(responseText);
-        } catch (jsonError) {
-          console.error(`Failed to parse response as JSON: ${jsonError.message}`);
-          setError("Invalid server response format");
-          toast.error("Nieprawidłowa odpowiedź serwera");
-          return;
-        }
-
-        if (!result.success) {
-          setError(result.error || "Niepoprawny email lub hasło");
-          toast.error(result.error || "Niepoprawny email lub hasło");
-          return;
-        }
-
-        // Handle success
+      if (result.success) {
         setMessage("Logowanie udane! Przekierowywanie...");
-        toast.success("Logowanie udane");
-
+        
         // Short delay before redirect to ensure toast is visible
         setTimeout(() => {
           navigateToUrl(redirectUrl);
         }, 800);
-      } catch (fetchError) {
-        // Fallback to context login
-        console.debug("Falling back to context login");
-        const result = await login(data.email, data.password);
-
-        if (result.success) {
-          setMessage("Logowanie udane! Przekierowywanie...");
-          toast.success("Logowanie udane");
-
-          // Short delay before redirect to ensure toast is visible
-          setTimeout(() => {
-            navigateToUrl(redirectUrl);
-          }, 800);
-        } else {
-          const errorMessage = result.error || "Niepoprawny email lub hasło";
-          setError(errorMessage);
-          toast.error(errorMessage);
-        }
+      } else {
+        const errorMessage = result.error || "Niepoprawny email lub hasło";
+        setError(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (submitError) {
       const errorMessage = submitError instanceof Error ? submitError.message : "Wystąpił błąd podczas logowania";

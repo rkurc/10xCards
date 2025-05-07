@@ -43,7 +43,7 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
   const [emailConfirmationSent, setEmailConfirmationSent] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [commonErrors, setCommonErrors] = useState<string[]>([]);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null); // Added state for error message
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { register } = useAuth();
 
   // Initialize react-hook-form with zod validation
@@ -98,48 +98,15 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
   async function onSubmit(data: FormValues) {
     console.debug(`Registration attempt: ${data.email}`);
     setIsSubmitting(true);
-    setErrorMessage(null); // Clear any previous error messages
+    setErrorMessage(null);
 
     try {
-      // Try using direct fetch first
-      try {
-        console.debug("Making registration API call");
+      // Use AuthContext's register method directly
+      const result = await register(data.email, data.password, {
+        name: data.name,
+      });
 
-        const response = await fetch("/api/auth/register", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify({
-            email: data.email,
-            password: data.password,
-            userData: {
-              name: data.name,
-            },
-          }),
-        });
-
-        // Get the response and parse it
-        const responseText = await response.text();
-        let result;
-
-        try {
-          result = JSON.parse(responseText);
-        } catch (jsonError) {
-          console.error(`Failed to parse response as JSON: ${jsonError.message}`);
-          toast.error("Invalid server response format");
-          setErrorMessage("Invalid server response format");
-          return;
-        }
-
-        if (!response.ok) {
-          toast.error(result.error || "Registration failed");
-          setErrorMessage(result.error || "Registration failed");
-          return;
-        }
-
-        // Handle success
+      if (result.success) {
         if (result.requiresEmailConfirmation) {
           setEmailConfirmationSent(true);
           toast.success("Wysłano link aktywacyjny na podany adres email");
@@ -150,40 +117,20 @@ export function RegisterForm({ redirectUrl = "/dashboard" }: RegisterFormProps) 
             window.location.href = redirectUrl;
           }, 1500);
         }
-      } catch (fetchError) {
-        // Fallback to context register function
-        console.debug("Falling back to context register");
-
-        const result = await register(data.email, data.password, {
-          name: data.name,
-        });
-
-        if (result.success) {
-          if (result.requiresEmailConfirmation) {
-            setEmailConfirmationSent(true);
-            toast.success("Wysłano link aktywacyjny na podany adres email");
-          } else {
-            toast.success("Konto zostało utworzone pomyślnie");
-
-            setTimeout(() => {
-              window.location.href = redirectUrl;
-            }, 1500);
-          }
-        } else {
-          // Handle common registration errors with user-friendly messages
-          let errorText = "Nie udało się utworzyć konta";
-          
-          if (result.error?.includes("already registered")) {
-            errorText = "Ten adres email jest już zarejestrowany";
-          } else if (result.error?.includes("weak password")) {
-            errorText = "Hasło jest zbyt słabe. Użyj silniejszego hasła.";
-          } else if (result.error) {
-            errorText = result.error;
-          }
-          
-          toast.error(errorText);
-          setErrorMessage(errorText); // Set the error message to be displayed in the UI
+      } else {
+        // Handle common registration errors with user-friendly messages
+        let errorText = "Nie udało się utworzyć konta";
+        
+        if (result.error?.includes("already registered")) {
+          errorText = "Ten adres email jest już zarejestrowany";
+        } else if (result.error?.includes("weak password")) {
+          errorText = "Hasło jest zbyt słabe. Użyj silniejszego hasła.";
+        } else if (result.error) {
+          errorText = result.error;
         }
+        
+        toast.error(errorText);
+        setErrorMessage(errorText);
       }
     } catch (error) {
       console.error("Registration error:", error);
