@@ -6,8 +6,13 @@ import {
   handleAuthResponse
 } from "../../../utils/auth/responses";
 
+/**
+ * @deprecated This API route is deprecated and will be removed in a future release.
+ * Use the AuthService or AuthContext directly with Supabase client instead.
+ */
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
-  console.log("[AUTH] Login API endpoint called - " + new Date().toISOString());
+  console.log("[AUTH] Login API endpoint called (DEPRECATED) - " + new Date().toISOString());
+  console.warn("This API route is deprecated. Use AuthService directly with Supabase client instead.");
   
   try {
     // Parse the request body with more robust error handling

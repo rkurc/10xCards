@@ -1,23 +1,18 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { LoginForm } from "../components/auth/LoginForm";
-import { TestLoginErrorDisplay } from "../components/testing/TestLoginErrorDisplay";
-import { AuthProvider } from "../context/AuthContext";
+import { LoginFormReact } from "../components/auth/LoginFormReact";
 import { createSupabaseServerClient } from "../lib/supabase.server";
-
-// Only show dev tools in development
-const isDev = import.meta.env.DEV;
-
-// Determine if we're in test mode
-const isTestMode = Astro.url.searchParams.get("test-mode") === "true";
 
 // Disable pre-rendering to ensure auth state is always current
 export const prerender = false;
 
+// Determine if we're in test mode (for test-specific features)
+const isTestMode = Astro.url.searchParams.get("test-mode") === "true";
+
 // Get redirectUrl from query params
 const redirectUrl = Astro.url.searchParams.get("redirect") || "/dashboard";
 
-// Support non-JavaScript users with HTML form handling
+// Process server-side form submissions for no-JS fallback
 if (Astro.request.method === "POST") {
   try {
     const formData = await Astro.request.formData();
@@ -39,7 +34,7 @@ if (Astro.request.method === "POST") {
     });
 
     if (error) {
-      // Return to login page with error details for better user feedback
+      // Return to login page with error details
       return Astro.redirect(`/login?error=${encodeURIComponent(error.message)}&redirect=${redirectUrl}`);
     }
 
@@ -87,15 +82,8 @@ const error = Astro.url.searchParams.get("error");
         )
       }
 
-      <!-- Test-specific error display component, only rendered in test mode -->
-      {isTestMode && <TestLoginErrorDisplay client:load />}
-
-      <!-- Standard form with AuthContext -->
-      <div>
-        <AuthProvider client:load>
-          <LoginForm client:load redirectUrl={redirectUrl} />
-        </AuthProvider>
-      </div>
+      <!-- React login form with client:load directive -->
+      <LoginFormReact client:load redirectUrl={redirectUrl} />
 
       <!-- Fallback for users with JavaScript disabled -->
       <noscript>
@@ -133,16 +121,4 @@ const error = Astro.url.searchParams.get("error");
       </noscript>
     </div>
   </div>
-
-  <script>
-    // Simple script to verify JavaScript is running
-    document.addEventListener("DOMContentLoaded", () => {
-      console.log("JavaScript is running on login page");
-      const testElement = document.getElementById("js-test");
-      if (testElement) {
-        testElement.textContent = "JavaScript działa poprawnie! ✅";
-        testElement.style.backgroundColor = "#d1fae5";
-      }
-    });
-  </script>
 </BaseLayout>

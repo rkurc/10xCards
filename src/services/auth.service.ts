@@ -1,180 +1,243 @@
-import { BaseService } from "./base.service";
-import type { User } from "@/context/AuthContext";
-import { toast } from "sonner";
+import { createBrowserSupabaseClient } from "../lib/supabase.client";
+import type { LoginResult, RegisterResult, User } from "../types/auth.types";
 
-/**
- * Interface for login results
- */
-export interface LoginResult {
-  success: boolean;
-  error?: string;
-  user?: User;
+// Don't create the Supabase client as a module-level variable
+// Instead create it inside each function when needed
+console.log(`[DEBUG] auth.service: Module loaded, typeof window = ${typeof window}`);
+
+// Helper to get supabase client on demand
+function getSupabaseClient() {
+  if (typeof window === 'undefined') {
+    console.log('[DEBUG] getSupabaseClient: Running server-side, returning null');
+    return null;
+  }
+  
+  console.log('[DEBUG] getSupabaseClient: Running client-side, creating client');
+  const client = createBrowserSupabaseClient();
+  return client;
 }
 
 /**
- * Interface for registration results
+ * Login a user with email and password
+ * @param email User email
+ * @param password User password
  */
-export interface RegisterResult {
-  success: boolean;
-  error?: string;
-  requiresEmailConfirmation?: boolean;
+export async function login(email: string, password: string): Promise<LoginResult> {
+  console.log('[DEBUG] authService.login CALLED for email:', email);
+  
+  // Get client on demand instead of using module-level variable
+  const supabase = getSupabaseClient();
+  console.log('[DEBUG] authService.login supabase available:', !!supabase);
+  
+  if (!supabase) {
+    console.error('[DEBUG] authService.login error: Supabase client not available (window not defined)');
+    return { success: false, error: "Authentication service unavailable in server environment" };
+  }
+
+  try {
+    console.log('[DEBUG] authService.login calling supabase.auth.signInWithPassword');
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    
+    if (error) {
+      console.error('[DEBUG] authService.login Supabase error:', error);
+      return { success: false, error: error.message };
+    }
+
+    if (!data?.user) {
+      console.error('[DEBUG] authService.login error: No user data returned');
+      return { success: false, error: "No user data returned from authentication" };
+    }
+
+    // Create user data object
+    const userData = {
+      id: data.user.id,
+      email: data.user.email!,
+      name: data.user.user_metadata?.name || data.user.email?.split("@")[0],
+    };
+
+    console.log('[DEBUG] authService.login successful');
+    return { success: true, user: userData };
+  } catch (error) {
+    console.error('[DEBUG] authService.login unhandled exception:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Wystąpił błąd podczas logowania." 
+    };
+  }
 }
 
 /**
- * Service for handling authentication operations using Supabase directly
+ * Register a new user
+ * @param email User email
+ * @param password User password
+ * @param options Additional user data
  */
-export class AuthService extends BaseService {
-  /**
-   * Login a user with email and password
-   * @param email User email
-   * @param password User password
-   * @returns LoginResult with success status and user data if successful
-   */
-  async login(email: string, password: string): Promise<LoginResult> {
-    try {
-      if (!this.supabase) {
-        return { success: false, error: "Authentication service unavailable" };
-      }
+export async function register(email: string, password: string, options?: { name?: string }): Promise<RegisterResult> {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    return { success: false, error: "Authentication service unavailable" };
+  }
 
-      const { data, error: supabaseError } = await this.supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: options,
+        emailRedirectTo: `${window.location.origin}/auth-callback`,
+      },
+    });
 
-      if (supabaseError) {
-        return { success: false, error: supabaseError.message };
-      }
+    if (error) {
+      return { success: false, error: error.message };
+    }
 
-      if (data.user) {
-        const userData = {
-          id: data.user.id,
-          email: data.user.email!,
-          name: data.user.user_metadata?.name || data.user.email?.split("@")[0],
-        };
-
-        return { success: true, user: userData };
-      }
-
+    // Check if email confirmation is required
+    if (data.session) {
       return { success: true };
-    } catch (error) {
-      return { success: false, error: "Wystąpił błąd podczas logowania." };
-    }
-  }
-
-  /**
-   * Register a new user
-   * @param email User email
-   * @param password User password
-   * @param options Additional user data
-   * @returns RegisterResult with success status
-   */
-  async register(email: string, password: string, options?: { name?: string }): Promise<RegisterResult> {
-    try {
-      if (!this.supabase) {
-        return { success: false, error: "Authentication service unavailable" };
-      }
-
-      const { data, error: supabaseError } = await this.supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: options,
-          emailRedirectTo: `${window.location.origin}/auth-callback`,
-        },
-      });
-
-      if (supabaseError) {
-        return { success: false, error: supabaseError.message };
-      }
-
-      // Check if email confirmation is required
-      if (data.session) {
-        return { success: true };
-      } else {
-        return {
-          success: true,
-          requiresEmailConfirmation: true,
-        };
-      }
-    } catch (error) {
-      return { success: false, error: "An error occurred during registration." };
-    }
-  }
-
-  /**
-   * Log out the current user
-   */
-  async logout(): Promise<void> {
-    try {
-      if (this.supabase) {
-        await this.supabase.auth.signOut();
-      }
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  /**
-   * Reset password for a user
-   * @param email User email
-   * @returns Object with success status
-   */
-  async resetPassword(email: string): Promise<{ success: boolean; error?: string }> {
-    try {
-      if (!this.supabase) {
-        return { success: false, error: "Authentication service unavailable" };
-      }
-
-      const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-
-      if (error) {
-        return { success: false, error: error.message };
-      }
-
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: "Wystąpił błąd podczas resetowania hasła." };
-    }
-  }
-
-  /**
-   * Get the current user
-   * @returns The current authenticated user or null
-   */
-  async getCurrentUser(): Promise<User | null> {
-    try {
-      if (!this.supabase) {
-        return null;
-      }
-
-      const { data, error } = await this.supabase.auth.getUser();
-      
-      if (error || !data.user) {
-        return null;
-      }
-
+    } else {
       return {
-        id: data.user.id,
-        email: data.user.email!,
-        name: data.user.user_metadata?.name || data.user.email?.split("@")[0],
+        success: true,
+        requiresEmailConfirmation: true,
       };
-    } catch (error) {
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Wystąpił błąd podczas rejestracji.",
+    };
+  }
+}
+
+/**
+ * Log out the current user
+ */
+export async function logout(): Promise<void> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return;
+
+  try {
+    await supabase.auth.signOut();
+  } catch (error) {
+    console.error("Logout error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Reset password for a user
+ * @param email User email
+ */
+export async function resetPassword(email: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    return { success: false, error: "Authentication service unavailable" };
+  }
+
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Wystąpił błąd podczas resetowania hasła.",
+    };
+  }
+}
+
+/**
+ * Update password with a reset token
+ * @param password New password
+ */
+export async function updatePassword(password: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    return { success: false, error: "Authentication service unavailable" };
+  }
+
+  try {
+    const { error } = await supabase.auth.updateUser({
+      password,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Wystąpił błąd podczas aktualizacji hasła.",
+    };
+  }
+}
+
+/**
+ * Get the current user
+ */
+export async function getCurrentUser(): Promise<User | null> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return null;
+
+  try {
+    const { data, error } = await supabase.auth.getUser();
+
+    if (error || !data.user) {
       return null;
     }
-  }
 
-  /**
-   * Verify if the user is authenticated
-   * @returns Promise that resolves to true if authenticated, false otherwise
-   */
-  async verifyAuthentication(): Promise<boolean> {
-    try {
-      const user = await this.getCurrentUser();
-      return !!user;
-    } catch (error) {
-      return false;
-    }
+    return {
+      id: data.user.id,
+      email: data.user.email!,
+      name: data.user.user_metadata?.name || data.user.email?.split("@")[0],
+    };
+  } catch (error) {
+    console.error("Get current user error:", error);
+    return null;
   }
+}
+
+/**
+ * Verify if the user is authenticated
+ */
+export async function verifyAuthentication(): Promise<boolean> {
+  try {
+    const user = await getCurrentUser();
+    return !!user;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
+ * Subscribe to auth state changes
+ */
+export function onAuthStateChange(callback: (user: User | null) => void): (() => void) | undefined {
+  const supabase = getSupabaseClient();
+  if (!supabase) return;
+
+  const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+    if (session?.user) {
+      callback({
+        id: session.user.id,
+        email: session.user.email!,
+        name: session.user.user_metadata?.name || session.user.email?.split("@")[0],
+      });
+    } else {
+      callback(null);
+    }
+  });
+
+  return data.subscription.unsubscribe;
 }

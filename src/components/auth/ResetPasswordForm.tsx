@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@hookform/resolvers.zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,8 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { AuthService } from "@/services/auth.service";
+import { createBrowserSupabaseClient } from "@/lib/supabase.client";
 
 // Form schema using zod
 const formSchema = z
@@ -33,6 +35,14 @@ interface ResetPasswordFormProps {
 export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [authService, setAuthService] = useState<AuthService | null>(null);
+
+  // Initialize auth service on client-side only
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setAuthService(new AuthService(createBrowserSupabaseClient()));
+    }
+  }, []);
 
   // Initialize react-hook-form with zod validation
   const form = useForm<FormValues>({
@@ -45,18 +55,29 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
 
   // Handle form submission
   async function onSubmit(data: FormValues) {
+    if (!token || !authService) {
+      toast.error("Nieprawidłowy token lub serwis autoryzacji niedostępny");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // This is where we would call the auth service in a real implementation
-      console.log("Reset password form submitted:", { ...data, token });
-      toast.success("Twoje hasło zostało zmienione");
-      setIsSubmitted(true);
+      // We're using the authService directly since this operation requires the token
+      // which isn't typically stored in the AuthContext
+      const result = await authService.updatePassword(token, data.password);
+      
+      if (result.success) {
+        toast.success("Twoje hasło zostało zmienione");
+        setIsSubmitted(true);
 
-      // Add a small delay before redirecting to ensure the toast is visible
-      setTimeout(() => {
-        window.location.href = "/login";
-      }, 3000);
+        // Add a small delay before redirecting to ensure the toast is visible
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 3000);
+      } else {
+        toast.error(result.error || "Wystąpił błąd podczas resetowania hasła");
+      }
     } catch (error) {
       console.error("Reset password error:", error);
       toast.error("Wystąpił błąd podczas resetowania hasła");

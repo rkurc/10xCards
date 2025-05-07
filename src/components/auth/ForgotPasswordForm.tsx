@@ -8,6 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/context/AuthContext";
 
 // Form schema using zod
 const formSchema = z.object({
@@ -19,6 +20,7 @@ type FormValues = z.infer<typeof formSchema>;
 export function ForgotPasswordForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const { resetPassword } = useAuth();
 
   // Initialize react-hook-form with zod validation
   const form = useForm<FormValues>({
@@ -33,10 +35,14 @@ export function ForgotPasswordForm() {
     setIsSubmitting(true);
 
     try {
-      // This is where we would call the auth service in a real implementation
-      console.log("Forgot password form submitted:", data);
-      toast.success("Instrukcja resetowania hasła została wysłana na podany email");
-      setIsSubmitted(true);
+      const result = await resetPassword(data.email);
+      
+      if (result.success) {
+        toast.success("Instrukcja resetowania hasła została wysłana na podany email");
+        setIsSubmitted(true);
+      } else {
+        toast.error(result.error || "Wystąpił błąd podczas wysyłania instrukcji resetowania hasła");
+      }
     } catch (error) {
       console.error("Forgot password error:", error);
       toast.error("Wystąpił błąd podczas wysyłania instrukcji resetowania hasła");

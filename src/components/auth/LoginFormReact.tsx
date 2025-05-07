@@ -1,57 +1,53 @@
-import React, { useState } from "react";
-import { useAuth } from "@/context/AuthContext";
-import { useToast } from "@/components/ui/use-toast";
+import { useState } from "react";
+import { login } from "@/services/auth.direct";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
 
-export const LoginForm = ({ redirectUrl = "/dashboard" }) => {
+// Simple props interface - just the redirect URL
+interface LoginFormProps {
+  redirectUrl?: string;
+}
+
+export function LoginFormReact({ redirectUrl = "/dashboard" }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login } = useAuth();
   const { toast } = useToast();
 
-  const onSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    console.log("[DEBUG] LoginForm.onSubmit starting with data:", { email, password: "[REDACTED]" });
-    console.log("[DEBUG] LoginForm.onSubmit redirectUrl:", redirectUrl);
-
+    
     try {
-      console.log("[DEBUG] LoginForm.onSubmit calling login method from AuthContext");
-      console.log("[DEBUG] LoginForm.onSubmit login available:", !!login);
-
+      // Direct call to auth service - no context needed
       const result = await login(email, password);
-      console.log("[DEBUG] LoginForm.onSubmit login result:", {
-        success: result.success,
-        error: result.error,
-        user: result.user ? "USER_OBJECT" : null,
-      });
-
+      
       if (result.success && result.user) {
-        console.log("[DEBUG] LoginForm.onSubmit navigating to:", redirectUrl);
+        // Success - show toast and redirect
+        toast({
+          title: "Zalogowano pomyślnie",
+          description: "Przekierowujemy Cię do aplikacji...",
+          variant: "default",
+        });
         
-        // Force a delay to ensure auth state is set before redirecting
+        // Add small delay for better UX and to ensure auth is established
         setTimeout(() => {
-          // Save a successful login flag in sessionStorage
-          sessionStorage.setItem('auth_success', 'true');
-          // Redirect with auth success parameter
-          window.location.href = redirectUrl.includes('?') 
-            ? `${redirectUrl}&auth_success=true` 
-            : `${redirectUrl}?auth_success=true`;
-        }, 500);
+          window.location.href = redirectUrl;
+        }, 300);
       } else {
-        console.log("[DEBUG] LoginForm.onSubmit showing error toast:", result.error);
+        // Login failure - show error message
         toast({
           title: "Błąd logowania",
-          description: result.error || "Nieprawidłowy email lub hasło",
+          description: result.error || "Niepoprawny email lub hasło",
           variant: "destructive",
         });
         setIsSubmitting(false);
       }
     } catch (error) {
-      console.error("[DEBUG] LoginForm.onSubmit unhandled exception:", error);
+      // Unexpected error
+      console.error("Login error:", error);
       toast({
         title: "Błąd",
         description: "Wystąpił nieoczekiwany błąd podczas logowania",
@@ -60,7 +56,7 @@ export const LoginForm = ({ redirectUrl = "/dashboard" }) => {
       setIsSubmitting(false);
     }
   };
-
+  
   return (
     <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md">
       <div className="text-center">
@@ -68,7 +64,7 @@ export const LoginForm = ({ redirectUrl = "/dashboard" }) => {
         <p className="text-sm text-gray-600 mt-2">Wprowadź dane logowania, aby kontynuować</p>
       </div>
 
-      <form onSubmit={onSubmit} className="mt-8 space-y-6">
+      <form onSubmit={handleSubmit} className="mt-8 space-y-6">
         <div className="space-y-4">
           <div>
             <Label htmlFor="email">Email</Label>
@@ -79,6 +75,8 @@ export const LoginForm = ({ redirectUrl = "/dashboard" }) => {
               onChange={(e) => setEmail(e.target.value)}
               required
               className="mt-1"
+              autoComplete="email"
+              data-testid="email-input"
             />
           </div>
 
@@ -96,11 +94,18 @@ export const LoginForm = ({ redirectUrl = "/dashboard" }) => {
               onChange={(e) => setPassword(e.target.value)}
               required
               className="mt-1"
+              autoComplete="current-password"
+              data-testid="password-input"
             />
           </div>
         </div>
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={isSubmitting}
+          data-testid="login-button"
+        >
           {isSubmitting ? "Logowanie..." : "Zaloguj się"}
         </Button>
 
@@ -113,4 +118,4 @@ export const LoginForm = ({ redirectUrl = "/dashboard" }) => {
       </form>
     </div>
   );
-};
+}

@@ -1,13 +1,15 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { AuthService, LoginResult } from "../services/auth.service";
-import { createBrowserSupabaseClient } from "../lib/supabase.client";
 import { toast } from "sonner";
-
-export type User = {
-  id: string;
-  name?: string;
-  email: string;
-};
+import type { LoginResult, User } from "../types/auth.types";
+// Import individual functions instead of the whole module
+import {
+  login as serviceLogin,
+  logout as serviceLogout,
+  register as serviceRegister,
+  resetPassword as serviceResetPassword,
+  getCurrentUser,
+  onAuthStateChange,
+} from "../services/auth.service";
 
 export type AuthContextType = {
   user: User | null;
@@ -19,12 +21,13 @@ export type AuthContextType = {
   resetPassword?: (email: string) => Promise<any>;
 };
 
-// Provide a default empty context value to avoid the undefined error
+// Default context value
 const defaultContextValue: AuthContextType = {
   user: null,
   loading: false,
   error: null,
-  login: async () => ({ success: false }),
+  login: async () => (
+    console.error("[DEBUG] AuthContext.login called without implementation"), { success: false }),
   register: async () => {},
   logout: async () => {},
 };
@@ -36,19 +39,115 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
   initialUser,
 }) => {
   const [user, setUser] = useState<User | null>(initialUser || null);
-  const [loading, setLoading] = useState(!initialUser);
+  const [loading, setLoading] = useState<boolean>(!initialUser);
   const [error, setError] = useState<Error | null>(null);
+  
+  // Check if code is running on server
+  const isServer = typeof window === "undefined";
 
-  // Only create services in browser environment
-  const authService = typeof window !== "undefined" ? new AuthService(createBrowserSupabaseClient()) : null;
+  const login = async (email: string, password: string): Promise<LoginResult> => {
+    // Handle server-side case explicitly
+    if (isServer) {
+      console.log("[DEBUG] AuthContext.login called on server-side, returning error");
+      return {
+        success: false,
+        error: "Authentication can only be performed in the browser",
+      };
+    }
+
+    try {
+      console.log("[DEBUG] AuthContext.login calling serviceLogin function directly");
+      const result = await serviceLogin(email, password);
+      console.log(
+        "[DEBUG] AuthContext.login result:",
+        JSON.stringify({
+          success: result.success,
+          hasError: !!result.error,
+          errorMessage: result.error,
+          hasUser: !!result.user,
+          user: result.user ? { id: result.user.id, email: result.user.email } : null
+        })
+      );
+
+      if (result.success) {
+        console.log("[DEBUG] AuthContext.login showing success toast");
+        toast.success("Logowanie udane");
+
+        if (result.user) {
+          console.log("[DEBUG] AuthContext.login setting user state:", result.user);
+          setUser(result.user);
+          
+          // Add this verification to check if the user was actually set
+          setTimeout(() => {
+            console.log("[DEBUG] User state after login:", user);
+          }, 0);
+        }
+      } else {
+        const errorMsg = result.error || "Niepoprawny email lub hasło";
+        console.error("[DEBUG] AuthContext.login error:", errorMsg);
+        toast.error(errorMsg);
+      }
+
+      return result;
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "Wystąpił błąd podczas logowania";
+      console.error("[DEBUG] AuthContext.login caught exception:", errorMsg);
+      toast.error(errorMsg);
+      return { success: false, error: errorMsg };
+    }
+  };
+
+  const register = async (email: string, password: string, options?: { name?: string }) => {
+    try {
+      const result = await serviceRegister(email, password, options);
+
+      if (!result.success && result.error) {
+        toast.error(result.error);
+      }
+
+      return result;
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "Wystąpił błąd podczas rejestracji";
+      toast.error(errorMsg);
+      return { success: false, error: errorMsg };
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await serviceLogout();
+      setUser(null);
+      toast.success("Wylogowano pomyślnie");
+    } catch (error) {
+      toast.error("Wystąpił błąd podczas wylogowywania");
+      console.error("Logout error:", error);
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    try {
+      const result = await serviceResetPassword(email);
+
+      if (!result.success && result.error) {
+        toast.error(result.error);
+      }
+
+      return result;
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "Wystąpił błąd podczas resetowania hasła";
+      toast.error(errorMsg);
+      return { success: false, error: errorMsg };
+    }
+  };
 
   useEffect(() => {
     // Skip server-side execution
-    if (typeof window === "undefined" || !authService) return;
+    if (typeof window === "undefined") return;
 
     const checkUser = async () => {
       try {
-        const currentUser = await authService.getCurrentUser();
+        setLoading(true);
+        const currentUser = await getCurrentUser();
         setUser(currentUser);
       } catch (error) {
         console.error("Error checking auth status:", error);
@@ -62,69 +161,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
       checkUser();
     }
 
-    // Listen for auth changes if Supabase client is available
-    if (authService?.supabase) {
-      const {
-        data: { subscription },
-      } = authService.supabase.auth.onAuthStateChange(async (event, session) => {
-        if (session?.user) {
-          setUser({
-            id: session.user.id,
-            email: session.user.email!,
-            name: session.user.user_metadata?.name || session.user.email?.split("@")[0],
-          });
-        } else {
-          setUser(null);
-        }
-      });
+    // Subscribe to auth changes
+    const unsubscribe = onAuthStateChange((authUser) => {
+      setUser(authUser);
+    });
 
-      return () => {
-        subscription?.unsubscribe();
-      };
-    }
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, [initialUser]);
-
-  const login = async (email: string, password: string): Promise<LoginResult> => {
-    if (!authService) {
-      return { success: false, error: "Authentication service unavailable" };
-    }
-
-    const result = await authService.login(email, password);
-    
-    if (result.success) {
-      toast.success("Logowanie udane");
-    }
-    
-    return result;
-  };
-
-  const register = async (email: string, password: string, options?: { name?: string }) => {
-    if (!authService) {
-      return { success: false, error: "Authentication service unavailable" };
-    }
-
-    return await authService.register(email, password, options);
-  };
-
-  const logout = async () => {
-    if (!authService) return;
-    
-    try {
-      await authService.logout();
-      toast.success("Wylogowano pomyślnie");
-    } catch (error) {
-      toast.error("Wystąpił błąd podczas wylogowywania");
-      console.error("Logout error:", error);
-    }
-  };
-
-  const resetPassword = async (email: string) => {
-    if (!authService) {
-      return { success: false, error: "Authentication service unavailable" };
-    }
-
-    return await authService.resetPassword(email);
-  };
 
   return (
     <AuthContext.Provider
