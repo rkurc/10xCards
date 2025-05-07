@@ -1,0 +1,22 @@
+---
+// Server-side auth guard for Astro pages
+// This component checks if a user is authenticated and redirects to login if not
+
+interface Props {
+  redirectUrl?: string;
+}
+
+const { redirectUrl = "/login" } = Astro.props;
+
+// Check if the user is authenticated
+if (!Astro.locals.isAuthenticated) {
+  // Create redirect URL with the current path as the redirect parameter
+  const loginUrl = new URL(redirectUrl, Astro.url.origin);
+  loginUrl.searchParams.set('redirect', Astro.url.pathname);
+  
+  return Astro.redirect(loginUrl.toString());
+}
+---
+
+<!-- If authenticated, render the slot content -->
+<slot />
