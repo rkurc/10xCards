@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useDirectAuth } from "@/hooks/useDirectAuth";
 import { logout } from "@/services/auth.direct";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -23,13 +22,13 @@ export function UserMenu() {
     setIsLoggingOut(true);
     try {
       const result = await logout();
-      
+
       if (result.success) {
         toast({
           title: "Wylogowano",
           description: "Zostałeś wylogowany z systemu",
         });
-        
+
         // Redirect to login page after logout
         window.location.href = "/login";
       } else {
@@ -67,26 +66,29 @@ export function UserMenu() {
   // Get user initials for avatar
   const getInitials = () => {
     if (!user) return "?";
-    
+
     if (user.name) {
       return user.name
         .split(" ")
-        .map(name => name[0])
+        .map((name) => name[0])
         .join("")
         .toUpperCase()
         .substring(0, 2);
     }
-    
+
     return user.email.substring(0, 2).toUpperCase();
   };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar>
-            <AvatarFallback>{getInitials()}</AvatarFallback>
-          </Avatar>
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full" data-testid="user-menu-button">
+          <div
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground"
+            data-testid="user-avatar"
+          >
+            {user.name ? user.name[0].toUpperCase() : "U"}
+          </div>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
@@ -103,11 +105,7 @@ export function UserMenu() {
           </a>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          onClick={handleLogout}
-          disabled={isLoggingOut}
-          className="cursor-pointer"
-        >
+        <DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut} className="cursor-pointer">
           {isLoggingOut ? "Wylogowywanie..." : "Wyloguj się"}
         </DropdownMenuItem>
       </DropdownMenuContent>
