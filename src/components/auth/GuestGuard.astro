@@ -1,0 +1,19 @@
+---
+// Server-side guest guard for Astro pages
+// This component checks if a user is NOT authenticated and redirects authenticated users away
+// Use this for pages like login, register, etc.
+
+interface Props {
+  redirectUrl?: string;
+}
+
+const { redirectUrl = "/dashboard" } = Astro.props;
+
+// Check if the user is authenticated, and redirect if they are
+if (Astro.locals.isAuthenticated) {
+  return Astro.redirect(redirectUrl);
+}
+---
+
+<!-- If not authenticated, render the slot content -->
+<slot />

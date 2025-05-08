@@ -1,13 +1,13 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import { RegisterForm } from "../components/auth/RegisterForm";
+import { RegisterFormReact } from "../components/auth/RegisterFormReact";
 import { createSupabaseServerClient } from "../lib/supabase.server";
 
 // Disable pre-rendering for dynamic auth content
 export const prerender = false;
 
 // Get redirectUrl from query params
-const redirectUrl = Astro.url.searchParams.get('redirect') || '/dashboard';
+const redirectUrl = Astro.url.searchParams.get('redirect') || '/registration-success';
 
 // Support non-JavaScript users with HTML form handling
 if (Astro.request.method === 'POST') {
@@ -88,7 +88,8 @@ const error = Astro.url.searchParams.get('error');
         </div>
       )}
       
-      <RegisterForm client:load redirectUrl={redirectUrl} />
+      <!-- Use the new React Register Form component -->
+      <RegisterFormReact client:load redirectUrl={redirectUrl} />
       
       <!-- Fallback for users with JavaScript disabled -->
       <noscript>
