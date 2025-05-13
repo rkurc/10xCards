@@ -6,13 +6,15 @@ export class ForgotPasswordPage {
   readonly submitButton: Locator;
   readonly loginLink: Locator;
   readonly successMessage: Locator;
+  readonly errorMessage: Locator;
 
   constructor(page: Page) {
     this.page = page;
-    this.emailInput = page.getByTestId("forgot-password-email-input");
-    this.submitButton = page.getByTestId("forgot-password-submit-button");
-    this.loginLink = page.getByTestId("forgot-password-login-link");
-    this.successMessage = page.getByTestId("forgot-password-success-message");
+    this.emailInput = page.getByTestId("reset-email-input");
+    this.submitButton = page.getByTestId("reset-submit-button");
+    this.loginLink = page.getByTestId("back-to-login-link");
+    this.successMessage = page.getByRole("alert").filter({ hasText: /Link do resetowania hasła/ });
+    this.errorMessage = page.getByRole("alert").filter({ hasText: /błąd/ });
   }
 
   async goto() {

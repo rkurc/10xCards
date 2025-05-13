@@ -6,16 +6,19 @@ export class ResetPasswordPage {
   readonly confirmPasswordInput: Locator;
   readonly submitButton: Locator;
   readonly successMessage: Locator;
+  readonly errorMessage: Locator;
   readonly loginLink: Locator;
+  readonly passwordStrength: Locator;
 
   constructor(page: Page) {
     this.page = page;
-    this.passwordInput = page.getByTestId("reset-password-input");
-    this.confirmPasswordInput = page.getByTestId("reset-password-confirm-input");
-    this.submitButton = page.getByTestId("reset-password-submit-button");
-    // No direct test ID for success message, so use text content
-    this.successMessage = page.getByText("Twoje hasło zostało zmienione pomyślnie");
-    this.loginLink = page.locator('a[href="/login"]');
+    this.passwordInput = page.getByTestId("new-password-input");
+    this.confirmPasswordInput = page.getByTestId("confirm-password-input");
+    this.submitButton = page.getByTestId("submit-button");
+    this.successMessage = page.getByRole("alert").filter({ hasText: /Hasło zostało zmienione/ });
+    this.errorMessage = page.getByRole("alert").filter({ hasText: /błąd/i });
+    this.loginLink = page.getByTestId("login-link");
+    this.passwordStrength = page.getByTestId("password-strength");
   }
 
   async goto(token: string) {

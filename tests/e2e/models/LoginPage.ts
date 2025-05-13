@@ -14,11 +14,12 @@ export class LoginPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.emailInput = page.locator('input[id="email"]').or(page.getByTestId("login-email-input"));
-    this.passwordInput = page.locator('input[id="password"]').or(page.getByTestId("login-password-input"));
-    this.submitButton = page.getByTestId("login-submit-button");
-    this.forgotPasswordLink = page.getByTestId("login-forgot-password-link");
-    this.registerLink = page.getByTestId("login-register-link");
+    // Updated selectors to match actual component IDs
+    this.emailInput = page.getByTestId("email-input");
+    this.passwordInput = page.getByTestId("password-input");
+    this.submitButton = page.getByTestId("submit-button");
+    this.forgotPasswordLink = page.getByTestId("forgot-password-link");
+    this.registerLink = page.getByTestId("register-link");
     this.errorMessage = page.getByTestId("error-message");
     this.successMessage = page.getByTestId("success-message");
     this.testHelper = new TestAuthHelper(page);

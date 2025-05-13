@@ -2,27 +2,25 @@ import { type Page, type Locator, expect } from "@playwright/test";
 
 export class UserMenu {
   readonly page: Page;
-  readonly userMenuButton: Locator;
+  readonly userMenuTrigger: Locator;
   readonly userAvatar: Locator;
-  readonly userMenuDropdown: Locator;
+  readonly userMenuContent: Locator;
   readonly userEmail: Locator;
-  readonly profileLink: Locator;
-  readonly settingsLink: Locator;
+  readonly userName: Locator;
+  readonly profileButton: Locator;
+  readonly settingsButton: Locator;
   readonly logoutButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
-    // Headers implementation has a simple logout button rather than a menu
-    this.userMenuButton = page
-      .getByRole("button")
-      .filter({ hasText: /^Witaj|^Użytkownik/ })
-      .or(page.getByTestId("user-menu-button"));
-    this.userAvatar = page.getByTestId("user-avatar").or(page.locator(".rounded-full"));
-    this.userMenuDropdown = page.getByTestId("user-menu-dropdown").or(page.locator('[data-state="open"]'));
-    this.userEmail = page.getByTestId("user-menu-email");
-    this.profileLink = page.getByTestId("user-menu-profile-link").or(page.getByRole("link", { name: /profil/i }));
-    this.settingsLink = page.getByTestId("user-menu-settings-link").or(page.getByRole("link", { name: /ustawienia/i }));
-    this.logoutButton = page.getByTestId("user-menu-logout-button").or(page.getByRole("button", { name: /wyloguj/i }));
+    this.userMenuTrigger = page.getByTestId("user-menu-trigger");
+    this.userAvatar = page.getByTestId("user-avatar");
+    this.userMenuContent = page.getByTestId("user-menu-content");
+    this.userEmail = page.getByTestId("user-email");
+    this.userName = page.getByTestId("user-name");
+    this.profileButton = page.getByRole("menuitem", { name: /Profil/i });
+    this.settingsButton = page.getByRole("menuitem", { name: /Ustawienia/i });
+    this.logoutButton = page.getByRole("menuitem", { name: /Wyloguj/i });
   }
 
   async open() {
@@ -33,12 +31,12 @@ export class UserMenu {
       return;
     }
 
-    await this.userMenuButton.click();
-    await expect(this.userMenuDropdown)
+    await this.userMenuTrigger.click();
+    await expect(this.userMenuContent)
       .toBeVisible({ timeout: 2000 })
       .catch(() => {
-        // If dropdown doesn't appear, try one more time
-        return this.userMenuButton.click();
+        // If content doesn't appear, try one more time
+        return this.userMenuTrigger.click();
       });
   }
 
@@ -56,12 +54,12 @@ export class UserMenu {
 
   async goToProfile() {
     await this.open();
-    await this.profileLink.click();
+    await this.profileButton.click();
   }
 
   async goToSettings() {
     await this.open();
-    await this.settingsLink.click();
+    await this.settingsButton.click();
   }
 
   async expectUserEmail(email: string) {
@@ -70,7 +68,7 @@ export class UserMenu {
       await this.open();
       await expect(this.userEmail).toContainText(email, { timeout: 2000 });
     } catch (e) {
-      // If we can't find the email in the dropdown, check if we're logged in
+      // If we can't find the email in the content, check if we're logged in
       const logoutButton = this.page.getByRole("button", { name: /wyloguj/i });
       await expect(logoutButton).toBeVisible();
     }

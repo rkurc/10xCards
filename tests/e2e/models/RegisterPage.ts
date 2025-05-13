@@ -15,18 +15,16 @@ export class RegisterPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.nameInput = page.locator('input[name="name"]');
-    this.emailInput = page.locator('input[name="email"]');
-    this.passwordInput = page.getByTestId("register-password-input");
-    //page.locator('input[name="password"]');
-    this.passwordConfirmInput = page.locator('input[name="passwordConfirm"]');
-    // Use a more flexible selector that works with both native checkboxes and Shadcn/ui checkbox components
-    this.termsCheckbox = page.getByTestId("register-terms-checkbox");
-    this.submitButton = page.getByRole("button", { name: /Zarejestruj się|Rejestracja/i });
-    this.loginLink = page.getByText("Zaloguj się").first();
-    this.errorMessage = page.getByTestId("error-message"); // Updated selector to handle our current implementation
-    this.passwordStrength = page.getByTestId("password-strength-bar");
-    this.successMessage = page.getByText(/Konto zostało utworzone|Sprawdź swoją skrzynkę/);
+    this.nameInput = page.getByTestId("name-input");
+    this.emailInput = page.getByTestId("email-input");
+    this.passwordInput = page.getByTestId("password-input");
+    this.passwordConfirmInput = page.getByTestId("password-confirm-input");
+    this.termsCheckbox = page.getByTestId("terms-checkbox");
+    this.submitButton = page.getByTestId("register-button");
+    this.loginLink = page.getByTestId("login-link");
+    this.errorMessage = page.getByRole("alert").filter({ hasText: /błąd/i });
+    this.passwordStrength = page.getByTestId("password-strength");
+    this.successMessage = page.getByRole("alert").filter({ hasText: /Konto zostało utworzone|Sprawdź swoją skrzynkę/ });
   }
 
   async goto() {
