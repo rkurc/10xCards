@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -39,7 +38,7 @@ export function UserMenu() {
         });
         setIsLoggingOut(false);
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Błąd",
         description: "Wystąpił nieoczekiwany błąd",
@@ -59,55 +58,55 @@ export function UserMenu() {
   }
 
   // Show loading state
-  if (loading) {
+  if (loading || !user) {
     return <div className="h-10 w-10 rounded-full bg-muted animate-pulse"></div>;
   }
-
-  // Get user initials for avatar
-  const getInitials = () => {
-    if (!user) return "?";
-
-    if (user.name) {
-      return user.name
-        .split(" ")
-        .map((name) => name[0])
-        .join("")
-        .toUpperCase()
-        .substring(0, 2);
-    }
-
-    return user.email.substring(0, 2).toUpperCase();
-  };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full" data-testid="user-menu-button">
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full" data-testid="user-menu-trigger">
           <div
             className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground"
             data-testid="user-avatar"
           >
-            {user.name ? user.name[0].toUpperCase() : "U"}
+            {user.name?.[0]?.toUpperCase() || user.email[0]?.toUpperCase() || "U"}
           </div>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" data-testid="user-menu-content">
         <DropdownMenuLabel>Moje konto</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <a href="/account" className="cursor-pointer w-full">
+        <div data-testid="user-email" className="px-2 py-1.5 text-sm text-muted-foreground">
+          {user.email}
+        </div>
+        {user.name && (
+          <div data-testid="user-name" className="px-2 py-1.5 text-sm font-medium">
+            {user.name}
+          </div>
+        )}
+        <DropdownMenuSeparator />
+        <div className="relative flex cursor-default select-none items-center px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
+          <a href="/account" className="cursor-pointer w-full" data-testid="profile-button">
             Profil
           </a>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <a href="/dashboard" className="cursor-pointer w-full">
+        </div>
+        <div className="relative flex cursor-default select-none items-center px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
+          <a href="/dashboard" className="cursor-pointer w-full" data-testid="dashboard-button">
             Dashboard
           </a>
-        </DropdownMenuItem>
+        </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout} disabled={isLoggingOut} className="cursor-pointer">
-          {isLoggingOut ? "Wylogowywanie..." : "Wyloguj się"}
-        </DropdownMenuItem>
+        <div className="relative flex cursor-default select-none items-center px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
+          <button
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="w-full text-left cursor-pointer disabled:opacity-50"
+            data-testid="logout-button"
+          >
+            {isLoggingOut ? "Wylogowywanie..." : "Wyloguj się"}
+          </button>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

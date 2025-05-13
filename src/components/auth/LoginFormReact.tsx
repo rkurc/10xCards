@@ -19,11 +19,11 @@ export function LoginFormReact({ redirectUrl = "/dashboard" }: LoginFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
       // Direct call to auth service - no context needed
       const result = await login(email, password);
-      
+
       if (result.success && result.user) {
         // Success - show toast and redirect
         toast({
@@ -31,7 +31,7 @@ export function LoginFormReact({ redirectUrl = "/dashboard" }: LoginFormProps) {
           description: "Przekierowujemy Cię do aplikacji...",
           variant: "default",
         });
-        
+
         // Add small delay for better UX and to ensure auth is established
         setTimeout(() => {
           window.location.href = redirectUrl;
@@ -56,7 +56,7 @@ export function LoginFormReact({ redirectUrl = "/dashboard" }: LoginFormProps) {
       setIsSubmitting(false);
     }
   };
-  
+
   return (
     <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md">
       <div className="text-center">
@@ -100,18 +100,23 @@ export function LoginFormReact({ redirectUrl = "/dashboard" }: LoginFormProps) {
           </div>
         </div>
 
-        <Button 
-          type="submit" 
-          className="w-full" 
-          disabled={isSubmitting}
-          data-testid="login-button"
-        >
+        <Button type="submit" className="w-full" disabled={isSubmitting} data-testid="submit-button">
           {isSubmitting ? "Logowanie..." : "Zaloguj się"}
         </Button>
 
         <div className="text-center mt-4">
+          <a
+            href="/forgot-password"
+            className="text-xs text-primary-600 hover:underline"
+            data-testid="forgot-password-link"
+          >
+            Zapomniałeś hasła?
+          </a>
+        </div>
+
+        <div className="text-center mt-4">
           <span className="text-sm text-gray-600">Nie masz jeszcze konta? </span>
-          <a href="/register" className="font-medium text-primary-600 hover:underline">
+          <a href="/register" className="font-medium text-primary-600 hover:underline" data-testid="register-link">
             Zarejestruj się
           </a>
         </div>

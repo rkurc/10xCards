@@ -32,20 +32,22 @@ export function ForgotPasswordForm() {
 
   // Handle form submission
   async function onSubmit(data: FormValues) {
+    if (!resetPassword) return;
+
     setIsSubmitting(true);
 
     try {
       const result = await resetPassword(data.email);
-      
+
       if (result.success) {
         toast.success("Instrukcja resetowania hasła została wysłana na podany email");
         setIsSubmitted(true);
       } else {
         toast.error(result.error || "Wystąpił błąd podczas wysyłania instrukcji resetowania hasła");
       }
-    } catch (error) {
-      console.error("Forgot password error:", error);
-      toast.error("Wystąpił błąd podczas wysyłania instrukcji resetowania hasła");
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err.message : "Wystąpił błąd podczas wysyłania instrukcji resetowania hasła";
+      toast.error(error);
     } finally {
       setIsSubmitting(false);
     }
@@ -60,32 +62,22 @@ export function ForgotPasswordForm() {
       <CardContent>
         {!isSubmitted ? (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" data-testid="forgot-password-form">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel data-testid="forgot-password-email-label">Email</FormLabel>
+                    <FormLabel data-testid="reset-email-label">Email</FormLabel>
                     <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="twoj@email.com"
-                        {...field}
-                        data-testid="forgot-password-email-input"
-                      />
+                      <Input type="email" placeholder="twoj@email.com" {...field} data-testid="reset-email-input" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isSubmitting}
-                data-testid="forgot-password-submit-button"
-              >
+              <Button type="submit" className="w-full" disabled={isSubmitting} data-testid="reset-submit-button">
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -98,7 +90,7 @@ export function ForgotPasswordForm() {
             </form>
           </Form>
         ) : (
-          <div className="text-center py-4" data-testid="forgot-password-success-message">
+          <div className="text-center py-4" data-testid="success-message">
             <p className="mb-4">Instrukcja resetowania hasła została wysłana na podany adres email.</p>
             <p className="text-muted-foreground text-sm">
               Sprawdź swoją skrzynkę odbiorczą oraz folder spam. Link do resetowania hasła jest ważny przez 24 godziny.
@@ -107,8 +99,8 @@ export function ForgotPasswordForm() {
         )}
       </CardContent>
       <CardFooter className="flex justify-center">
-        <div className="text-sm text-muted-foreground" data-testid="forgot-password-links">
-          <a href="/login" className="text-primary hover:underline" data-testid="forgot-password-login-link">
+        <div className="text-sm text-muted-foreground">
+          <a href="/login" className="text-primary hover:underline" data-testid="back-to-login-link">
             Powrót do strony logowania
           </a>
         </div>

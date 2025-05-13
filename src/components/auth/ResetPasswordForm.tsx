@@ -1,50 +1,75 @@
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers.zod";
+import { useState } from "react";
+import { useForm, type Control, type ControllerRenderProps } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { AuthService } from "@/services/auth.service";
-import { createBrowserSupabaseClient } from "@/lib/supabase.client";
 
-// Form schema using zod
 const formSchema = z
   .object({
     password: z
       .string()
-      .min(8, "Hasło musi mieć co najmniej 8 znaków")
-      .regex(/[a-zA-Z]/, "Hasło musi zawierać co najmniej jedną literę")
-      .regex(/[0-9]/, "Hasło musi zawierać co najmniej jedną cyfrę"),
-    passwordConfirm: z.string().min(8, "Powtórz hasło"),
+      .min(8, "Hasło musi mieć minimum 8 znaków")
+      .regex(/[a-z]/, "Hasło musi zawierać małą literę")
+      .regex(/[A-Z]/, "Hasło musi zawierać wielką literę")
+      .regex(/[0-9]/, "Hasło musi zawierać cyfrę"),
+    passwordConfirm: z.string(),
   })
   .refine((data) => data.password === data.passwordConfirm, {
-    message: "Hasła nie są identyczne",
+    message: "Hasła muszą być takie same",
     path: ["passwordConfirm"],
   });
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface ResetPasswordFormProps {
-  token?: string;
+interface Props {
+  token: string;
 }
 
-export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
+interface PasswordFieldProps {
+  field: ControllerRenderProps<FormValues, "password" | "passwordConfirm">;
+  showStrength?: boolean;
+  label: string;
+  testId: string;
+}
+
+function PasswordField({ field, showStrength = false, label, testId }: PasswordFieldProps) {
+  return (
+    <FormItem>
+      <FormLabel>{label}</FormLabel>
+      <FormControl>
+        <Input type="password" placeholder="********" {...field} data-testid={testId} />
+      </FormControl>
+      {showStrength && (
+        <div className="mt-1 h-1 bg-gray-200 rounded" data-testid="password-strength">
+          <div
+            className={`h-1 rounded transition-all ${
+              field.value.length === 0
+                ? "w-0"
+                : field.value.length < 8
+                  ? "w-1/4 bg-red-500"
+                  : field.value.length < 12
+                    ? "w-1/2 bg-yellow-500"
+                    : field.value.match(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/)
+                      ? "w-full bg-green-500"
+                      : "w-3/4 bg-yellow-500"
+            }`}
+          />
+        </div>
+      )}
+      <FormMessage />
+    </FormItem>
+  );
+}
+
+export function ResetPasswordForm({ token }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [authService, setAuthService] = useState<AuthService | null>(null);
 
-  // Initialize auth service on client-side only
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setAuthService(new AuthService(createBrowserSupabaseClient()));
-    }
-  }, []);
-
-  // Initialize react-hook-form with zod validation
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -53,139 +78,88 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
     },
   });
 
-  // Handle form submission
   async function onSubmit(data: FormValues) {
-    if (!token || !authService) {
-      toast.error("Nieprawidłowy token lub serwis autoryzacji niedostępny");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
-      // We're using the authService directly since this operation requires the token
-      // which isn't typically stored in the AuthContext
-      const result = await authService.updatePassword(token, data.password);
-      
-      if (result.success) {
-        toast.success("Twoje hasło zostało zmienione");
-        setIsSubmitted(true);
+      const response = await fetch("/api/auth/update-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token,
+          password: data.password,
+        }),
+      });
 
-        // Add a small delay before redirecting to ensure the toast is visible
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success("Hasło zostało zmienione");
+        setIsSubmitted(true);
         setTimeout(() => {
           window.location.href = "/login";
-        }, 3000);
+        }, 2000);
       } else {
-        toast.error(result.error || "Wystąpił błąd podczas resetowania hasła");
+        toast.error(result.error || "Nie udało się zmienić hasła");
       }
-    } catch (error) {
-      console.error("Reset password error:", error);
-      toast.error("Wystąpił błąd podczas resetowania hasła");
+    } catch {
+      toast.error("Wystąpił nieoczekiwany błąd");
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  if (!token) {
-    return (
-      <Card className="w-full max-w-md mx-auto" data-testid="reset-password-invalid-token">
-        <CardHeader>
-          <CardTitle>Nieprawidłowy link</CardTitle>
-          <CardDescription>Link do resetowania hasła jest nieprawidłowy lub wygasł.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-center">Spróbuj ponownie zresetować hasło.</p>
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          <Button asChild>
-            <a href="/forgot-password" data-testid="reset-password-try-again">
-              Resetuj hasło
-            </a>
-          </Button>
-        </CardFooter>
-      </Card>
-    );
-  }
-
   return (
-    <Card className="w-full max-w-md mx-auto" data-testid="reset-password-container">
+    <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle>Ustaw nowe hasło</CardTitle>
-        <CardDescription>Wprowadź nowe hasło do swojego konta</CardDescription>
+        <CardTitle>Zresetuj hasło</CardTitle>
+        <CardDescription>Wprowadź nowe hasło dla swojego konta</CardDescription>
       </CardHeader>
       <CardContent>
         {!isSubmitted ? (
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" data-testid="reset-password-form">
-              <FormField
-                control={form.control}
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField<FormValues>
+                control={form.control as unknown as Control<FormValues>}
                 name="password"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel htmlFor="password" data-testid="reset-password-label">
-                      Nowe hasło
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        id="password"
-                        type="password"
-                        placeholder="••••••••"
-                        data-testid="reset-password-input"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>Minimum 8 znaków, w tym jedna litera i jedna cyfra</FormDescription>
-                    <FormMessage />
-                  </FormItem>
+                  <PasswordField field={field} showStrength label="Nowe hasło" testId="new-password-input" />
                 )}
               />
-
-              <FormField
-                control={form.control}
+              <FormField<FormValues>
+                control={form.control as unknown as Control<FormValues>}
                 name="passwordConfirm"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel htmlFor="confirmPassword" data-testid="reset-password-confirm-label">
-                      Powtórz hasło
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        id="confirmPassword"
-                        type="password"
-                        placeholder="••••••••"
-                        data-testid="reset-password-confirm-input"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                  <PasswordField field={field} label="Potwierdź nowe hasło" testId="confirm-password-input" />
                 )}
               />
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isSubmitting}
-                data-testid="reset-password-submit-button"
-              >
+              <Button type="submit" className="w-full" disabled={isSubmitting} data-testid="submit-button">
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Aktualizacja hasła...
+                    Trwa resetowanie...
                   </>
                 ) : (
-                  "Zapisz nowe hasło"
+                  "Zresetuj hasło"
                 )}
               </Button>
             </form>
           </Form>
         ) : (
-          <div className="text-center py-4" data-testid="reset-password-success-message">
+          <div className="text-center py-4" data-testid="success-message">
             <p className="mb-4">Twoje hasło zostało zmienione pomyślnie.</p>
             <p className="text-muted-foreground text-sm">Za chwilę zostaniesz przekierowany do strony logowania.</p>
           </div>
         )}
       </CardContent>
+      <CardFooter className="flex justify-center">
+        <a href="/login" className="text-primary hover:underline" data-testid="login-link">
+          Wróć do logowania
+        </a>
+      </CardFooter>
     </Card>
   );
 }
