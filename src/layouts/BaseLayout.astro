@@ -4,6 +4,7 @@ import { UserMenu } from "../components/auth/UserMenu";
 import { AuthProvider } from "../context/AuthContext";
 import { ModeToggle } from "../components/theme/ModeToggle";
 import { Button } from "../components/ui/button";
+import { Toaster } from "../components/ui/sonner";
 
 interface Props {
   title: string;
@@ -25,7 +26,7 @@ const fullTitle = title ? `${title} | 10xCards` : "10xCards";
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Learn efficiently with AI-generated flashcards" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>{fullTitle}</title>
+    <title>{title}</title>
   </head>
   <body class="min-h-screen bg-background">
     <AuthProvider client:load initialUser={user}>
@@ -33,106 +34,121 @@ const fullTitle = title ? `${title} | 10xCards` : "10xCards";
         <div class="container mx-auto py-4 px-4 flex items-center justify-between">
           <div class="flex items-center gap-6">
             <a href="/" class="text-xl font-bold">10xCards</a>
-            
+
             {/* Show navigation links only to authenticated users */}
-            {user && (
-              <nav class="hidden md:block">
-                <ul class="flex items-center gap-6">
-                  <li><a href="/dashboard" class="text-sm hover:text-primary transition-colors">Dashboard</a></li>
-                  <li><a href="/sets" class="text-sm hover:text-primary transition-colors">Zestawy</a></li>
-                  <li><a href="/generate" class="text-sm hover:text-primary transition-colors">Generuj</a></li>
-                  <li><a href="/learn" class="text-sm hover:text-primary transition-colors">Nauka</a></li>
-                </ul>
-              </nav>
-            )}
+            {
+              user && (
+                <nav class="hidden md:block">
+                  <ul class="flex items-center gap-6">
+                    <li>
+                      <a href="/dashboard" class="text-sm hover:text-primary transition-colors">
+                        Dashboard
+                      </a>
+                    </li>
+                    <li>
+                      <a href="/sets" class="text-sm hover:text-primary transition-colors">
+                        Zestawy
+                      </a>
+                    </li>
+                    <li>
+                      <a href="/generate" class="text-sm hover:text-primary transition-colors">
+                        Generuj
+                      </a>
+                    </li>
+                    <li>
+                      <a href="/learn" class="text-sm hover:text-primary transition-colors">
+                        Nauka
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+              )
+            }
           </div>
-          
+
           <div class="flex items-center gap-4">
             <ModeToggle client:load />
-            
-            {user ? (
-              <div class="flex items-center gap-4">
-                {/* Display user name on larger screens */}
-                <span class="text-sm hidden md:inline-block">
-                  {user.name || user.email}
-                </span>
-                
-                {/* User menu with dropdown for profile actions and logout */}
-                <UserMenu client:load user={user} />
-                
-                {/* Alternative logout button with enhanced functionality */}
-                <form id="logout-form" action="/api/auth/logout" method="post" class="hidden sm:block">
-                  <Button 
-                    type="submit" 
-                    variant="outline" 
-                    size="sm"
-                    id="logout-button"
+
+            {
+              user ? (
+                <div class="flex items-center gap-4">
+                  {/* Display user name on larger screens */}
+                  <span class="text-sm hidden md:inline-block">{user.name || user.email}</span>
+
+                  {/* User menu with dropdown for profile actions and logout */}
+                  <UserMenu client:load user={user} />
+
+                  {/* Alternative logout button with enhanced functionality */}
+                  <form id="logout-form" action="/api/auth/logout" method="post" class="hidden sm:block">
+                    <Button type="submit" variant="outline" size="sm" id="logout-button">
+                      Wyloguj
+                    </Button>
+                  </form>
+                </div>
+              ) : (
+                <div class="flex items-center gap-3">
+                  <a href="/login" class="text-sm hover:text-primary transition-colors">
+                    Logowanie
+                  </a>
+                  <a
+                    href="/register"
+                    class="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 transition-colors"
                   >
-                    Wyloguj
-                  </Button>
-                </form>
-              </div>
-            ) : (
-              <div class="flex items-center gap-3">
-                <a href="/login" class="text-sm hover:text-primary transition-colors">
-                  Logowanie
-                </a>
-                <a 
-                  href="/register" 
-                  class="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90 transition-colors">
-                  Rejestracja
-                </a>
-              </div>
-            )}
+                    Rejestracja
+                  </a>
+                </div>
+              )
+            }
           </div>
         </div>
       </header>
-      
+
       <main class="relative">
         <slot />
       </main>
-      
+      <Toaster client:load position="top-right" richColors />
+
       <footer class="border-t py-6 mt-12">
         <div class="container mx-auto px-4 text-center text-sm text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} 10xCards. All rights reserved.</p>
         </div>
       </footer>
     </AuthProvider>
-    
+
     {/* Script to enhance logout form to prevent getting stuck */}
     <script>
       // Make sure DOM is loaded
-      document.addEventListener('DOMContentLoaded', () => {
-        const logoutForm = document.getElementById('logout-form');
-        const logoutButton = document.getElementById('logout-button');
-        
+      document.addEventListener("DOMContentLoaded", () => {
+        const logoutForm = document.getElementById("logout-form");
+        const logoutButton = document.getElementById("logout-button");
+
         if (logoutForm && logoutButton) {
-          logoutForm.addEventListener('submit', async (e) => {
+          logoutForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            logoutButton.setAttribute('disabled', 'true');
-            logoutButton.textContent = 'Wylogowywanie...';
-            
+            logoutButton.setAttribute("disabled", "true");
+            logoutButton.textContent = "Wylogowywanie...";
+
             try {
               // Use fetch instead of form submission for better control
-              const response = await fetch('/api/auth/logout', {
-                method: 'POST',
+              const response = await fetch("/api/auth/logout", {
+                method: "POST",
                 headers: {
-                  'Content-Type': 'application/json',
-                }
+                  "Content-Type": "application/json",
+                },
               });
-              
+
               // If successful, redirect to home page
               if (response.ok) {
-                window.location.href = '/';
+                window.location.href = "/";
               } else {
-                console.error('Logout failed');
-                logoutButton.removeAttribute('disabled');
-                logoutButton.textContent = 'Wyloguj';
+                console.error("Logout failed");
+                logoutButton.removeAttribute("disabled");
+                logoutButton.textContent = "Wyloguj";
               }
             } catch (error) {
-              console.error('Logout error:', error);
-              logoutButton.removeAttribute('disabled');
-              logoutButton.textContent = 'Wyloguj';
+              console.error("Logout error:", error);
+              logoutButton.removeAttribute("disabled");
+              logoutButton.textContent = "Wyloguj";
             }
           });
         }
