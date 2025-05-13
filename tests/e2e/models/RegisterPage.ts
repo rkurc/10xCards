@@ -35,35 +35,35 @@ export class RegisterPage {
   async register(name: string, email: string, password: string) {
     // Wait for form to be interactive
     await this.page.waitForLoadState("domcontentloaded");
-    
+
     // Fill name
     await this.nameInput.waitFor({ state: "visible" });
     await this.nameInput.fill(name);
-    
+
     // Fill email
     await this.emailInput.waitFor({ state: "visible" });
     await this.emailInput.fill(email);
-    
+
     // Fill password
     await this.passwordInput.waitFor({ state: "visible" });
     await this.passwordInput.fill(password);
-    
+
     // Fill password confirmation
     await this.passwordConfirmInput.waitFor({ state: "visible" });
     await this.passwordConfirmInput.fill(password);
-    
+
     // Accept terms
     await this.termsCheckbox.waitFor({ state: "visible" });
     await this.termsCheckbox.check();
-    
+
     // Submit form
     await this.submitButton.waitFor({ state: "visible" });
     await this.submitButton.click();
-    
+
     // Wait for navigation or error
     await Promise.race([
       this.page.waitForURL(/\/dashboard/),
-      this.errorMessage.waitFor({ state: "visible", timeout: 2000 }).catch(() => {})
+      this.errorMessage.waitFor({ state: "visible", timeout: 2000 }).catch(() => {}),
     ]);
   }
 
