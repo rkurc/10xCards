@@ -3,42 +3,105 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-// Get email from query params
-const email = Astro.url.searchParams.get('email') || '';
+// Get params from URL
+const email = Astro.url.searchParams.get("email") || "";
+const error = Astro.url.searchParams.get("error");
+const message = Astro.url.searchParams.get("message");
 ---
 
 <BaseLayout title="Rejestracja zakończona">
   <div class="container mx-auto py-12 px-4">
     <div class="max-w-md mx-auto">
+      {
+        error && (
+          <div
+            class="bg-destructive/10 text-destructive rounded-md p-3 mb-4 text-sm"
+            role="alert"
+            data-testid="error-message"
+          >
+            {decodeURIComponent(error)}
+          </div>
+        )
+      }
+      {
+        message && (
+          <div
+            class="bg-emerald-50 text-emerald-600 rounded-md p-3 mb-4 text-sm"
+            role="status"
+            data-testid="success-message"
+          >
+            {decodeURIComponent(message)}
+          </div>
+        )
+      }
       <Card>
         <CardHeader>
-          <div class="mx-auto w-12 h-12 flex items-center justify-center rounded-full bg-green-100 mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          <div
+            class="mx-auto w-12 h-12 flex items-center justify-center rounded-full bg-green-100 mb-4"
+            data-testid="success-icon"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6 text-green-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
             </svg>
           </div>
-          <CardTitle class="text-center">Sprawdź swoją skrzynkę email</CardTitle>
-          <CardDescription class="text-center">
+          <CardTitle className="text-center">Dziękujemy za rejestrację!</CardTitle>
+          <CardDescription className="text-center">
             Wysłaliśmy link aktywacyjny na adres {email}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div class="space-y-4 text-center">
-            <p>
-              Aby dokończyć proces rejestracji, kliknij w link aktywacyjny, który wysłaliśmy na podany adres email.
-            </p>
+            <div class="space-y-2">
+              <p>Co dalej?</p>
+              <ol class="list-decimal text-sm text-left pl-5 space-y-2">
+                <li>Sprawdź swoją skrzynkę email</li>
+                <li>Kliknij w link aktywacyjny w otrzymanej wiadomości</li>
+                <li>Po potwierdzeniu będziesz mógł się zalogować</li>
+              </ol>
+            </div>
             <p class="text-sm text-muted-foreground">
-              Link aktywacyjny jest ważny przez 24 godziny. Jeśli nie otrzymałeś wiadomości, sprawdź folder spam.
+              Link aktywacyjny jest ważny przez 24 godziny. Jeśli nie otrzymałeś wiadomości, sprawdź folder spam lub użyj przycisku poniżej, aby wysłać link ponownie.
             </p>
           </div>
         </CardContent>
-        <CardFooter class="flex flex-col items-center space-y-4">
-          <Button asChild variant="outline" class="w-full">
-            <a href="/api/auth/resend-verification?email={encodeURIComponent(email)}">
-              Wyślij link ponownie
+        <CardFooter className="flex flex-col items-center space-y-4">
+          <Button variant="outline" className="w-full group relative" data-testid="resend-link-button" asChild>
+            <a
+              href={`/api/auth/resend-verification?email=${encodeURIComponent(email)}`}
+              onclick="this.querySelector('.loading').classList.remove('hidden');this.querySelector('.text').classList.add('hidden')"
+            >
+              <span class="loading hidden absolute inset-0 flex items-center justify-center">
+                <svg
+                  class="animate-spin h-5 w-5 text-primary"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  ></circle>
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+              </span>
+              <span class="text">Wyślij link ponownie</span>
             </a>
           </Button>
-          <a href="/login" class="text-primary hover:underline text-sm">
+          <a href="/login" class="text-primary hover:underline text-sm" data-testid="back-to-login-link">
             Powrót do strony logowania
           </a>
         </CardFooter>
