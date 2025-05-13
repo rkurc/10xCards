@@ -16,7 +16,6 @@ export function UserMenu() {
   const { toast } = useToast();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // Handle logout
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
@@ -28,7 +27,6 @@ export function UserMenu() {
           description: "Zostałeś wylogowany z systemu",
         });
 
-        // Redirect to login page after logout
         window.location.href = "/login";
       } else {
         toast({
@@ -38,7 +36,7 @@ export function UserMenu() {
         });
         setIsLoggingOut(false);
       }
-    } catch {
+    } catch (error) {
       toast({
         title: "Błąd",
         description: "Wystąpił nieoczekiwany błąd",
@@ -48,7 +46,6 @@ export function UserMenu() {
     }
   };
 
-  // Show login button when not authenticated
   if (!user && !loading) {
     return (
       <Button variant="outline" asChild>
@@ -57,7 +54,6 @@ export function UserMenu() {
     );
   }
 
-  // Show loading state
   if (loading || !user) {
     return <div className="h-10 w-10 rounded-full bg-muted animate-pulse"></div>;
   }
@@ -74,30 +70,38 @@ export function UserMenu() {
           </div>
         </Button>
       </DropdownMenuTrigger>
+
       <DropdownMenuContent align="end" data-testid="user-menu-content">
         <DropdownMenuLabel>Moje konto</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <div data-testid="user-email" className="px-2 py-1.5 text-sm text-muted-foreground">
+
+        <div className="px-2 py-1.5 text-sm text-muted-foreground" data-testid="user-email">
           {user.email}
         </div>
+
         {user.name && (
-          <div data-testid="user-name" className="px-2 py-1.5 text-sm font-medium">
+          <div className="px-2 py-1.5 text-sm font-medium" data-testid="user-name">
             {user.name}
           </div>
         )}
+
         <DropdownMenuSeparator />
-        <div className="relative flex cursor-default select-none items-center px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
-          <a href="/account" className="cursor-pointer w-full" data-testid="profile-button">
+
+        <div className="relative flex cursor-default select-none items-center px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground">
+          <a href="/account" className="w-full" data-testid="profile-button">
             Profil
           </a>
         </div>
-        <div className="relative flex cursor-default select-none items-center px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
-          <a href="/dashboard" className="cursor-pointer w-full" data-testid="dashboard-button">
+
+        <div className="relative flex cursor-default select-none items-center px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground">
+          <a href="/dashboard" className="w-full" data-testid="dashboard-button">
             Dashboard
           </a>
         </div>
+
         <DropdownMenuSeparator />
-        <div className="relative flex cursor-default select-none items-center px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground">
+
+        <div className="relative flex cursor-default select-none items-center px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground">
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}
