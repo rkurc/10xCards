@@ -107,12 +107,17 @@ export interface CardToSetAddResponse {
 // ===== AI Flashcard Generation Types =====
 
 /**
+ * Add UUID type alias for better type safety
+ */
+export type UUID = string & { readonly UUID: unique symbol };
+
+/**
  * Command to start generation of flashcards from text
  */
 export interface GenerationStartCommand {
-  text: string;
-  target_count?: number;
-  set_id?: string;
+  text: string; // Should have min/max length constraints
+  target_count?: number; // Should have min/max value constraints
+  set_id?: string; // Should be UUID
 }
 
 /**
@@ -142,7 +147,7 @@ export interface GenerationStatusResponse {
  * Represents a generated card proposal before acceptance
  */
 export interface GenerationCardDTO {
-  id: string;
+  id: UUID;
   front_content: string;
   back_content: string;
   readability_score: number | null;
@@ -188,9 +193,9 @@ export interface GenerationCardAcceptCommand {
  * Command to finalize the generation process and create a new set from accepted cards
  */
 export interface GenerationFinalizeCommand {
-  name: string;
-  description?: string;
-  accepted_cards: string[];
+  name: string; // Should have length constraints matching DB
+  description?: string; // Should have length constraints matching DB
+  accepted_cards: string[]; // Should be non-empty array of UUIDs
 }
 
 /**

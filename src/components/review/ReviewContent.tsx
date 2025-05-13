@@ -104,7 +104,7 @@ export function ReviewContent({ generationId }: ReviewContentProps) {
     console.log("[DEBUG] Fetched cards:", {
       cards,
       firstCard: cards[0],
-      totalCards: cards.length
+      totalCards: cards.length,
     });
   }, [cards]);
 
@@ -157,36 +157,42 @@ export function ReviewContent({ generationId }: ReviewContentProps) {
   const handleSaveCards = async () => {
     setIsSaving(true);
 
-    console.log("[REVIEW] Finalizing generation and saving cards...");
     try {
-      // Make API call to finalize the generation
+      // Get only IDs of accepted cards
+      const acceptedCardIds = cards
+        .filter((card) => card.isAccepted)
+        .map((card) => card.id);
+
+      // Match the schema structure exactly
+      const payload = {
+        name: `Generated Set - ${new Date().toLocaleDateString()}`,
+        description: "Automatically generated flashcards",
+        accepted_cards: acceptedCardIds  // This matches the schema expectation
+      };
+
+      console.log('[DEBUG] Finalization payload:', payload);
+
       const response = await fetch(`/api/generation/${generationId}/finalize`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          name: `Generated Set - ${new Date().toLocaleDateString()}`,
-          description: "Automatically generated flashcards",
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to finalize generation: ${response.status}`);
+        const errorData = await response.json();
+        console.error("[DEBUG] Server error response:", errorData);
+        throw new Error(errorData.error || `Failed to finalize generation: ${response.status}`);
       }
 
-      const result = await response.json();
-      console.log("[REVIEW] Finalization successful:", result);
-
       toast.success("Fiszki zostały zapisane");
-
-      // Navigate to the dashboard - simple direct navigation
       setTimeout(() => {
         window.location.href = "/dashboard";
       }, 500);
     } catch (error) {
       console.error("[REVIEW] Error saving cards:", error);
-      toast.error("Wystąpił błąd podczas zapisywania fiszek");
+      toast.error(error instanceof Error ? error.message : "Wystąpił błąd podczas zapisywania fiszek");
     } finally {
       setIsSaving(false);
     }

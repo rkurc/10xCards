@@ -713,12 +713,33 @@ export class GenerationService extends BaseService {
       "finalize_generation",
       {
         p_user_id: userId,
-        p_generation_id: generationId,
+        p_generation_id: await this.getGenerationIdAsUUID(generationId),
         p_name: command.name,
         p_description: command.description || "",
         p_accepted_cards: command.accepted_cards,
       },
       "Failed to finalize generation"
     );
+  }
+
+  private async getGenerationIdAsUUID(generationId: string): Promise<string> {
+    // Check if it's already a UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(generationId)) {
+      return generationId;
+    }
+
+    // If it's a timestamp, fetch the corresponding UUID from the generations table
+    const { data, error } = await this.supabase
+      .from('generation_results')
+      .select('id')
+      .eq('generation_id', generationId)
+      .single();
+
+    if (error || !data) {
+      throw new Error(`Generation not found: ${generationId} ${error?.message || ""}`);
+    }
+
+    return data.id;
   }
 }
