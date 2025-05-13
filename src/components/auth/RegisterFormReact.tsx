@@ -58,6 +58,15 @@ export function RegisterFormReact({ redirectUrl = "/registration-success" }: Reg
       return;
     }
 
+    if (password.length < 6) {
+      toast({
+        title: "Błąd",
+        description: "Hasło musi mieć przynajmniej 6 znaków. Spełnij wymagania bezpieczeństwa.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (password !== confirmPassword) {
       toast({
         title: "Błąd",
@@ -78,7 +87,6 @@ export function RegisterFormReact({ redirectUrl = "/registration-success" }: Reg
 
     setIsSubmitting(true);
     setError(null);
-
     try {
       const result = await register(email, password, { name });
 
@@ -91,11 +99,13 @@ export function RegisterFormReact({ redirectUrl = "/registration-success" }: Reg
           variant: "default",
         });
 
-        const url = new URL(redirectUrl, window.location.origin);
+        // Ensure toast is visible before redirect
+        
         if (result.requiresEmailConfirmation) {
-          url.searchParams.set("confirmation", "true");
+          window.location.href = `/registration-success?email=${encodeURIComponent(email)}`;
+        } else {
+          window.location.href = redirectUrl;
         }
-        window.location.href = url.toString();
       } else {
         const errorMessage = result.error || "Niepoprawne dane rejestracyjne";
         toast({
