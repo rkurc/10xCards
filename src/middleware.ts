@@ -23,6 +23,7 @@ const PUBLIC_PATHS = [
   "/register",
   "/forgot-password",
   "/reset-password",
+  "/registration-success",
   "/auth-callback",
   "/api/auth/login",
   "/api/auth/register",
@@ -30,10 +31,8 @@ const PUBLIC_PATHS = [
   "/api/auth/logout",
   "/api/auth/create-test-user", // Add the test user creation endpoint
   "/api/auth/confirm-test-user", // Add the test user confirmation endpoint
+  "/api/auth/resend-verification",
 ];
-
-// Change this value to false to use real Supabase authentication
-const USE_MOCK_AUTH = false;
 
 // Declare global variable to track environment validation
 declare global {
