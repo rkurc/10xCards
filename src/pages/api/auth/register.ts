@@ -1,10 +1,6 @@
 import type { APIRoute } from "astro";
 import { createSupabaseServerClient } from "../../../lib/supabase.server";
-import { 
-  createAuthErrorResponse, 
-  createAuthSuccessResponse,
-  handleAuthResponse
-} from "../../../utils/auth/responses";
+import { createAuthErrorResponse, createAuthSuccessResponse } from "../../../utils/auth/responses";
 
 /**
  * @deprecated This API route is deprecated and will be removed in a future release.
@@ -15,10 +11,9 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   console.warn("This API route is deprecated. Use AuthService directly with Supabase client instead.");
 
   try {
-    // Parse the request body
-    let email, password, userData, redirectUrl;
+    let email: string, password: string, userData: any, redirectUrl: string;
+
     try {
-      // Handle both JSON and form data requests
       const contentType = request.headers.get("content-type") || "";
 
       if (contentType.includes("application/json")) {
@@ -43,68 +38,45 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       return createAuthErrorResponse("Invalid request format", 400);
     }
 
-    // Validate required fields
     if (!email || !password) {
       return createAuthErrorResponse("Email and password are required", 400);
     }
 
-    // Create Supabase client
-    let supabase;
-    try {
-      supabase = createSupabaseServerClient({ cookies, headers: request.headers });
-    } catch (error) {
-      return createAuthErrorResponse("Authentication service initialization failed", 500);
-    }
+    const supabase = createSupabaseServerClient({ cookies, headers: request.headers });
 
-    // First check if the email already exists
-    const { data: existingUser } = await supabase
-      .from("profiles")
-      .select("email")
-      .eq("email", email)
-      .maybeSingle();
-      
-    if (existingUser) {
-      console.log("[AUTH] Attempted registration with existing email:", email);
-      return createAuthErrorResponse("Email already registered", 400);
-    }
-
-    // Attempt registration with metadata for user's name
+    // Attempt registration
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: userData, // This will include the name field
+        data: userData,
         emailRedirectTo: `${new URL(request.url).origin}/auth-callback`,
       },
     });
 
     if (error) {
+      // Check for specific error messages
+      if (error.message.toLowerCase().includes("user already registered")) {
+        return createAuthErrorResponse("User already registered", 400);
+      }
       return createAuthErrorResponse(error.message, 400);
     }
 
-    // Check if email confirmation is required
-    const emailConfirmationRequired = !data.session;
-
-    if (emailConfirmationRequired) {
-      return createAuthSuccessResponse({
-        requiresEmailConfirmation: true
-      });
+    if (!data.user) {
+      return createAuthErrorResponse("Registration failed - no user created", 400);
     }
 
-    // Handle successful registration response
-    return handleAuthResponse({
-      request,
-      redirect,
-      data: {
-        user: {
-          id: data.user?.id,
-          email: data.user?.email,
-          name: data.user?.user_metadata?.name || data.user?.email?.split("@")[0],
-        }
+    // Return success response
+    return createAuthSuccessResponse({
+      user: {
+        id: data.user.id,
+        email: data.user.email || "",
+        name: data.user.user_metadata?.name || data.user.email?.split("@")[0] || "",
       },
-      redirectUrl: redirectUrl || "/dashboard"
+      requiresEmailConfirmation: !data.session,
     });
   } catch (error) {
-    return createAuthErrorResponse("An unexpected error occurred during registration", 500);
+    console.error("[AUTH] Registration error:", error);
+    return createAuthErrorResponse("Unexpected error during registration", 500);
   }
 };

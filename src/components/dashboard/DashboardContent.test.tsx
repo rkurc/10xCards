@@ -248,21 +248,35 @@ describe("DashboardContent", () => {
 
   describe("Scenariusze obsługi błędów", () => {
     it("łapie i wyświetla błędy renderowania za pomocą ErrorBoundary", () => {
+      // Suppress React error logging for expected errors
+      const originalError = console.error;
+      console.error = (...args) => {
+        if (/Test błędu renderowania/.test(args[0])) {
+          return;
+        }
+        originalError(...args);
+      };
+      
       // Arrange: define a faulty component
       const FaultyComponent = () => {
         throw new Error("Test błędu renderowania");
       };
 
-      // Act
-      render(
-        <TestErrorBoundary>
-          <FaultyComponent />
-        </TestErrorBoundary>
-      );
+      try {
+        // Act
+        render(
+          <TestErrorBoundary>
+            <FaultyComponent />
+          </TestErrorBoundary>
+        );
 
-      // Assert
-      expect(screen.getByTestId("error-fallback")).toBeTruthy();
-      expect(screen.getByText(/Wystąpił błąd: Test błędu renderowania/i)).toBeTruthy();
+        // Assert
+        expect(screen.getByTestId("error-fallback")).toBeTruthy();
+        expect(screen.getByText(/Wystąpił błąd: Test błędu renderowania/i)).toBeTruthy();
+      } finally {
+        // Restore console.error even if test fails
+        console.error = originalError;
+      }
     });
   });
 
