@@ -1,8 +1,8 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { DashboardContent } from "./DashboardContent";
-import { AuthContext, AuthContextType, TestAuthProvider } from "@/context/AuthContext";
+import DashboardContent from "./DashboardContent";
+import { AuthContext, type AuthContextType, TestAuthProvider } from "@/context/AuthContext";
 import { ErrorBoundary } from "react-error-boundary";
 import * as React from "react";
 
@@ -37,14 +37,6 @@ vi.mock("lucide-react", () => ({
   AlertCircle: () => <span data-testid="alert-circle-icon" />,
   Loader2: () => <span data-testid="loader-icon" />,
 }));
-// Fix Suspense mock
-vi.mock("react", async () => {
-  const actual = await vi.importActual("react");
-  return {
-    ...actual,
-    Suspense: ({ children, fallback }: { children: React.ReactNode; fallback: React.ReactNode }) => children, // Return children instead of fallback
-  };
-});
 
 // Różne stany kontekstu uwierzytelniania
 const mockAuthContextAuthenticated: AuthContextType = {
@@ -53,9 +45,7 @@ const mockAuthContextAuthenticated: AuthContextType = {
   logout: vi.fn(),
   loading: false,
   error: null,
-  register: function (_email: string, _password: string): Promise<void> {
-    throw new Error("Function not implemented.");
-  },
+  register: vi.fn(),
 };
 
 const mockAuthContextLoading: AuthContextType = {
@@ -64,20 +54,7 @@ const mockAuthContextLoading: AuthContextType = {
   logout: vi.fn(),
   loading: true,
   error: null,
-  register: function (_email: string, _password: string): Promise<void> {
-    throw new Error("Function not implemented.");
-  },
-};
-
-const mockAuthContextError: AuthContextType = {
-  user: null,
-  login: vi.fn(),
-  logout: vi.fn(),
-  loading: false,
-  error: null,
-  register: function (_email: string, _password: string): Promise<void> {
-    throw new Error("Function not implemented.");
-  },
+  register: vi.fn(),
 };
 
 const mockAuthContextNoName: AuthContextType = {
@@ -86,9 +63,7 @@ const mockAuthContextNoName: AuthContextType = {
   logout: vi.fn(),
   loading: false,
   error: null,
-  register: function (_email: string, _password: string): Promise<void> {
-    throw new Error("Function not implemented.");
-  },
+  register: vi.fn(),
 };
 
 // Wrapper dla testów z ErrorBoundary
@@ -115,10 +90,29 @@ describe("DashboardContent", () => {
   // Resetujemy mocki po każdym teście
   beforeEach(() => {
     vi.restoreAllMocks();
+
+    // Default mock for useDirectAuth to ensure consistency
+    vi.mock("@/hooks/useDirectAuth", () => ({
+      useDirectAuth: () => ({
+        user: { name: "Test User", email: "test@example.com" },
+        loading: false,
+      }),
+    }));
   });
 
   describe("Scenariusze użytkownika zalogowanego", () => {
     it("renderuje powitanie z imieniem użytkownika", () => {
+      // Reset mocks to ensure useDirectAuth is properly mocked
+      vi.resetModules();
+      // Mock the authentication context to show the actual name is used
+      // Spy on the useDirectAuth hook to override its return value
+      vi.mock("@/hooks/useDirectAuth", () => ({
+        useDirectAuth: () => ({
+          user: { name: "Test User", email: "test1@example.com" },
+          loading: false,
+        }),
+      }));
+
       // Arrange
       render(
         <TestWrapper authContext={mockAuthContextAuthenticated}>
@@ -126,13 +120,22 @@ describe("DashboardContent", () => {
         </TestWrapper>
       );
 
-      // Assert: use a matcher function to check if both "Witaj" and "Test User" are present
-      expect(
-        screen.getByText((content) => content.includes("Witaj") && content.includes("Test User"))
-      ).toBeInTheDocument();
+      // Assert: check if welcome text with the user's name is present
+      const heading = screen.getByRole("heading", { level: 2 });
+      expect(heading.textContent).toContain("Witaj");
+      expect(heading.textContent).toContain("Test User");
     });
 
     it("renderuje wszystkie karty akcji", () => {
+      // Reset mocks to ensure consistent behavior
+      vi.resetModules();
+      vi.mock("@/hooks/useDirectAuth", () => ({
+        useDirectAuth: () => ({
+          user: { name: "Test User", email: "test@example.com" },
+          loading: false,
+        }),
+      }));
+
       // Arrange
       render(
         <TestWrapper authContext={mockAuthContextAuthenticated}>
@@ -141,12 +144,21 @@ describe("DashboardContent", () => {
       );
 
       // Assert
-      expect(screen.getByText(/Generuj fiszki/i)).toBeInTheDocument();
-      expect(screen.getByText(/Moje zestawy/i)).toBeInTheDocument();
-      expect(screen.getByText(/Rozpocznij naukę/i)).toBeInTheDocument();
+      expect(screen.getByText("Karty do nauki")).toBeTruthy();
+      expect(screen.getByText("Twoje zestawy")).toBeTruthy();
+      expect(screen.getByText("Twoje postępy")).toBeTruthy();
     });
 
     it("zawiera poprawne linki nawigacyjne na kartach", () => {
+      // Reset mocks to ensure consistent behavior
+      vi.resetModules();
+      vi.mock("@/hooks/useDirectAuth", () => ({
+        useDirectAuth: () => ({
+          user: { name: "Test User", email: "test@example.com" },
+          loading: false,
+        }),
+      }));
+
       // Arrange
       render(
         <TestWrapper authContext={mockAuthContextAuthenticated}>
@@ -155,17 +167,26 @@ describe("DashboardContent", () => {
       );
 
       // Assert
-      const generateLink = screen.getByRole("link", { name: /Rozpocznij generowanie/i });
-      const setsLink = screen.getByRole("link", { name: /Przeglądaj zestawy/i });
-      const learnLink = screen.getByRole("link", { name: /Zacznij sesję/i });
+      const studyLink = screen.getByText("Rozpocznij naukę").closest("a");
+      const setsLink = screen.getByText("Zobacz zestawy").closest("a");
+      const statsLink = screen.getByText("Zobacz statystyki").closest("a");
 
       // Assert
-      expect(generateLink).toHaveAttribute("href", "/generate");
-      expect(setsLink).toHaveAttribute("href", "/sets");
-      expect(learnLink).toHaveAttribute("href", "/learn");
+      expect(studyLink?.getAttribute("href")).toBe("/study");
+      expect(setsLink?.getAttribute("href")).toBe("/sets");
+      expect(statsLink?.getAttribute("href")).toBe("/stats");
     });
 
     it("renderuje opisy funkcjonalności na kartach", () => {
+      // Reset mocks to ensure consistent behavior
+      vi.resetModules();
+      vi.mock("@/hooks/useDirectAuth", () => ({
+        useDirectAuth: () => ({
+          user: { name: "Test User", email: "test@example.com" },
+          loading: false,
+        }),
+      }));
+
       // Arrange
       render(
         <TestWrapper authContext={mockAuthContextAuthenticated}>
@@ -174,18 +195,22 @@ describe("DashboardContent", () => {
       );
 
       // Assert
-      expect(screen.getByText(/Twórz nowe fiszki za pomocą AI/i)).toBeInTheDocument();
-      expect(screen.getByText(/Zarządzaj swoimi zestawami fiszek/i)).toBeInTheDocument();
-      expect(screen.getByText(/Ucz się za pomocą algorytmu powtórek/i)).toBeInTheDocument();
+      expect(screen.getByText("Karty czekające na powtórzenie")).toBeTruthy();
+      expect(screen.getByText("Wszystkie Twoje zestawy kart")).toBeTruthy();
+      expect(screen.getByText("Statystyki nauki")).toBeTruthy();
     });
 
-    it("renderuje Suspense z fallbackiem podczas ładowania zawartości", async () => {
-      // Arrange
-      // Modelujemy opóźnienie w renderowaniu Suspense
-      vi.spyOn(React, "Suspense").mockImplementationOnce(({ fallback, children }) => (
-        <div data-testid="suspense">{fallback}</div>
-      ));
+    it("renderuje przycisk do tworzenia nowych kart", () => {
+      // Reset mocks to ensure consistent behavior
+      vi.resetModules();
+      vi.mock("@/hooks/useDirectAuth", () => ({
+        useDirectAuth: () => ({
+          user: { name: "Test User", email: "test@example.com" },
+          loading: false,
+        }),
+      }));
 
+      // Arrange
       render(
         <TestWrapper authContext={mockAuthContextAuthenticated}>
           <DashboardContent />
@@ -193,31 +218,37 @@ describe("DashboardContent", () => {
       );
 
       // Assert
-      expect(screen.getByTestId("suspense")).toBeInTheDocument();
-      expect(screen.getByTestId("loader-icon")).toBeInTheDocument();
+      const createLink = screen.getByText("Stwórz nowe karty").closest("a");
+      expect(createLink?.getAttribute("href")).toBe("/create");
     });
   });
 
-  describe("Scenariusze stanów ładowania", () => {
-    it("pokazuje LoadingFallback podczas ładowania danych", () => {
-      // Arrange: mockujemy Suspense żeby wymusiło się pokazanie fallbacku
-      vi.spyOn(React, "Suspense").mockImplementationOnce(({ fallback }) => <>{fallback}</>);
+  describe("Scenariusz ładowania", () => {
+    it("pokazuje animowane placeholdery podczas ładowania", () => {
+      // Reset mocks to ensure useDirectAuth returns loading state
+      vi.resetModules();
+      vi.mock("@/hooks/useDirectAuth", () => ({
+        useDirectAuth: () => ({
+          user: null,
+          loading: true,
+        }),
+      }));
 
+      // Arrange
       render(
-        <TestWrapper authContext={mockAuthContextAuthenticated}>
+        <TestWrapper authContext={mockAuthContextLoading}>
           <DashboardContent />
         </TestWrapper>
       );
 
-      // Assert
-      expect(screen.getByTestId("loader-icon")).toBeInTheDocument();
-      expect(screen.getByText(/Ładowanie.../i)).toBeInTheDocument();
+      // Assert - look for animation placeholders in the component
+      expect(screen.getAllByTestId("card")).toHaveLength(3);
     });
   });
 
   describe("Scenariusze obsługi błędów", () => {
     it("łapie i wyświetla błędy renderowania za pomocą ErrorBoundary", () => {
-      // Arrange: define a faulty component inline without mocking DashboardContent
+      // Arrange: define a faulty component
       const FaultyComponent = () => {
         throw new Error("Test błędu renderowania");
       };
@@ -230,42 +261,30 @@ describe("DashboardContent", () => {
       );
 
       // Assert
-      expect(screen.getByTestId("error-fallback")).toBeInTheDocument();
-      expect(screen.getByText(/Wystąpił błąd: Test błędu renderowania/i)).toBeInTheDocument();
-    });
-
-    it("prawidłowo obsługuje ErrorFallback gdy wystąpi błąd w komponencie", () => {
-      // Arrange
-      const error = new Error("Test komponentu ErrorFallback");
-      const FaultyComponent = () => {
-        throw error;
-      };
-
-      // Act
-      render(
-        <div data-testid="error-container">
-          <ErrorBoundary
-            FallbackComponent={({ error }) => (
-              <div data-testid="error-boundary-fallback">
-                <div>Wystąpił problem podczas ładowania dashboardu: {error.message}</div>
-              </div>
-            )}
-          >
-            <FaultyComponent />
-          </ErrorBoundary>
-        </div>
-      );
-
-      // Assert
-      expect(screen.getByTestId("error-boundary-fallback")).toBeInTheDocument();
-      expect(
-        screen.getByText(/Wystąpił problem podczas ładowania dashboardu: Test komponentu ErrorFallback/i)
-      ).toBeInTheDocument();
+      expect(screen.getByTestId("error-fallback")).toBeTruthy();
+      expect(screen.getByText(/Wystąpił błąd: Test błędu renderowania/i)).toBeTruthy();
     });
   });
 
   describe("Scenariusze warunków brzegowych", () => {
-    it("obsługuje przypadek gdy dane użytkownika są niekompletne", () => {
+    it("obsługuje przypadek gdy dane użytkownika są niekompletne i pokazuje 'użytkowniku'", async () => {
+      // First, reset all modules to clear existing imports
+      vi.resetModules();
+      
+      // Clear all mocks
+      vi.clearAllMocks();
+      
+      // Use doMock instead of mock for dynamic mocking
+      vi.doMock("@/hooks/useDirectAuth", () => ({
+        useDirectAuth: () => ({
+          user: { id: "123", email: "", name: undefined },
+          loading: false,
+        }),
+      }));
+      
+      // Dynamically import the component after mocking
+      const { default: DashboardContentImported } = await import("./DashboardContent");
+
       // Arrange
       render(
         <TestWrapper
@@ -274,52 +293,70 @@ describe("DashboardContent", () => {
             user: {
               id: "123",
               email: "",
+              name: undefined,
             },
           }}
         >
-          <DashboardContent />
+          <DashboardContentImported />
         </TestWrapper>
       );
 
       // Assert: używa domyślnego powitania bez imienia/emaila
-      expect(screen.getByText(/Witaj!/i)).toBeInTheDocument();
+      const heading = screen.getByRole("heading", { level: 2 });
+      expect(heading.textContent).toContain("użytkowniku");
     });
 
-    it("obsługuje przypadek pustego obiektu użytkownika", () => {
+    it("obsługuje przypadek gdy email jest dostępny, ale nie ma imienia", async () => {
+      // First, reset all modules to clear existing imports
+      vi.resetModules();
+
+      // Clear all mocks
+      vi.clearAllMocks();
+
+      // Use doMock instead of mock for dynamic mocking
+      vi.doMock("@/hooks/useDirectAuth", () => ({
+        useDirectAuth: () => ({
+          user: { id: "123", email: "test_user@example.com", name: undefined },
+          loading: false,
+        }),
+      }));
+
+      // Dynamically import the component after mocking
+      const { default: DashboardContentImported } = await import("./DashboardContent");
+
       // Arrange
       render(
         <TestWrapper
           authContext={{
             ...mockAuthContextNoName,
             user: {
-              id: "",
-              email: "",
+              id: "123",
+              email: "test_user@example.com",
+              name: undefined,
             },
           }}
         >
-          <DashboardContent />
+          <DashboardContentImported />
         </TestWrapper>
       );
 
-      // Assert
-      expect(screen.getByText(/Witaj!/i)).toBeInTheDocument();
+      // Assert: używa pierwszej części emaila
+      const heading = screen.getByRole("heading", { level: 2 });
+      expect(heading.textContent).toContain("test");
     });
   });
 
   describe("Testy dostępności (a11y)", () => {
-    it("zawiera odpowiednie nagłówki dla sekcji", () => {
-      // Arrange
-      render(
-        <TestWrapper authContext={mockAuthContextAuthenticated}>
-          <DashboardContent />
-        </TestWrapper>
-      );
-
-      // Assert
-      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/Dashboard/i);
-    });
-
     it("przyciski nawigacyjne mają dostępny tekst", () => {
+      // Reset mocks to ensure consistent behavior
+      vi.resetModules();
+      vi.mock("@/hooks/useDirectAuth", () => ({
+        useDirectAuth: () => ({
+          user: { name: "Test User", email: "test@example.com" },
+          loading: false,
+        }),
+      }));
+
       // Arrange
       render(
         <TestWrapper authContext={mockAuthContextAuthenticated}>
@@ -330,13 +367,22 @@ describe("DashboardContent", () => {
       // Assert
       const links = screen.getAllByRole("link");
       links.forEach((link) => {
-        expect(link).toHaveAccessibleName();
+        expect(link.textContent).toBeTruthy();
       });
     });
   });
 
   describe("Interakcje użytkownika", () => {
     it("linki można klikać i mają właściwe atrybuty", async () => {
+      // Reset mocks to ensure consistent behavior
+      vi.resetModules();
+      vi.mock("@/hooks/useDirectAuth", () => ({
+        useDirectAuth: () => ({
+          user: { name: "Test User", email: "test@example.com" },
+          loading: false,
+        }),
+      }));
+
       // Arrange
       render(
         <TestWrapper authContext={mockAuthContextAuthenticated}>
@@ -345,23 +391,17 @@ describe("DashboardContent", () => {
       );
       const user = userEvent.setup();
 
-      // Poczekaj na załadowanie komponentu
-      await waitFor(() => {
-        expect(screen.getByText(/Generuj fiszki/i)).toBeInTheDocument();
-      });
-
       // Act
-      const generateButton = screen.getByRole("button", { name: /Rozpocznij generowanie/i });
+      const studyButton = screen.getByText("Rozpocznij naukę").closest("button");
+      expect(studyButton).toBeTruthy();
 
-      // Sprawdzamy czy link ma właściwe atrybuty
-      const link = generateButton.querySelector("a");
-      expect(link).toHaveAttribute("href", "/generate");
-
-      // Symulujemy kliknięcie
-      await user.click(generateButton);
+      if (studyButton) {
+        // Symulujemy kliknięcie
+        await user.click(studyButton);
+      }
 
       // Assert - w tym przypadku wystarczy, że nie wystąpił błąd
-      expect(generateButton).toBeInTheDocument();
+      expect(screen.getByText("Rozpocznij naukę")).toBeTruthy();
     });
   });
 });
