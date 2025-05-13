@@ -1,11 +1,11 @@
 import { test } from "@playwright/test";
 
-test.describe("Authentication Flow Tests", () => {
-  test.describe("Registration Tests", () => {
-    test("should successfully register a new user", async () => {
-      test.skip();
-    });
+test.describe("Authentication Flow", () => {
+  test("should successfully register a new user", async () => {
+    test.skip();
+  });
 
+  test.describe("Registration Tests", () => {
     test("should show error for existing email", async () => {
       test.skip();
     });
