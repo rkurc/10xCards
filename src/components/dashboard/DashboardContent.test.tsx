@@ -1,8 +1,8 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import DashboardContent from "./DashboardContent";
-import { AuthContext, type AuthContextType, TestAuthProvider } from "@/context/AuthContext";
+import { type AuthContextType, TestAuthProvider } from "@/context/AuthContext";
 import { ErrorBoundary } from "react-error-boundary";
 import * as React from "react";
 
@@ -18,7 +18,7 @@ vi.mock("@/components/ui/card", () => ({
   CardFooter: ({ children }: { children: React.ReactNode }) => <div data-testid="card-footer">{children}</div>,
 }));
 vi.mock("@/components/ui/button", () => ({
-  Button: ({ children, asChild, className }: { children: React.ReactNode; asChild?: boolean; className?: string }) => (
+  Button: ({ children, className }: { children: React.ReactNode; asChild?: boolean; className?: string }) => (
     <button data-testid="button" className={className}>
       {children}
     </button>
@@ -256,7 +256,7 @@ describe("DashboardContent", () => {
         }
         originalError(...args);
       };
-      
+
       // Arrange: define a faulty component
       const FaultyComponent = () => {
         throw new Error("Test błędu renderowania");
@@ -284,10 +284,10 @@ describe("DashboardContent", () => {
     it("obsługuje przypadek gdy dane użytkownika są niekompletne i pokazuje 'użytkowniku'", async () => {
       // First, reset all modules to clear existing imports
       vi.resetModules();
-      
+
       // Clear all mocks
       vi.clearAllMocks();
-      
+
       // Use doMock instead of mock for dynamic mocking
       vi.doMock("@/hooks/useDirectAuth", () => ({
         useDirectAuth: () => ({
@@ -295,7 +295,7 @@ describe("DashboardContent", () => {
           loading: false,
         }),
       }));
-      
+
       // Dynamically import the component after mocking
       const { default: DashboardContentImported } = await import("./DashboardContent");
 

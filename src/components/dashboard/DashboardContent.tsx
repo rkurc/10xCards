@@ -6,7 +6,7 @@ interface DashboardContentProps {
   // Add any props if needed
 }
 
-export function DashboardContent({}: DashboardContentProps) {
+export default function DashboardContent({}: DashboardContentProps) {
   const { user, loading } = useDirectAuth();
 
   if (loading) {
