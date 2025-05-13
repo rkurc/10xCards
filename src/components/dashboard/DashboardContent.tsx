@@ -2,11 +2,7 @@ import { useDirectAuth } from "@/hooks/useDirectAuth";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-interface DashboardContentProps {
-  // Add any props if needed
-}
-
-export default function DashboardContent({}: DashboardContentProps) {
+export function DashboardContent() {
   const { user, loading } = useDirectAuth();
 
   if (loading) {
@@ -34,9 +30,7 @@ export default function DashboardContent({}: DashboardContentProps) {
           <h2 data-testid="dashboard-greeting" className="text-xl font-semibold mb-1">
             Witaj, {user?.name || user?.email?.split("@")[0] || "użytkowniku"}!
           </h2>
-          <p className="text-muted-foreground">
-            Oto Twoje karty do nauki i postępy
-          </p>
+          <p className="text-muted-foreground">Oto Twoje karty do nauki i postępy</p>
         </div>
         <Button className="ml-auto" asChild>
           <a href="/create">Stwórz nowe karty</a>
@@ -101,3 +95,5 @@ export default function DashboardContent({}: DashboardContentProps) {
     </div>
   );
 }
+
+export default DashboardContent;
