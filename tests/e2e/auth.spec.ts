@@ -1,8 +1,18 @@
 import { test } from "@playwright/test";
+import { RegisterPage } from "./models/RegisterPage";
 
 test.describe("Authentication Flow", () => {
-  test("should successfully register a new user", async () => {
-    test.skip();
+  test("should successfully register a new user", async ({ page }) => {
+    // Arrange
+    const registerPage = new RegisterPage(page);
+    const testEmail = `test-${Date.now()}@example.com`; // Generate unique email
+    
+    // Act
+    await registerPage.goto();
+    await registerPage.register("Test User", testEmail, "Password123!");
+    
+    // Assert
+    await registerPage.expectToBeRedirected();
   });
 
   test.describe("Registration Tests", () => {
