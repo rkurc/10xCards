@@ -56,8 +56,6 @@ export const GenerationProvider: React.FC<{ children: ReactNode }> = ({ children
   const [stats, setStats] = useState<GenerationStats | null>(null);
 
   const updateGenerationState = useCallback((id: string, step?: GenerationStep) => {
-    console.log(`[CONTEXT] Atomic update - ID: ${id}, Step: ${step || "unchanged"}`);
-
     setGenerationId(id);
 
     if (step) {
@@ -70,28 +68,20 @@ export const GenerationProvider: React.FC<{ children: ReactNode }> = ({ children
         sessionStorage.setItem("flashcard_generation_step", step);
       }
     } catch (e) {
-      console.error("[CONTEXT] Failed to persist to session storage", e);
+      // Keep error handling but remove console.error
     }
   }, []);
 
   useEffect(() => {
-    console.log("[CONTEXT] Generation context state updated:", {
-      currentStep,
-      generationId,
-      cardsCount: cards.length,
-    });
-
     if (!generationId) {
       const storedId = sessionStorage.getItem("flashcard_generation_id");
       if (storedId) {
-        console.log(`[CONTEXT] Recovering generation ID from session storage: ${storedId}`);
         setGenerationId(storedId);
       }
     }
   }, [currentStep, generationId, cards.length]);
 
   const resetGeneration = useCallback(() => {
-    console.log("[CONTEXT] Resetting generation state");
     setCurrentStep("input");
     setGenerationId(null);
     setText("");
@@ -102,7 +92,7 @@ export const GenerationProvider: React.FC<{ children: ReactNode }> = ({ children
       sessionStorage.removeItem("flashcard_generation_id");
       sessionStorage.removeItem("flashcard_generation_step");
     } catch (e) {
-      console.error("[CONTEXT] Failed to clear session storage", e);
+      // Keep error handling but remove console.error
     }
   }, []);
 

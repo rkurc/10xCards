@@ -29,6 +29,14 @@ interface GenerationResultsProps {
 }
 
 export function GenerationResults({ generationId, cards, stats, onComplete }: GenerationResultsProps) {
+  // Add debug logging at the start
+  console.log('[DEBUG-GENERATION-RESULTS]', {
+    generationId,
+    cardsCount: cards.length,
+    stats,
+    firstCard: cards[0]
+  });
+
   const [cardStates, setCardStates] = useState<GenerationCard[]>(cards);
   const [finalizeDialogOpen, setFinalizeDialogOpen] = useState(false);
   const [setName, setSetName] = useState('');

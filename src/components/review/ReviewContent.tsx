@@ -11,9 +11,11 @@ interface ReviewContentProps {
 
 interface FlashCard {
   id: string;
-  front: string;
-  back: string;
-  isAccepted: boolean;
+  front_content: string;
+  back_content: string;
+  readability_score: number;
+  isAccepted?: boolean;
+  isRejected?: boolean;
 }
 
 export function ReviewContent({ generationId }: ReviewContentProps) {
@@ -53,14 +55,16 @@ export function ReviewContent({ generationId }: ReviewContentProps) {
           setCards([
             {
               id: "1",
-              front: "Co to jest astrofizyka?",
-              back: "Dział fizyki zajmujący się badaniem ciał niebieskich.",
+              front_content: "Co to jest astrofizyka?",
+              back_content: "Dział fizyki zajmujący się badaniem ciał niebieskich.",
+              readability_score: 5,
               isAccepted: true,
             },
             {
               id: "2",
-              front: "Czym jest czarna dziura?",
-              back: "Obszar czasoprzestrzeni o bardzo silnym polu grawitacyjnym.",
+              front_content: "Czym jest czarna dziura?",
+              back_content: "Obszar czasoprzestrzeni o bardzo silnym polu grawitacyjnym.",
+              readability_score: 4,
               isAccepted: true,
             },
           ]);
@@ -74,14 +78,16 @@ export function ReviewContent({ generationId }: ReviewContentProps) {
           setCards([
             {
               id: "1",
-              front: "Co to jest astrofizyka?",
-              back: "Dział fizyki zajmujący się badaniem ciał niebieskich.",
+              front_content: "Co to jest astrofizyka?",
+              back_content: "Dział fizyki zajmujący się badaniem ciał niebieskich.",
+              readability_score: 5,
               isAccepted: true,
             },
             {
               id: "2",
-              front: "Czym jest czarna dziura?",
-              back: "Obszar czasoprzestrzeni o bardzo silnym polu grawitacyjnym.",
+              front_content: "Czym jest czarna dziura?",
+              back_content: "Obszar czasoprzestrzeni o bardzo silnym polu grawitacyjnym.",
+              readability_score: 4,
               isAccepted: true,
             },
           ]);
@@ -93,6 +99,14 @@ export function ReviewContent({ generationId }: ReviewContentProps) {
 
     fetchCards();
   }, [generationId]);
+
+  useEffect(() => {
+    console.log("[DEBUG] Fetched cards:", {
+      cards,
+      firstCard: cards[0],
+      totalCards: cards.length
+    });
+  }, [cards]);
 
   const handleAcceptCard = async (cardId: string) => {
     console.log(`[REVIEW] Accepting card: ${cardId}`);
@@ -218,12 +232,12 @@ export function ReviewContent({ generationId }: ReviewContentProps) {
           <Card key={card.id} className={card.isAccepted ? "border-green-500" : ""}>
             <CardHeader>
               <CardTitle>Przód</CardTitle>
-              <CardDescription>{card.front}</CardDescription>
+              <CardDescription>{card.front_content}</CardDescription>
             </CardHeader>
             <CardContent>
               <div>
                 <h4 className="text-sm font-medium mb-2">Tył</h4>
-                <p className="text-muted-foreground">{card.back}</p>
+                <p className="text-muted-foreground">{card.back_content}</p>
               </div>
             </CardContent>
             <CardFooter className="flex justify-end space-x-2">
