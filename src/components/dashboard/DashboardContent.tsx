@@ -2,7 +2,11 @@ import { useDirectAuth } from "@/hooks/useDirectAuth";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-export default function DashboardContent() {
+interface DashboardContentProps {
+  // Add any props if needed
+}
+
+export function DashboardContent({}: DashboardContentProps) {
   const { user, loading } = useDirectAuth();
 
   if (loading) {
@@ -24,10 +28,10 @@ export default function DashboardContent() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center">
+    <div data-testid="dashboard-content" className="space-y-8">
+      <div data-testid="dashboard-header" className="flex items-center">
         <div>
-          <h2 className="text-xl font-semibold mb-1">
+          <h2 data-testid="dashboard-greeting" className="text-xl font-semibold mb-1">
             Witaj, {user?.name || user?.email?.split("@")[0] || "użytkowniku"}!
           </h2>
           <p className="text-muted-foreground">
@@ -39,7 +43,7 @@ export default function DashboardContent() {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div data-testid="dashboard-stats-grid" className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle>Karty do nauki</CardTitle>

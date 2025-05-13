@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { register } from "@/services/auth.direct";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
+import { AlertCircle } from "lucide-react";
 
 interface RegisterFormProps {
   redirectUrl?: string;
@@ -18,11 +20,44 @@ export function RegisterFormReact({ redirectUrl = "/registration-success" }: Reg
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const { toast } = useToast();
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!password) {
+      setPasswordStrength(0);
+      setPasswordErrors([]);
+      return;
+    }
+
+    const requirements = [
+      { test: /.{8,}/, message: "Co najmniej 8 znaków" },
+      { test: /[A-Z]/, message: "Wielka litera" },
+      { test: /[a-z]/, message: "Mała litera" },
+      { test: /[0-9]/, message: "Cyfra" },
+      { test: /[^A-Za-z0-9]/, message: "Znak specjalny" },
+    ];
+
+    const passedRequirements = requirements.filter((req) => req.test.test(password));
+    const strength = Math.round((passedRequirements.length / requirements.length) * 100);
+
+    setPasswordStrength(strength);
+    setPasswordErrors(requirements.filter((req) => !req.test.test(password)).map((req) => req.message));
+  }, [password]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Basic validation
+
+    // Enhanced validation
+    if (passwordStrength < 40) {
+      toast({
+        title: "Błąd",
+        description: "Hasło jest zbyt słabe. Spełnij wymagania bezpieczeństwa.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (password !== confirmPassword) {
       toast({
         title: "Błąd",
@@ -42,24 +77,24 @@ export function RegisterFormReact({ redirectUrl = "/registration-success" }: Reg
     }
 
     setIsSubmitting(true);
-    
+
     try {
       // Direct call to auth service - no context needed
       const result = await register(email, password, { name });
-      
+
       if (result.success) {
         toast({
           title: "Rejestracja udana",
-          description: result.requiresEmailConfirmation 
+          description: result.requiresEmailConfirmation
             ? "Sprawdź swoją skrzynkę email, aby potwierdzić rejestrację."
             : "Konto zostało utworzone. Możesz się teraz zalogować.",
           variant: "default",
         });
-        
+
         // Redirect to success page with appropriate parameters
         const url = new URL(redirectUrl, window.location.origin);
         if (result.requiresEmailConfirmation) {
-          url.searchParams.set('confirmation', 'true');
+          url.searchParams.set("confirmation", "true");
         }
         window.location.href = url.toString();
       } else {
@@ -82,7 +117,7 @@ export function RegisterFormReact({ redirectUrl = "/registration-success" }: Reg
       setIsSubmitting(false);
     }
   };
-  
+
   return (
     <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md">
       <div className="text-center">
@@ -105,7 +140,7 @@ export function RegisterFormReact({ redirectUrl = "/registration-success" }: Reg
               data-testid="name-input"
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -132,13 +167,39 @@ export function RegisterFormReact({ redirectUrl = "/registration-success" }: Reg
               className="mt-1"
               autoComplete="new-password"
               data-testid="password-input"
-              minLength={8}
             />
-            <p className="text-xs text-muted-foreground">
-              Minimum 8 znaków
-            </p>
+
+            {password && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs">Siła hasła:</span>
+                  <span className="text-xs font-semibold" data-testid="password-strength-text">
+                    {passwordStrength < 40 ? "Słabe" : passwordStrength < 80 ? "Średnie" : "Silne"}
+                  </span>
+                </div>
+
+                <Progress
+                  value={passwordStrength}
+                  className={`h-1 ${
+                    passwordStrength < 40 ? "bg-destructive" : passwordStrength < 80 ? "bg-amber-500" : "bg-emerald-500"
+                  }`}
+                  data-testid="password-strength-bar"
+                />
+
+                {passwordErrors.length > 0 && (
+                  <ul className="text-xs text-muted-foreground space-y-1" data-testid="password-requirements">
+                    {passwordErrors.map((error, i) => (
+                      <li key={i} className="flex items-center">
+                        <AlertCircle className="h-3 w-3 mr-1 text-destructive" />
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Potwierdź hasło</Label>
             <Input
@@ -152,27 +213,28 @@ export function RegisterFormReact({ redirectUrl = "/registration-success" }: Reg
               data-testid="confirm-password-input"
             />
           </div>
-          
+
           <div className="flex items-center space-x-2 mt-4">
-            <Checkbox 
-              id="terms" 
+            <Checkbox
+              id="terms"
               checked={termsAccepted}
               onCheckedChange={(checked) => setTermsAccepted(checked === true)}
               data-testid="terms-checkbox"
             />
             <Label htmlFor="terms" className="text-sm">
-              Akceptuję <a href="/terms" className="text-primary hover:underline">regulamin</a> i{" "}
-              <a href="/privacy" className="text-primary hover:underline">politykę prywatności</a>
+              Akceptuję{" "}
+              <a href="/terms" className="text-primary hover:underline">
+                regulamin
+              </a>{" "}
+              i{" "}
+              <a href="/privacy" className="text-primary hover:underline">
+                politykę prywatności
+              </a>
             </Label>
           </div>
         </div>
 
-        <Button 
-          type="submit" 
-          className="w-full" 
-          disabled={isSubmitting}
-          data-testid="register-button"
-        >
+        <Button type="submit" className="w-full" disabled={isSubmitting} data-testid="register-button">
           {isSubmitting ? "Rejestracja..." : "Zarejestruj się"}
         </Button>
 
