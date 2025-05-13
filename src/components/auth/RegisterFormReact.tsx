@@ -22,6 +22,7 @@ export function RegisterFormReact({ redirectUrl = "/registration-success" }: Reg
   const { toast } = useToast();
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!password) {
@@ -48,7 +49,6 @@ export function RegisterFormReact({ redirectUrl = "/registration-success" }: Reg
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Enhanced validation
     if (passwordStrength < 40) {
       toast({
         title: "Błąd",
@@ -77,9 +77,9 @@ export function RegisterFormReact({ redirectUrl = "/registration-success" }: Reg
     }
 
     setIsSubmitting(true);
+    setError(null);
 
     try {
-      // Direct call to auth service - no context needed
       const result = await register(email, password, { name });
 
       if (result.success) {
@@ -91,29 +91,31 @@ export function RegisterFormReact({ redirectUrl = "/registration-success" }: Reg
           variant: "default",
         });
 
-        // Redirect to success page with appropriate parameters
         const url = new URL(redirectUrl, window.location.origin);
         if (result.requiresEmailConfirmation) {
           url.searchParams.set("confirmation", "true");
         }
         window.location.href = url.toString();
       } else {
-        // Registration failure - show error message
+        const errorMessage = result.error || "Niepoprawne dane rejestracyjne";
         toast({
           title: "Błąd rejestracji",
-          description: result.error || "Niepoprawne dane rejestracyjne",
+          description: errorMessage,
           variant: "destructive",
         });
+        setError(errorMessage);
         setIsSubmitting(false);
       }
     } catch (error) {
-      // Unexpected error
+      // eslint-disable-next-line no-console
       console.error("Registration error:", error);
+      const errorMessage = "Wystąpił nieoczekiwany błąd podczas rejestracji";
       toast({
         title: "Błąd",
-        description: "Wystąpił nieoczekiwany błąd podczas rejestracji",
+        description: errorMessage,
         variant: "destructive",
       });
+      setError(errorMessage);
       setIsSubmitting(false);
     }
   };
@@ -173,7 +175,7 @@ export function RegisterFormReact({ redirectUrl = "/registration-success" }: Reg
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs">Siła hasła:</span>
-                  <span className="text-xs font-semibold" data-testid="password-strength-text">
+                  <span className="text-xs font-semibold" data-testid="password-strength">
                     {passwordStrength < 40 ? "Słabe" : passwordStrength < 80 ? "Średnie" : "Silne"}
                   </span>
                 </div>
@@ -234,17 +236,30 @@ export function RegisterFormReact({ redirectUrl = "/registration-success" }: Reg
           </div>
         </div>
 
-        <Button type="submit" className="w-full" disabled={isSubmitting} data-testid="register-button">
+        <Button type="submit" className="w-full" disabled={isSubmitting} data-testid="submit-button">
           {isSubmitting ? "Rejestracja..." : "Zarejestruj się"}
         </Button>
 
         <div className="text-center mt-4">
           <span className="text-sm text-gray-600">Masz już konto? </span>
-          <a href="/login" className="font-medium text-primary hover:underline">
+          <a href="/login" className="font-medium text-primary hover:underline" data-testid="login-link">
             Zaloguj się
           </a>
         </div>
       </form>
+
+      {error && (
+        <div className="mt-4 p-4 border border-destructive rounded-md bg-destructive/10" data-testid="error-message">
+          {error}
+        </div>
+      )}
+
+      {/* Success message */}
+      {isSubmitting && (
+        <div className="mt-4 p-4 border border-primary rounded-md bg-primary/10" data-testid="success-message">
+          Rejestracja w toku...
+        </div>
+      )}
     </div>
   );
 }

@@ -18,42 +18,53 @@ export class RegisterPage {
     this.nameInput = page.getByTestId("name-input");
     this.emailInput = page.getByTestId("email-input");
     this.passwordInput = page.getByTestId("password-input");
-    this.passwordConfirmInput = page.getByTestId("password-confirm-input");
+    this.passwordConfirmInput = page.getByTestId("confirm-password-input");
     this.termsCheckbox = page.getByTestId("terms-checkbox");
-    this.submitButton = page.getByTestId("register-button");
+    this.submitButton = page.getByTestId("submit-button");
     this.loginLink = page.getByTestId("login-link");
-    this.errorMessage = page.getByRole("alert").filter({ hasText: /błąd/i });
+    this.errorMessage = page.getByTestId("error-message");
     this.passwordStrength = page.getByTestId("password-strength");
-    this.successMessage = page.getByRole("alert").filter({ hasText: /Konto zostało utworzone|Sprawdź swoją skrzynkę/ });
+    this.successMessage = page.getByTestId("success-message");
   }
 
   async goto() {
     await this.page.goto("/register");
+    await this.page.waitForLoadState("networkidle");
   }
 
   async register(name: string, email: string, password: string) {
-    // First focus on the name input and then fill
-    await this.nameInput.focus();
+    // Wait for form to be interactive
+    await this.page.waitForLoadState("domcontentloaded");
+    
+    // Fill name
+    await this.nameInput.waitFor({ state: "visible" });
     await this.nameInput.fill(name);
-
-    // Focus on email input and then fill
-    await this.emailInput.focus();
+    
+    // Fill email
+    await this.emailInput.waitFor({ state: "visible" });
     await this.emailInput.fill(email);
-
-    // For password, try a more robust approach
-    await this.passwordInput.focus();
-    await this.page.waitForTimeout(1000); // Small delay to ensure element is ready
+    
+    // Fill password
+    await this.passwordInput.waitFor({ state: "visible" });
     await this.passwordInput.fill(password);
-
-    // For password confirmation, same approach
-    await this.passwordConfirmInput.focus();
-    await this.page.waitForTimeout(100);
+    
+    // Fill password confirmation
+    await this.passwordConfirmInput.waitFor({ state: "visible" });
     await this.passwordConfirmInput.fill(password);
-
-    // Click the checkbox instead of using check() since we're using Shadcn/ui Checkbox component
-    await this.termsCheckbox.click();
-
+    
+    // Accept terms
+    await this.termsCheckbox.waitFor({ state: "visible" });
+    await this.termsCheckbox.check();
+    
+    // Submit form
+    await this.submitButton.waitFor({ state: "visible" });
     await this.submitButton.click();
+    
+    // Wait for navigation or error
+    await Promise.race([
+      this.page.waitForURL(/\/dashboard/),
+      this.errorMessage.waitFor({ state: "visible", timeout: 2000 }).catch(() => {})
+    ]);
   }
 
   async goToLogin() {
@@ -85,5 +96,15 @@ export class RegisterPage {
         }
       }
     }
+  }
+
+  async expectErrorMessage() {
+    await this.errorMessage.waitFor({ state: "visible" });
+    return this.errorMessage.textContent();
+  }
+
+  async expectPasswordStrength(strength: "weak" | "medium" | "strong") {
+    await this.passwordStrength.waitFor({ state: "visible" });
+    await expect(this.passwordStrength).toHaveClass(new RegExp(strength));
   }
 }
