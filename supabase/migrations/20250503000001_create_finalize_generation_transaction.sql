@@ -2,7 +2,7 @@
 -- This ensures that all operations are performed atomically (all succeed or all fail)
 CREATE OR REPLACE FUNCTION public.finalize_generation(
   p_user_id UUID,
-  p_generation_id UUID,
+  p_generation_id BIGINT,
   p_name TEXT,
   p_description TEXT DEFAULT '',
   p_accepted_cards UUID[] DEFAULT '{}'::UUID[]
@@ -74,7 +74,7 @@ BEGIN
     SELECT COALESCE(array_length(v_card_ids, 1), 0) INTO v_card_count;
     
     -- Link cards to set
-    INSERT INTO cards_to_sets (card_id, set_id, added_at)
+    INSERT INTO cards_to_sets (card_id, set_id, created_at)
     SELECT unnest(v_card_ids), v_set_id, NOW();
     
     -- Update generation statistics

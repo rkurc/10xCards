@@ -651,7 +651,7 @@ export class GenerationService extends BaseService {
   async getGenerationStatus(userId: string, generationId: string): Promise<GenerationStatusResponse | null> {
     return this.executeDbOperation(async () => {
       console.log(`[DEBUG] getGenerationStatus - Checking status for generation ID: ${generationId}`);
-      
+
       // Check if the generation exists and belongs to the user
       const { data: generationLog, error } = await this.supabase
         .from("generation_logs")
@@ -664,12 +664,12 @@ export class GenerationService extends BaseService {
         console.log(`[DEBUG] getGenerationStatus - Generation not found: ${error?.message || "No data"}`);
         return null;
       }
-      
+
       console.log(`[DEBUG] getGenerationStatus - Retrieved status: ${generationLog.status}`);
 
       // Map database status to response status
       let progress = 0;
-      
+
       switch (generationLog.status) {
         case "pending":
           progress = 10;
@@ -713,33 +713,12 @@ export class GenerationService extends BaseService {
       "finalize_generation",
       {
         p_user_id: userId,
-        p_generation_id: await this.getGenerationIdAsUUID(generationId),
+        p_generation_id: generationId,
         p_name: command.name,
         p_description: command.description || "",
         p_accepted_cards: command.accepted_cards,
       },
       "Failed to finalize generation"
     );
-  }
-
-  private async getGenerationIdAsUUID(generationId: string): Promise<string> {
-    // Check if it's already a UUID
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (uuidRegex.test(generationId)) {
-      return generationId;
-    }
-
-    // If it's a timestamp, fetch the corresponding UUID from the generations table
-    const { data, error } = await this.supabase
-      .from('generation_results')
-      .select('id')
-      .eq('generation_id', generationId)
-      .single();
-
-    if (error || !data) {
-      throw new Error(`Generation not found: ${generationId} ${error?.message || ""}`);
-    }
-
-    return data.id;
   }
 }
