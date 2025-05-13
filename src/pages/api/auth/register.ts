@@ -55,10 +55,6 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     });
 
     if (error) {
-      // Check for specific error messages
-      if (error.message.toLowerCase().includes("user already registered")) {
-        return createAuthErrorResponse("User already registered", 400);
-      }
       return createAuthErrorResponse(error.message, 400);
     }
 
