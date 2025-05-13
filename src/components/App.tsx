@@ -5,16 +5,13 @@ import { AuthContext } from "@/context/AuthContext";
 import { GenerationProvider } from "../contexts/generation-context";
 
 export function App() {
-  const { isAuthenticated, login } = useContext(AuthContext);
-
+  const { isAuthenticated } = useContext(AuthContext);
 
   const handleGetStarted = () => {
     if (isAuthenticated) {
       window.location.href = "/dashboard";
     } else {
-      login();
-      // After login, redirect to dashboard
-      setTimeout(() => (window.location.href = "/dashboard"), 100);
+      window.location.href = "/register";
     }
   };
 
