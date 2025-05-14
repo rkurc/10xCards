@@ -108,7 +108,7 @@ jobs:
 
   status-comment:
     name: Comment on PR
-    needs: [unit-tests, e2e-tests]
+    needs: [unit-tests, e2e-tests, lint]
     runs-on: ubuntu-latest
     if: always()
     
