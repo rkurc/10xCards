@@ -32,7 +32,7 @@ export class LoginPage {
   async login(email: string, password: string) {
     // Set test mode header for consistent behavior
     await this.testHelper.setupTestMode();
-    
+
     // Focus on email input first then fill
     await this.emailInput.focus();
     await this.emailInput.fill(email);
@@ -44,22 +44,22 @@ export class LoginPage {
 
     // Click the submit button and wait for network to settle
     await this.submitButton.click();
-    
+
     // Wait for network requests to complete - important for error handling
     await this.testHelper.waitForNetworkIdle();
   }
 
   async loginWithInvalidCredentials(email: string, password: string) {
     // Use our test mode approach to ensure errors are displayed
-    await this.page.goto('/login?test-mode=true&error-type=invalid-credentials');
-    
+    await this.page.goto("/login?test-mode=true&error-type=invalid-credentials");
+
     // Fill in the form fields to simulate a login attempt
     await this.emailInput.focus();
     await this.emailInput.fill(email);
-    await this.passwordInput.focus(); 
+    await this.passwordInput.focus();
     await this.page.waitForTimeout(100);
     await this.passwordInput.fill(password);
-    
+
     // Wait for the error message to be visible
     await expect(this.errorMessage).toBeVisible({ timeout: 5000 });
   }

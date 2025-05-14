@@ -12,8 +12,8 @@ const { redirectUrl = "/login" } = Astro.props;
 if (!Astro.locals.isAuthenticated) {
   // Create redirect URL with the current path as the redirect parameter
   const loginUrl = new URL(redirectUrl, Astro.url.origin);
-  loginUrl.searchParams.set('redirect', Astro.url.pathname);
-  
+  loginUrl.searchParams.set("redirect", Astro.url.pathname);
+
   return Astro.redirect(loginUrl.toString());
 }
 ---
