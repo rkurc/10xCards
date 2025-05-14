@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { useCardSet } from '../../hooks/useCardSet';
-import type { CardDTO } from '../../types';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { useCardSet } from "../../hooks/useCardSet";
+import type { CardDTO } from "../../types";
 
 interface CardSetDetailProps {
   setId: string;
@@ -25,7 +25,7 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
     return (
       <div className="text-center py-8">
         <p className="text-red-500">Failed to load flashcard set</p>
-        <Button variant="outline" className="mt-4" onClick={() => window.location.href = '/sets'}>
+        <Button variant="outline" className="mt-4" onClick={() => (window.location.href = "/sets")}>
           Back to Sets
         </Button>
       </div>

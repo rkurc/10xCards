@@ -1,14 +1,17 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import CardSetList from '../../components/card-sets/CardSetList';
-
+import Layout from "../../layouts/Layout.astro";
+import CardSetList from "../../components/card-sets/CardSetList";
+import CardSetFilters from "../../components/card-sets/CardSetFilters";
+import CreateCardSetModal from "../../components/card-sets/CreateCardSetModal";
 ---
 
 <Layout title="Flashcard Sets">
   <div class="container py-8">
     <div class="flex justify-between items-center mb-8">
       <h1 class="text-3xl font-bold">My Flashcard Sets</h1>
+      <CreateCardSetModal client:load />
     </div>
+    <CardSetFilters client:load />
     <CardSetList client:load />
   </div>
 </Layout>

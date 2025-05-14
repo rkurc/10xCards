@@ -1,12 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
-import type { CardSetWithCardCount, CardSetListResponse, PaginationInfo } from '../types';
+import { useState, useEffect, useCallback } from "react";
+import type { CardSetWithCardCount, CardSetListResponse, PaginationInfo } from "../types";
 
 interface UseCardSetsParams {
   page?: number;
   limit?: number;
   search?: string;
-  sortBy?: 'name' | 'created_at' | 'updated_at' | 'card_count';
-  sortDirection?: 'asc' | 'desc';
+  sortBy?: "name" | "created_at" | "updated_at" | "card_count";
+  sortDirection?: "asc" | "desc";
 }
 
 export function useCardSets(params: UseCardSetsParams = {}) {
@@ -19,19 +19,19 @@ export function useCardSets(params: UseCardSetsParams = {}) {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // TODO: Replace with actual API call
-      const response: CardSetListResponse = await fetch('/api/card-sets', {
-        method: 'GET',
+      const response: CardSetListResponse = await fetch("/api/card-sets", {
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-      }).then(res => res.json());
+      }).then((res) => res.json());
 
       setCardSets(response.data);
       setPagination(response.pagination);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load card sets');
+      setError(err instanceof Error ? err.message : "Failed to load card sets");
     } finally {
       setIsLoading(false);
     }

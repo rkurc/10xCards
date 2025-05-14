@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import type { CardSetDTO, CardDTO, PaginationInfo } from '../types';
+import { useState, useEffect, useCallback } from "react";
+import type { CardSetDTO, CardDTO, PaginationInfo } from "../types";
 
 interface UseCardSetParams {
   page?: number;
@@ -31,20 +31,20 @@ export function useCardSet(setId: string, params: UseCardSetParams = {}): UseCar
     try {
       setIsLoading(true);
       setError(null);
-      
+
       // TODO: Replace with actual API call
       const response = await fetch(`/api/card-sets/${setId}`, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-      }).then(res => res.json());
+      }).then((res) => res.json());
 
       setCardSet(response);
       setCards(response.cards.data);
       setCardPagination(response.cards.pagination);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load card set');
+      setError(err instanceof Error ? err.message : "Failed to load card set");
     } finally {
       setIsLoading(false);
     }
