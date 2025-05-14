@@ -64,8 +64,8 @@ export async function login(email: string, password: string): Promise<LoginResul
       success: true,
       user: {
         id: data.user.id,
-        email: data.user.email!,
-        name: data.user.user_metadata?.name || data.user.email?.split("@")[0],
+        email: data.user.email || "",
+        name: data.user.user_metadata?.name || data.user.email?.split("@")[0] || "User",
       },
     };
   } catch (error) {
@@ -112,8 +112,8 @@ export async function register(email: string, password: string, options?: { name
         user: data.user
           ? {
               id: data.user.id,
-              email: data.user.email!,
-              name: options?.name || data.user.email?.split("@")[0],
+              email: data.user.email || "",
+              name: options?.name || data.user.email?.split("@")[0] || "User",
             }
           : undefined,
       };
@@ -177,8 +177,8 @@ export async function getCurrentUser(): Promise<User | null> {
 
       return {
         id: data.user.id,
-        email: data.user.email!,
-        name: data.user.user_metadata?.name || data.user.email?.split("@")[0],
+        email: data.user.email || "",
+        name: data.user.user_metadata?.name || data.user.email?.split("@")[0] || "User",
       };
     } catch (error) {
       console.error("Get current user error:", error);
@@ -218,8 +218,8 @@ export async function updateProfile(profile: Partial<User>): Promise<UpdateProfi
       success: true,
       user: {
         id: data.user.id,
-        email: data.user.email!,
-        name: data.user.user_metadata?.name || data.user.email?.split("@")[0],
+        email: data.user.email || "",
+        name: data.user.user_metadata?.name || data.user.email?.split("@")[0] || "User",
       },
     };
   } catch (error) {
@@ -338,8 +338,8 @@ export function createAuthStore() {
     if (session?.user) {
       currentUser = {
         id: session.user.id,
-        email: session.user.email!,
-        name: session.user.user_metadata?.name || session.user.email?.split("@")[0],
+        email: session.user.email || "",
+        name: session.user.user_metadata?.name || session.user.email?.split("@")[0] || "User",
       };
     } else {
       currentUser = null;

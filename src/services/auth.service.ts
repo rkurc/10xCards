@@ -47,12 +47,12 @@ export async function login(email: string, password: string): Promise<LoginResul
     // Create user data object
     const userData = {
       id: data.user.id,
-      email: data.user.email!,
-      name: data.user.user_metadata?.name || data.user.email?.split("@")[0],
+      email: data.user.email || "",
+      name: data.user.user_metadata?.name || data.user.email?.split("@")[0] || "User",
     };
 
     return { success: true, user: userData };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("[DEBUG] authService.login unhandled exception:", error);
     return {
       success: false,
@@ -191,8 +191,8 @@ export async function getCurrentUser(): Promise<User | null> {
 
     return {
       id: data.user.id,
-      email: data.user.email!,
-      name: data.user.user_metadata?.name || data.user.email?.split("@")[0],
+      email: data.user.email || "",
+      name: data.user.user_metadata?.name || data.user.email?.split("@")[0] || "User",
     };
   } catch (error) {
     console.error("Get current user error:", error);
@@ -207,7 +207,8 @@ export async function verifyAuthentication(): Promise<boolean> {
   try {
     const user = await getCurrentUser();
     return !!user;
-  } catch (error) {
+  } catch (error: unknown) {
+    console.error("Error verifying authentication:", error);
     return false;
   }
 }
@@ -223,8 +224,8 @@ export function onAuthStateChange(callback: (user: User | null) => void): (() =>
     if (session?.user) {
       callback({
         id: session.user.id,
-        email: session.user.email!,
-        name: session.user.user_metadata?.name || session.user.email?.split("@")[0],
+        email: session.user.email || "",
+        name: session.user.user_metadata?.name || session.user.email?.split("@")[0] || "User",
       });
     } else {
       callback(null);

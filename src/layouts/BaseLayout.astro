@@ -5,6 +5,7 @@ import { AuthProvider } from "../context/AuthContext";
 import { ModeToggle } from "../components/theme/ModeToggle";
 import { Button } from "../components/ui/button";
 import { Toaster } from "../components/ui/sonner";
+import type { User } from "../types/auth.types";
 
 interface Props {
   title: string;
@@ -12,8 +13,14 @@ interface Props {
 
 const { title } = Astro.props;
 
-// Check if user is authenticated from Astro.locals
-const user = Astro.locals.user;
+// Check if user is authenticated from Astro.locals and convert to our User type
+const userFromLocals = Astro.locals.user
+  ? ({
+      id: Astro.locals.user.id,
+      email: Astro.locals.user.email || "",
+      name: Astro.locals.user.user_metadata?.name || Astro.locals.user.email?.split("@")[0] || "User",
+    } as User)
+  : undefined;
 
 // Generate title with app name
 const fullTitle = title ? `${title} | 10xCards` : "10xCards";
@@ -26,10 +33,10 @@ const fullTitle = title ? `${title} | 10xCards` : "10xCards";
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Learn efficiently with AI-generated flashcards" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>{title}</title>
+    <title>{fullTitle}</title>
   </head>
   <body class="min-h-screen bg-background">
-    <AuthProvider client:load initialUser={user}>
+    <AuthProvider client:load initialUser={userFromLocals}>
       <header class="border-b sticky top-0 bg-background z-10">
         <div class="container mx-auto py-4 px-4 flex items-center justify-between">
           <div class="flex items-center gap-6">
@@ -37,7 +44,7 @@ const fullTitle = title ? `${title} | 10xCards` : "10xCards";
 
             {/* Show navigation links only to authenticated users */}
             {
-              user && (
+              userFromLocals && (
                 <nav class="hidden md:block">
                   <ul class="flex items-center gap-6">
                     <li>
@@ -70,13 +77,13 @@ const fullTitle = title ? `${title} | 10xCards` : "10xCards";
             <ModeToggle client:load />
 
             {
-              user ? (
+              userFromLocals ? (
                 <div class="flex items-center gap-4">
                   {/* Display user name on larger screens */}
-                  <span class="text-sm hidden md:inline-block">{user.name || user.email}</span>
+                  <span class="text-sm hidden md:inline-block">{userFromLocals.name || userFromLocals.email}</span>
 
                   {/* User menu with dropdown for profile actions and logout */}
-                  <UserMenu client:load user={user} />
+                  <UserMenu client:load />
 
                   {/* Alternative logout button with enhanced functionality */}
                   <form id="logout-form" action="/api/auth/logout" method="post" class="hidden sm:block">
@@ -115,9 +122,7 @@ const fullTitle = title ? `${title} | 10xCards` : "10xCards";
       </footer>
     </AuthProvider>
 
-    <!-- Script to enhance logout form to prevent getting stuck -->
     <script>
-      // Make sure DOM is loaded
       document.addEventListener("DOMContentLoaded", () => {
         const logoutForm = document.getElementById("logout-form");
         const logoutButton = document.getElementById("logout-button");
@@ -129,15 +134,11 @@ const fullTitle = title ? `${title} | 10xCards` : "10xCards";
             logoutButton.textContent = "Wylogowywanie...";
 
             try {
-              // Use fetch instead of form submission for better control
               const response = await fetch("/api/auth/logout", {
                 method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
               });
 
-              // If successful, redirect to home page
               if (response.ok) {
                 window.location.href = "/";
               } else {
