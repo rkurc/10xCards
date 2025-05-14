@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { RegisterPage } from "./models/RegisterPage";
+import { LoginPage } from "./models/LoginPage";
 
 test.describe("Authentication Flow", () => {
   test("should successfully register a new user", async ({ page }) => {
@@ -59,12 +60,20 @@ test.describe("Authentication Flow", () => {
       test.skip();
     });
 
-    test("should show error with invalid credentials", async () => {
+    test("should show error with invalid credentials", async ({ page }) => {
       test.skip();
     });
 
-    test("should navigate to register page", async () => {
-      test.skip();
+    test("should navigate to register page", async ({ page }) => {
+      // Arrange
+      const loginPage = new LoginPage(page);
+      await loginPage.goto();
+
+      // Act
+      await loginPage.goToRegister();
+
+      // Assert
+      await expect(page).toHaveURL(/.*register/);
     });
   });
 
