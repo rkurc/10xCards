@@ -101,11 +101,13 @@ export function ReviewContent({ generationId }: ReviewContentProps) {
   }, [generationId]);
 
   useEffect(() => {
-    
-      cards,
-      firstCard: cards[0],
-      totalCards: cards.length,
-    });
+    if (!cards.length) return;
+
+    // TODO: Add state updates or side effects based on cards here
+    // Currently these values are not being used:
+    // cards,
+    // firstCard: cards[0],
+    // totalCards: cards.length
   }, [cards]);
 
   const handleAcceptCard = async (cardId: string) => {
@@ -167,8 +169,6 @@ export function ReviewContent({ generationId }: ReviewContentProps) {
         description: "Automatically generated flashcards",
         accepted_cards: acceptedCardIds, // This matches the schema expectation
       };
-
-      
 
       const response = await fetch(`/api/generation/${generationId}/finalize`, {
         method: "POST",

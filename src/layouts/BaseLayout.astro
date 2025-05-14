@@ -115,7 +115,7 @@ const fullTitle = title ? `${title} | 10xCards` : "10xCards";
       </footer>
     </AuthProvider>
 
-    {/* Script to enhance logout form to prevent getting stuck */}
+    <!-- Script to enhance logout form to prevent getting stuck -->
     <script>
       // Make sure DOM is loaded
       document.addEventListener("DOMContentLoaded", () => {
@@ -141,12 +141,11 @@ const fullTitle = title ? `${title} | 10xCards` : "10xCards";
               if (response.ok) {
                 window.location.href = "/";
               } else {
-                console.error("Logout failed");
                 logoutButton.removeAttribute("disabled");
                 logoutButton.textContent = "Wyloguj";
               }
             } catch (error) {
-              console.error("Logout error:", error);
+              console.error("Error during logout:", error);
               logoutButton.removeAttribute("disabled");
               logoutButton.textContent = "Wyloguj";
             }
