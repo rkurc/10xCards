@@ -1,0 +1,14 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import CardSetList from '../../components/card-sets/CardSetList';
+
+---
+
+<Layout title="Flashcard Sets">
+  <div class="container py-8">
+    <div class="flex justify-between items-center mb-8">
+      <h1 class="text-3xl font-bold">My Flashcard Sets</h1>
+    </div>
+    <CardSetList client:load />
+  </div>
+</Layout>
