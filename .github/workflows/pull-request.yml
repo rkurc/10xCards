@@ -1,0 +1,142 @@
+name: Pull Request Validation
+
+on:
+  pull_request:
+    branches: [main]
+  
+env:
+  RUN_E2E: false # Flag to control E2E test execution
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  lint:
+    name: Lint Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run linter
+        run: npm run lint
+
+  unit-tests:
+    name: Unit Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    
+    env:
+      NODE_ENV: test
+      PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run unit tests
+        run: npm run test:coverage
+      
+      - name: Upload unit test coverage
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          files: ./coverage/coverage-final.json
+          flags: unit-tests
+
+  e2e-tests:
+    name: E2E Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    if: ${{ vars.RUN_E2E == 'true' }}
+    
+    env:
+      NODE_ENV: integration
+      PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      # Add any additional environment variables for E2E tests
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+      
+      - name: Build application
+        run: npm run build
+      
+      - name: Run E2E tests
+        run: npm run test:e2e
+      
+      - name: Upload E2E test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+  status-comment:
+    name: Comment on PR
+    needs: [unit-tests, e2e-tests]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Create Status Comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const conclusion = context.payload.workflow_run ? context.payload.workflow_run.conclusion : 'success';
+            const unitTests = '${{ needs.unit-tests.result }}';
+            const e2eTests = '${{ needs.e2e-tests.result }}';
+            const linting = '${{ needs.lint.result }}';
+            
+            const summary = [
+              '## PR Validation Results',
+              '',
+              `| Check | Status |`,
+              `|-------|--------|`,
+              `| Linting | ${linting === 'success' ? '✅' : '❌'} |`,
+              `| Unit Tests | ${unitTests === 'success' ? '✅' : '❌'} |`,
+              `| E2E Tests | ${e2eTests === 'success' ? '✅' : '❌'} |`,
+              ''
+            ].join('\n');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
