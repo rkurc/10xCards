@@ -127,9 +127,9 @@ jobs:
               '',
               `| Check | Status |`,
               `|-------|--------|`,
-              `| Linting | ${linting === 'success' ? '✅' : '❌'} |`,
-              `| Unit Tests | ${unitTests === 'success' ? '✅' : '❌'} |`,
-              `| E2E Tests | ${e2eTests === 'success' ? '✅' : '❌'} |`,
+              `| Linting | ${linting === 'success' ? '✅' : linting} |`,
+              `| Unit Tests | ${unitTests === 'success' ? '✅' : unitTests} |`,
+              `| E2E Tests | ${e2eTests === 'success' ? '✅' : e2eTests} |`,
               ''
             ].join('\n');
             
