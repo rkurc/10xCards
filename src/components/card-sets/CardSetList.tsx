@@ -35,6 +35,10 @@ export default function CardSetList() {
     }
   };
 
+  const handleFilterChange = (newFilters: Partial<Filters>) => {
+    setFilters((prev) => ({ ...prev, ...newFilters }));
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -70,7 +74,7 @@ export default function CardSetList() {
     <div>
       <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-4">
         <div className="w-full md:flex-1">
-          <CardSetFilters filters={filters} onFilterChange={(newFilters) => setFilters(newFilters)} />
+          <CardSetFilters filters={filters} onFilterChange={handleFilterChange} />
         </div>
         <div className="flex flex-col md:flex-row gap-4">
           <Button onClick={openCreateCardSetModal}>Create New Set</Button>

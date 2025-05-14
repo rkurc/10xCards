@@ -209,7 +209,7 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
       )}
 
       <CardToSetModal
-        cards={[]} // TODO: Fetch available cards
+        setId={setId}
         onSubmit={handleAddCards}
         open={isAddCardsOpen}
         onOpenChange={setIsAddCardsOpen}

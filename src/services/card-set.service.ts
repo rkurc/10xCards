@@ -1,6 +1,6 @@
 import { BaseService } from "./base.service";
 import type { CardSetDTO, CardSetCreateCommand, CardSetUpdateCommand, CardSetWithCardCount, CardSetWithCardsDTO, CardListResponse, CardToSetAddCommand, CardToSetAddResponse, CardSetListResponse } from "../types";
-import type { SupabaseClient } from "../db/supabase.client";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * Service for managing card sets
@@ -65,7 +65,7 @@ export class CardSetService extends BaseService {
       }
 
       // Transform the response to include card_count
-      const transformedData: CardSetWithCardCount[] = cardSets.map((set: any) => ({
+      const transformedData: CardSetWithCardCount[] = cardSets.map((set) => ({
         id: set.id,
         name: set.name,
         description: set.description,
@@ -332,5 +332,84 @@ export class CardSetService extends BaseService {
         added_count: command.card_ids.length,
       };
     }, "Failed to add cards to set");
+  }
+
+  /**
+   * Get cards that are not in a specific card set
+   * @param userId The ID of the requesting user
+   * @param setId The ID of the card set
+   * @param page Page number for pagination
+   * @param limit Number of items per page
+   * @returns Paginated list of available cards
+   */
+  async getAvailableCards(userId: string, setId: string, page: number, limit: number): Promise<CardListResponse> {
+    return this.executeDbOperation(async () => {
+      // Check if set exists and belongs to user
+      const { data: existingSet, error: setError } = await this.supabase
+        .from("card_sets")
+        .select()
+        .eq("id", setId)
+        .eq("user_id", userId)
+        .eq("is_deleted", false)
+        .single();
+
+      if (setError || !existingSet) {
+        throw new Error("Card set not found");
+      }
+
+      // Calculate offset for pagination
+      const offset = (page - 1) * limit;
+
+      // Get subquery for cards already in set
+      const cardsInSetQuery = this.supabase
+        .from("cards_to_sets")
+        .select("card_id")
+        .eq("set_id", setId)
+        .then((result) => result.data?.map((r) => r.card_id) || []);
+
+      // Get total count of available cards
+      const { count: total } = await this.supabase
+        .from("cards")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("is_deleted", false)
+        .not("id", "in", await cardsInSetQuery);
+
+      if (!total) {
+        return {
+          data: [],
+          pagination: {
+            total: 0,
+            page,
+            limit,
+            pages: 0,
+          },
+        };
+      }
+
+      // Get paginated available cards
+      const { data: cards, error: cardsError } = await this.supabase
+        .from("cards")
+        .select()
+        .eq("user_id", userId)
+        .eq("is_deleted", false)
+        .not("id", "in", await cardsInSetQuery)
+        .range(offset, offset + limit - 1)
+        .order("created_at", { ascending: false });
+
+      if (cardsError) {
+        throw new Error("Failed to fetch available cards");
+      }
+
+      return {
+        data: cards,
+        pagination: {
+          total,
+          page,
+          limit,
+          pages: Math.ceil(total / limit),
+        },
+      };
+    }, "Failed to get available cards");
   }
 }

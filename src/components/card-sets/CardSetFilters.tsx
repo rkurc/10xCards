@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -8,7 +7,7 @@ interface CardSetFiltersProps {
     sortBy: "name" | "created_at" | "updated_at" | "card_count";
     sortDirection: "asc" | "desc";
   };
-  onFilterChange: (filters: CardSetFiltersProps["filters"]) => void;
+  onFilterChange: (newFilters: Partial<CardSetFiltersProps["filters"]>) => void;
 }
 
 export default function CardSetFilters({ filters, onFilterChange }: CardSetFiltersProps) {
@@ -17,8 +16,8 @@ export default function CardSetFilters({ filters, onFilterChange }: CardSetFilte
       <div className="flex-1">
         <Input
           placeholder="Search flashcard sets..."
-          value={filters.search}
-          onChange={(e) => onFilterChange({ ...filters, search: e.target.value })}
+          value={filters.search || ""}
+          onChange={(e) => onFilterChange({ search: e.target.value })}
           className="max-w-sm"
         />
       </div>
@@ -27,7 +26,6 @@ export default function CardSetFilters({ filters, onFilterChange }: CardSetFilte
           value={filters.sortBy}
           onValueChange={(value) =>
             onFilterChange({
-              ...filters,
               sortBy: value as CardSetFiltersProps["filters"]["sortBy"],
             })
           }
@@ -47,7 +45,6 @@ export default function CardSetFilters({ filters, onFilterChange }: CardSetFilte
           value={filters.sortDirection}
           onValueChange={(value) =>
             onFilterChange({
-              ...filters,
               sortDirection: value as "asc" | "desc",
             })
           }
