@@ -3,7 +3,6 @@ import type { LoginResult, RegisterResult, User } from "../types/auth.types";
 
 // Don't create the Supabase client as a module-level variable
 // Instead create it inside each function when needed
-console.log(`[DEBUG] auth.service: Module loaded, typeof window = ${typeof window}`);
 
 // Helper to get supabase client on demand
 function getSupabaseClient() {

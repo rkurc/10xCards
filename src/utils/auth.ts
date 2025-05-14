@@ -36,9 +36,14 @@ export async function checkAuth(Astro?: AstroGlobal): Promise<User | null> {
         return null;
       }
 
+      // If we got this far, user.email should exist, but handle it safely
+      if (!user.email) {
+        throw new Error("User email is required but not provided");
+      }
+
       return {
         id: user.id,
-        email: user.email!,
+        email: user.email,
         name: user.user_metadata?.name || user.email?.split("@")[0],
       };
     } catch (error) {

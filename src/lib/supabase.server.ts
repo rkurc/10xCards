@@ -57,21 +57,13 @@ export const createSupabaseServerClient = (context: { headers: Headers; cookies:
         },
         set(name, value, options) {
           try {
-            console.log(`[DEBUG] cookie.set: Setting cookie '${name}' with options:`, options);
             context?.cookies?.set(name, value, options);
-            console.log(`[DEBUG] cookie.set: Cookie '${name}' set successfully`);
-          } catch (error) {
-            console.error(`[DEBUG] cookie.set: Error setting cookie ${name}:`, error);
-          }
+          } catch (error) {}
         },
         remove(name, options) {
           try {
-            console.log(`[DEBUG] cookie.remove: Removing cookie '${name}'`);
             context?.cookies?.delete(name, options);
-            console.log(`[DEBUG] cookie.remove: Cookie '${name}' removed successfully`);
-          } catch (error) {
-            console.error(`[DEBUG] cookie.remove: Error removing cookie ${name}:`, error);
-          }
+          } catch (error) {}
         },
         getAll() {
           try {

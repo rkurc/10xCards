@@ -31,15 +31,11 @@ export class GenerationService extends BaseService {
       // Create a record in generation_logs
       const generationId = this.generateNumericId();
 
-      console.log(`[DEBUG] startTextProcessing - Starting generation with ID: ${generationId}`);
-      console.log(`[DEBUG] startTextProcessing - User ID: ${userId}`);
-      console.log(`[DEBUG] startTextProcessing - Input text length: ${command.text.length}`);
       console.log(
         `[DEBUG] startTextProcessing - Target count provided: ${command.target_count || "Not provided, using default"}`
       );
 
       const defaultCardCount = this.calculateDefaultCardCount(command.text);
-      console.log(`[DEBUG] startTextProcessing - Calculated default card count: ${defaultCardCount}`);
 
       const insertData = {
         id: generationId,
@@ -52,17 +48,12 @@ export class GenerationService extends BaseService {
         updated_at: new Date().toISOString(),
       };
 
-      console.log(`[DEBUG] startTextProcessing - Data to be inserted:`, JSON.stringify(insertData, null, 2));
-
       // Insert the generation log
       const { error, data } = await this.supabase.from("generation_logs").insert(insertData).select();
 
       if (error) {
-        console.error(`[DEBUG] startTextProcessing - Error inserting to generation_logs:`, error);
         throw error;
       }
-
-      console.log(`[DEBUG] startTextProcessing - Successfully inserted generation_logs record:`, data);
 
       // Start async processing (would be a queue/worker in production)
       // We don't await this as it's meant to run in the background
@@ -87,8 +78,6 @@ export class GenerationService extends BaseService {
    */
   private async processTextAsync(generationId: string): Promise<void> {
     try {
-      console.log(`[DEBUG] processTextAsync - Starting processing for generation ID: ${generationId}`);
-
       // Update status to processing
       const { error: updateStatusError } = await this.supabase
         .from("generation_logs")
@@ -96,9 +85,7 @@ export class GenerationService extends BaseService {
         .eq("id", generationId);
 
       if (updateStatusError) {
-        console.error(`[DEBUG] processTextAsync - Error updating status to processing:`, updateStatusError);
       } else {
-        console.log(`[DEBUG] processTextAsync - Status updated to processing`);
       }
 
       // Get the generation log to access text and options
@@ -109,24 +96,18 @@ export class GenerationService extends BaseService {
         .single();
 
       if (logError || !generationLog) {
-        console.error(`[DEBUG] processTextAsync - Error retrieving generation log:`, logError);
         throw new Error(`Failed to retrieve generation log: ${logError?.message || "Record not found"}`);
       }
 
-      console.log(`[DEBUG] processTextAsync - Retrieved generation log:`, JSON.stringify(generationLog, null, 2));
-
       // Simulate processing delay based on text length
       const processingDelay = Math.min(5000, Math.max(2000, generationLog.source_text.length / 100));
-      console.log(`[DEBUG] processTextAsync - Processing delay: ${processingDelay}ms`);
+
       await new Promise((resolve) => setTimeout(resolve, processingDelay));
 
       // Generate mock flashcards
       const targetCount = generationLog.target_count || this.calculateDefaultCardCount(generationLog.source_text);
-      console.log(`[DEBUG] processTextAsync - Target card count: ${targetCount}`);
 
       const generatedCards = this.generateMockFlashcards(generationLog.source_text, targetCount);
-
-      console.log(`[DEBUG] processTextAsync - Generated ${generatedCards.length} flashcards`);
 
       // Store the generated cards in the database
       const cardInserts = generatedCards.map((card) => ({
@@ -137,19 +118,14 @@ export class GenerationService extends BaseService {
         readability_score: card.readability_score,
       }));
 
-      console.log(`[DEBUG] processTextAsync - Inserting ${cardInserts.length} cards into generation_results`);
-
       const { error: insertError, data: insertData } = await this.supabase
         .from("generation_results")
         .insert(cardInserts)
         .select();
 
       if (insertError) {
-        console.error(`[DEBUG] processTextAsync - Error inserting cards:`, insertError);
         throw new Error(`Failed to store generated cards: ${insertError.message}`);
       }
-
-      console.log(`[DEBUG] processTextAsync - Successfully inserted ${insertData?.length || 0} cards`);
 
       // Update generation log with completion status and generated count
       const updateData = {
@@ -158,8 +134,6 @@ export class GenerationService extends BaseService {
         generated_count: generatedCards.length,
       };
 
-      console.log(`[DEBUG] processTextAsync - Updating generation_logs with:`, JSON.stringify(updateData, null, 2));
-
       const { error: completeError, data: completeData } = await this.supabase
         .from("generation_logs")
         .update(updateData)
@@ -167,15 +141,9 @@ export class GenerationService extends BaseService {
         .select();
 
       if (completeError) {
-        console.error(`[DEBUG] processTextAsync - Error updating completion status:`, completeError);
       } else {
-        console.log(`[DEBUG] processTextAsync - Successfully updated completion status:`, completeData);
       }
-
-      console.log(`[DEBUG] processTextAsync - Processing completed for generation ID: ${generationId}`);
     } catch (error) {
-      console.error(`[DEBUG] processTextAsync - Error processing text:`, error);
-
       // Update status to failed
       const failedUpdateData = {
         status: "failed",
@@ -194,7 +162,6 @@ export class GenerationService extends BaseService {
         .eq("id", generationId);
 
       if (failedError) {
-        console.error(`[DEBUG] processTextAsync - Error updating to failed status:`, failedError);
       }
     }
   }
@@ -328,65 +295,55 @@ export class GenerationService extends BaseService {
     return this.executeDbOperation(async () => {
       // Check if generation exists and belongs to user
 
-      try {
-        const generationExists = await this.verifyOwnership("generation_logs", generationId, userId);
+      const generationExists = await this.verifyOwnership("generation_logs", generationId, userId);
 
-        if (!generationExists) {
-          throw {
-            code: ErrorCode.NOT_FOUND,
-            message: "Generation not found or you don't have access to it",
-            status: 404,
-          };
-        }
-      } catch (error) {
-        console.error(`[DEBUG] getGenerationResults: Error in verifyOwnership:`, error);
-        throw error;
+      if (!generationExists) {
+        throw {
+          code: ErrorCode.NOT_FOUND,
+          message: "Generation not found or you don't have access to it",
+          status: 404,
+        };
       }
 
       // Get the generation details
 
-      try {
-        const { data: generationJob, error: jobError } = await this.supabase
-          .from("generation_logs")
-          .select("id, created_at, generated_count, source_text_length")
-          .eq("id", generationId)
-          .single();
+      const { data: generationJob, error: jobError } = await this.supabase
+        .from("generation_logs")
+        .select("id, created_at, generated_count, source_text_length")
+        .eq("id", generationId)
+        .single();
 
-        if (jobError) {
-          throw jobError;
-        }
-
-        // Get the generated cards
-
-        const { data: cards, error: cardsError } = await this.supabase
-          .from("generation_results")
-          .select("id, front_content, back_content, readability_score")
-          .eq("generation_id", generationId);
-
-        if (cardsError) {
-          throw cardsError;
-        }
-
-        // Format the response
-        const cardDTOs: GenerationCardDTO[] = cards.map((card) => ({
-          id: card.id,
-          front_content: card.front_content,
-          back_content: card.back_content,
-          readability_score: card.readability_score,
-        }));
-
-        return {
-          cards: cardDTOs,
-          stats: {
-            text_length: generationJob.source_text_length || 0,
-            generated_count: generationJob.generated_count || cardDTOs.length,
-            generation_time_ms: 0, // Would be calculated in production
-          },
-        };
-      } catch (error) {
-        console.error(`[DEBUG] getGenerationResults: Unexpected error:`, error);
-        throw error;
+      if (jobError) {
+        throw jobError;
       }
+
+      // Get the generated cards
+
+      const { data: cards, error: cardsError } = await this.supabase
+        .from("generation_results")
+        .select("id, front_content, back_content, readability_score")
+        .eq("generation_id", generationId);
+
+      if (cardsError) {
+        throw cardsError;
+      }
+
+      // Format the response
+      const cardDTOs: GenerationCardDTO[] = cards.map((card) => ({
+        id: card.id,
+        front_content: card.front_content,
+        back_content: card.back_content,
+        readability_score: card.readability_score,
+      }));
+
+      return {
+        cards: cardDTOs,
+        stats: {
+          text_length: generationJob.source_text_length || 0,
+          generated_count: generationJob.generated_count || cardDTOs.length,
+          generation_time_ms: 0, // Would be calculated in production
+        },
+      };
     }, "Failed to get generation results");
   }
 
@@ -650,8 +607,6 @@ export class GenerationService extends BaseService {
    */
   async getGenerationStatus(userId: string, generationId: string): Promise<GenerationStatusResponse | null> {
     return this.executeDbOperation(async () => {
-      console.log(`[DEBUG] getGenerationStatus - Checking status for generation ID: ${generationId}`);
-
       // Check if the generation exists and belongs to the user
       const { data: generationLog, error } = await this.supabase
         .from("generation_logs")
@@ -661,11 +616,8 @@ export class GenerationService extends BaseService {
         .single();
 
       if (error || !generationLog) {
-        console.log(`[DEBUG] getGenerationStatus - Generation not found: ${error?.message || "No data"}`);
         return null;
       }
-
-      console.log(`[DEBUG] getGenerationStatus - Retrieved status: ${generationLog.status}`);
 
       // Map database status to response status
       let progress = 0;

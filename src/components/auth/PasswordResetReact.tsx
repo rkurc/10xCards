@@ -39,11 +39,9 @@ export function PasswordResetReact({ redirectUrl = "/login" }: PasswordResetProp
         });
       }
     } catch (error) {
-      // Unexpected error
-      console.error("Password reset error:", error);
       toast({
         title: "Błąd",
-        description: "Wystąpił nieoczekiwany błąd",
+        description: "Wystąpił nieoczekiwany błąd: " + (error as Error).message,
         variant: "destructive",
       });
     } finally {

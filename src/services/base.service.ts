@@ -25,8 +25,6 @@ export class BaseService {
 
       return result;
     } catch (error: any) {
-      console.error(`[DEBUG] executeDbOperation: Error encountered:`, error);
-
       // Transform Postgres error codes
       if (error && error.code === "23505") {
         throw {
@@ -144,7 +142,6 @@ export class BaseService {
 
       return data && data.length > 0;
     } catch (error) {
-      console.error(`[DEBUG] recordExists: Unexpected error checking if record exists:`, error);
       throw error;
     }
   }
@@ -164,7 +161,6 @@ export class BaseService {
 
       return exists;
     } catch (error) {
-      console.error(`[DEBUG] verifyOwnership: Error verifying ownership in ${table}:`, error);
       return false;
     }
   }

@@ -119,7 +119,6 @@ export const onRequest: MiddlewareHandler = async ({ locals, request, cookies },
     // Log request details in development
     if (env.isDevelopment) {
       const userEmail = locals.user?.email || "unauthenticated";
-      console.log(`[DEBUG] Request: ${url.pathname} - User: ${userEmail}`);
     }
 
     return next();
