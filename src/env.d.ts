@@ -21,8 +21,8 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
-type User = {
+interface User {
   id: string;
   email: string;
   name?: string;
-};
+}

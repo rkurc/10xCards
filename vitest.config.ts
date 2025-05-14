@@ -10,15 +10,7 @@ export default defineConfig({
       "src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
       "tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}",
     ],
-    exclude: [
-      "node_modules", 
-      "dist", 
-      ".idea", 
-      ".git", 
-      ".cache", 
-      "e2e/**/*", 
-      "tests/e2e/**/*"
-    ],
+    exclude: ["node_modules", "dist", ".idea", ".git", ".cache", "e2e/**/*", "tests/e2e/**/*"],
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "json", "lcov"],

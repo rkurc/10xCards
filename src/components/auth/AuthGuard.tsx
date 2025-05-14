@@ -10,20 +10,17 @@ interface AuthGuardProps {
   redirectUrl?: string;
 }
 
-export function AuthGuard({ 
-  children, 
-  redirectUrl = "/login" 
-}: AuthGuardProps) {
+export function AuthGuard({ children, redirectUrl = "/login" }: AuthGuardProps) {
   const { user, loading } = useAuth();
   const [pathname, setPathname] = useState<string>("");
 
   useEffect(() => {
     // Get current path for redirect parameter
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       setPathname(window.location.pathname);
     }
   }, []);
-  
+
   // Handle redirection if not authenticated
   useEffect(() => {
     if (!loading && !user && pathname) {

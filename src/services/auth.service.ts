@@ -7,12 +7,12 @@ console.log(`[DEBUG] auth.service: Module loaded, typeof window = ${typeof windo
 
 // Helper to get supabase client on demand
 function getSupabaseClient() {
-  if (typeof window === 'undefined') {
-    console.log('[DEBUG] getSupabaseClient: Running server-side, returning null');
+  if (typeof window === "undefined") {
+    console.log("[DEBUG] getSupabaseClient: Running server-side, returning null");
     return null;
   }
-  
-  console.log('[DEBUG] getSupabaseClient: Running client-side, creating client');
+
+  console.log("[DEBUG] getSupabaseClient: Running client-side, creating client");
   const client = createBrowserSupabaseClient();
   return client;
 }
@@ -23,31 +23,31 @@ function getSupabaseClient() {
  * @param password User password
  */
 export async function login(email: string, password: string): Promise<LoginResult> {
-  console.log('[DEBUG] authService.login CALLED for email:', email);
-  
+  console.log("[DEBUG] authService.login CALLED for email:", email);
+
   // Get client on demand instead of using module-level variable
   const supabase = getSupabaseClient();
-  console.log('[DEBUG] authService.login supabase available:', !!supabase);
-  
+  console.log("[DEBUG] authService.login supabase available:", !!supabase);
+
   if (!supabase) {
-    console.error('[DEBUG] authService.login error: Supabase client not available (window not defined)');
+    console.error("[DEBUG] authService.login error: Supabase client not available (window not defined)");
     return { success: false, error: "Authentication service unavailable in server environment" };
   }
 
   try {
-    console.log('[DEBUG] authService.login calling supabase.auth.signInWithPassword');
+    console.log("[DEBUG] authService.login calling supabase.auth.signInWithPassword");
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    
+
     if (error) {
-      console.error('[DEBUG] authService.login Supabase error:', error);
+      console.error("[DEBUG] authService.login Supabase error:", error);
       return { success: false, error: error.message };
     }
 
     if (!data?.user) {
-      console.error('[DEBUG] authService.login error: No user data returned');
+      console.error("[DEBUG] authService.login error: No user data returned");
       return { success: false, error: "No user data returned from authentication" };
     }
 
@@ -58,13 +58,13 @@ export async function login(email: string, password: string): Promise<LoginResul
       name: data.user.user_metadata?.name || data.user.email?.split("@")[0],
     };
 
-    console.log('[DEBUG] authService.login successful');
+    console.log("[DEBUG] authService.login successful");
     return { success: true, user: userData };
   } catch (error) {
-    console.error('[DEBUG] authService.login unhandled exception:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Wystąpił błąd podczas logowania." 
+    console.error("[DEBUG] authService.login unhandled exception:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Wystąpił błąd podczas logowania.",
     };
   }
 }

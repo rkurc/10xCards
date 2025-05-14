@@ -113,23 +113,27 @@ const mockUser: User = {
 const mockCookieHandling = {
   cookies: {
     get: (name: string) => mockCookies.get(name)?.value || "",
-    set: (name: string, value: string, options?: CookieOptions) => mockCookies.set(name, value, {
-      ...options,
-      sameSite: convertSameSite(options?.sameSite),
-    }),
-    remove: (name: string, options?: CookieOptions) => mockCookies.delete(name, {
-      ...options,
-      sameSite: convertSameSite(options?.sameSite),
-    }),
+    set: (name: string, value: string, options?: CookieOptions) =>
+      mockCookies.set(name, value, {
+        ...options,
+        sameSite: convertSameSite(options?.sameSite),
+      }),
+    remove: (name: string, options?: CookieOptions) =>
+      mockCookies.delete(name, {
+        ...options,
+        sameSite: convertSameSite(options?.sameSite),
+      }),
     getAll: () => {
       const cookieHeader = mockRequest({}).headers.get("cookie") || "";
       return parseCookieHeader(cookieHeader);
     },
     setAll: (cookiesToSet: { name: string; value: string; options?: CookieOptions }[]) => {
-      cookiesToSet.forEach(({ name, value, options }) => mockCookies.set(name, value, {
-        ...options,
-        sameSite: convertSameSite(options?.sameSite),
-      }));
+      cookiesToSet.forEach(({ name, value, options }) =>
+        mockCookies.set(name, value, {
+          ...options,
+          sameSite: convertSameSite(options?.sameSite),
+        })
+      );
     },
   },
 };
@@ -170,18 +174,18 @@ vi.mock("../../../lib/supabase.server", () => ({
 describe("Auth API Endpoints", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Set up default successful responses
     mockSupabaseAuth.auth.signInWithPassword.mockResolvedValue({
       data: { user: mockUser, session: null },
       error: null,
     } as AuthResponse<{ user: User | null; session: null }>);
-    
+
     mockSupabaseAuth.auth.signUp.mockResolvedValue({
       data: { user: mockUser, session: null },
       error: null,
     } as AuthResponse<{ user: User | null; session: null }>);
-    
+
     mockSupabaseAuth.auth.resetPasswordForEmail.mockResolvedValue({
       error: null,
     });

@@ -159,18 +159,16 @@ export function ReviewContent({ generationId }: ReviewContentProps) {
 
     try {
       // Get only IDs of accepted cards
-      const acceptedCardIds = cards
-        .filter((card) => card.isAccepted)
-        .map((card) => card.id);
+      const acceptedCardIds = cards.filter((card) => card.isAccepted).map((card) => card.id);
 
       // Match the schema structure exactly
       const payload = {
         name: `Generated Set - ${new Date().toLocaleDateString()}`,
         description: "Automatically generated flashcards",
-        accepted_cards: acceptedCardIds  // This matches the schema expectation
+        accepted_cards: acceptedCardIds, // This matches the schema expectation
       };
 
-      console.log('[DEBUG] Finalization payload:', payload);
+      console.log("[DEBUG] Finalization payload:", payload);
 
       const response = await fetch(`/api/generation/${generationId}/finalize`, {
         method: "POST",

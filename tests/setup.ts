@@ -6,7 +6,8 @@ import { server } from "./mocks/server";
 
 // Ensure test environment values match .env.development values
 process.env.PUBLIC_SUPABASE_URL = "http://127.0.0.1:54321";
-process.env.PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0";
+process.env.PUBLIC_SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0";
 
 // Mock Vite's import.meta.env
 // @ts-expect-error - mocking import.meta
@@ -15,7 +16,7 @@ globalThis.import = {
     env: {
       DEV: true,
       PROD: false,
-      MODE: 'development',
+      MODE: "development",
       SSR: true,
       PUBLIC_SUPABASE_URL: process.env.PUBLIC_SUPABASE_URL,
       PUBLIC_SUPABASE_ANON_KEY: process.env.PUBLIC_SUPABASE_ANON_KEY,
@@ -25,7 +26,7 @@ globalThis.import = {
 
 // Create mock storage for Supabase
 const createMockStorage = () => {
-  let data = new Map();
+  const data = new Map();
   return {
     getItem: (key: string) => data.get(key) || null,
     setItem: (key: string, value: string) => data.set(key, value),
@@ -35,8 +36,8 @@ const createMockStorage = () => {
 };
 
 // Mock localStorage and sessionStorage
-Object.defineProperty(window, 'localStorage', { value: createMockStorage() });
-Object.defineProperty(window, 'sessionStorage', { value: createMockStorage() });
+Object.defineProperty(window, "localStorage", { value: createMockStorage() });
+Object.defineProperty(window, "sessionStorage", { value: createMockStorage() });
 
 // Extend vitest's expect method with methods from react-testing-library
 expect.extend(matchers);

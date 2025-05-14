@@ -26,9 +26,9 @@ export type AuthResponse = AuthSuccessResponse | AuthErrorResponse;
  */
 export function createAuthErrorResponse(error: string | Error, status = 400): Response {
   const errorMessage = error instanceof Error ? error.message : error;
-  
+
   console.error(`[AUTH] Error: ${errorMessage}`);
-  
+
   return new Response(
     JSON.stringify({
       success: false,
@@ -73,11 +73,11 @@ export function requestExpectsJson(request: Request): boolean {
  * Handle authentication response based on client expectations
  * Returns JSON for API requests, performs redirect for form submissions
  */
-export function handleAuthResponse({ 
-  request, 
-  redirect, 
-  data, 
-  redirectUrl = "/dashboard" 
+export function handleAuthResponse({
+  request,
+  redirect,
+  data,
+  redirectUrl = "/dashboard",
 }: {
   request: Request;
   redirect: APIContext["redirect"];
@@ -86,13 +86,13 @@ export function handleAuthResponse({
 }): Response {
   // Check for test mode header
   const isTestMode = request.headers.get("x-test-environment") === "true";
-  
+
   // For API requests or in test mode, return JSON
   if (requestExpectsJson(request) || isTestMode) {
     console.log("[AUTH] Returning JSON response for successful auth operation");
     return createAuthSuccessResponse(data);
   }
-  
+
   // For form submissions, redirect
   console.log("[AUTH] Redirecting to:", redirectUrl);
   return redirect(redirectUrl);

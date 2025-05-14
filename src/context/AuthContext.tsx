@@ -11,7 +11,7 @@ import {
   onAuthStateChange,
 } from "../services/auth.service";
 
-export type AuthContextType = {
+export interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: Error | null;
@@ -19,15 +19,14 @@ export type AuthContextType = {
   register: (email: string, password: string, options?: { name?: string }) => Promise<any>;
   logout: () => Promise<void>;
   resetPassword?: (email: string) => Promise<any>;
-};
+}
 
 // Default context value
 const defaultContextValue: AuthContextType = {
   user: null,
   loading: false,
   error: null,
-  login: async () => (
-    console.error("[DEBUG] AuthContext.login called without implementation"), { success: false }),
+  login: async () => (console.error("[DEBUG] AuthContext.login called without implementation"), { success: false }),
   register: async () => {},
   logout: async () => {},
 };
@@ -41,7 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
   const [user, setUser] = useState<User | null>(initialUser || null);
   const [loading, setLoading] = useState<boolean>(!initialUser);
   const [error, setError] = useState<Error | null>(null);
-  
+
   // Check if code is running on server
   const isServer = typeof window === "undefined";
 
@@ -65,7 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
           hasError: !!result.error,
           errorMessage: result.error,
           hasUser: !!result.user,
-          user: result.user ? { id: result.user.id, email: result.user.email } : null
+          user: result.user ? { id: result.user.id, email: result.user.email } : null,
         })
       );
 
@@ -76,7 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
         if (result.user) {
           console.log("[DEBUG] AuthContext.login setting user state:", result.user);
           setUser(result.user);
-          
+
           // Add this verification to check if the user was actually set
           setTimeout(() => {
             console.log("[DEBUG] User state after login:", user);

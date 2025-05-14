@@ -9,7 +9,7 @@ const { token } = Astro.params;
 // Check if user is already authenticated
 const user = checkAuth();
 if (user) {
-  return Astro.redirect('/dashboard');
+  return Astro.redirect("/dashboard");
 }
 ---
 

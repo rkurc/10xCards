@@ -8,10 +8,8 @@ import { createAuthErrorResponse, createAuthSuccessResponse } from "../../../uti
  */
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
   // Only allow this endpoint in test mode
-  const isTestMode = 
-    process.env.MODE === 'test' || 
-    request.headers.get('x-test-environment') === 'true';
-  
+  const isTestMode = process.env.MODE === "test" || request.headers.get("x-test-environment") === "true";
+
   if (!isTestMode) {
     return new Response(
       JSON.stringify({
@@ -33,36 +31,32 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     const { action, userData } = body;
 
     // Create Supabase client
-    const supabase = createSupabaseServerClient({ 
-      cookies, 
-      headers: request.headers 
+    const supabase = createSupabaseServerClient({
+      cookies,
+      headers: request.headers,
     });
 
     // Handle different test actions
     switch (action) {
-      case 'create_test_user': {
+      case "create_test_user": {
         const { name, email, password } = userData;
-        
+
         if (!email || !password) {
           return createAuthErrorResponse("Email and password are required", 400);
         }
 
         // First check if the user already exists
-        const { data: existingUser } = await supabase
-          .from("profiles")
-          .select("email")
-          .eq("email", email)
-          .maybeSingle();
+        const { data: existingUser } = await supabase.from("profiles").select("email").eq("email", email).maybeSingle();
 
         // If user exists, return their data instead of error
         if (existingUser) {
           return createAuthSuccessResponse({
             user: {
               email,
-              id: existingUser.id || 'unknown',
-              name: name || email.split('@')[0]
+              id: existingUser.id || "unknown",
+              name: name || email.split("@")[0],
             },
-            exists: true
+            exists: true,
           });
         }
 
@@ -82,15 +76,15 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
 
         return createAuthSuccessResponse({
           user: {
-            id: data.user?.id || 'unknown',
+            id: data.user?.id || "unknown",
             email: data.user?.email || email,
-            name: data.user?.user_metadata?.name || name || email.split('@')[0]
+            name: data.user?.user_metadata?.name || name || email.split("@")[0],
           },
-          exists: false
+          exists: false,
         });
       }
 
-      case 'simulate_login_error': {
+      case "simulate_login_error": {
         // Simulate a login error for testing error display
         return createAuthErrorResponse("Invalid login credentials", 401);
       }
