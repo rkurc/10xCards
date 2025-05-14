@@ -75,8 +75,12 @@ export default function CardSetList() {
         <div className="flex flex-col md:flex-row gap-4">
           <Button onClick={openCreateCardSetModal}>Create New Set</Button>
           <div className="flex space-x-2">
-            <Button variant={viewMode === "grid" ? "default" : "outline"} onClick={() => setViewMode("grid")}>Grid</Button>
-            <Button variant={viewMode === "list" ? "default" : "outline"} onClick={() => setViewMode("list")}>List</Button>
+            <Button variant={viewMode === "grid" ? "default" : "outline"} onClick={() => setViewMode("grid")}>
+              Grid
+            </Button>
+            <Button variant={viewMode === "list" ? "default" : "outline"} onClick={() => setViewMode("list")}>
+              List
+            </Button>
           </div>
         </div>
       </div>
@@ -92,7 +96,9 @@ export default function CardSetList() {
               <div className="mt-4 flex justify-between items-center">
                 <span className="text-sm text-gray-500">{set.card_count} cards</span>
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => (window.location.href = `/sets/${set.id}`)}>View Set</Button>
+                  <Button variant="outline" onClick={() => (window.location.href = `/sets/${set.id}`)}>
+                    View Set
+                  </Button>
                   <DeleteAlertDialog onConfirm={() => handleDeleteSet(set.id)} />
                 </div>
               </div>

@@ -45,9 +45,7 @@ export default function EditCardSetModal({ cardSet, onSubmit, open, onOpenChange
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Edit Flashcard Set</DialogTitle>
-            <DialogDescription>
-              Update your flashcard set details.
-            </DialogDescription>
+            <DialogDescription>Update your flashcard set details.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">

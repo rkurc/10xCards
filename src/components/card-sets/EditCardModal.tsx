@@ -44,9 +44,7 @@ export default function EditCardModal({ card, onSubmit, open, onOpenChange }: Ed
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Edit Card</DialogTitle>
-            <DialogDescription>
-              Update the front and back content of your flashcard.
-            </DialogDescription>
+            <DialogDescription>Update the front and back content of your flashcard.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">

@@ -38,11 +38,7 @@ export default function CardToSetModal({ cards, onSubmit, open, onOpenChange }: 
   };
 
   const toggleCard = (cardId: string) => {
-    setSelectedCards(prev =>
-      prev.includes(cardId)
-        ? prev.filter(id => id !== cardId)
-        : [...prev, cardId]
-    );
+    setSelectedCards((prev) => (prev.includes(cardId) ? prev.filter((id) => id !== cardId) : [...prev, cardId]));
   };
 
   return (
@@ -51,9 +47,7 @@ export default function CardToSetModal({ cards, onSubmit, open, onOpenChange }: 
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Add Cards to Set</DialogTitle>
-            <DialogDescription>
-              Select the cards you want to add to this set.
-            </DialogDescription>
+            <DialogDescription>Select the cards you want to add to this set.</DialogDescription>
           </DialogHeader>
           <div className="py-4 overflow-y-auto max-h-[60vh]">
             <div className="grid grid-cols-1 gap-4">
@@ -72,17 +66,13 @@ export default function CardToSetModal({ cards, onSubmit, open, onOpenChange }: 
                   </CardContent>
                 </Card>
               ))}
-              {cards.length === 0 && (
-                <div className="text-center py-8 text-gray-600">
-                  No cards available to add
-                </div>
-              )}
+              {cards.length === 0 && <div className="text-center py-8 text-gray-600">No cards available to add</div>}
             </div>
           </div>
           <DialogFooter>
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">
-                {selectedCards.length} card{selectedCards.length !== 1 ? 's' : ''} selected
+                {selectedCards.length} card{selectedCards.length !== 1 ? "s" : ""} selected
               </span>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
                 Cancel

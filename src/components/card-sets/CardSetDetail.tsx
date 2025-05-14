@@ -119,19 +119,16 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
       <div className="mb-8">
         <div className="flex justify-between items-center">
           <div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="mb-4" 
-              onClick={() => (window.location.href = "/sets")}
-            >
+            <Button variant="outline" size="sm" className="mb-4" onClick={() => (window.location.href = "/sets")}>
               ← Back to Sets
             </Button>
             <h1 className="text-3xl font-bold mb-2">{cardSet.name}</h1>
             <p className="text-gray-600">{cardSet.description}</p>
           </div>
           <div className="space-x-2">
-            <Button variant="outline" onClick={() => setIsEditSetOpen(true)}>Edit Set</Button>
+            <Button variant="outline" onClick={() => setIsEditSetOpen(true)}>
+              Edit Set
+            </Button>
             <Button onClick={() => setIsAddCardsOpen(true)}>Add Cards</Button>
             <DeleteAlertDialog onConfirm={handleDeleteSet} />
           </div>
@@ -142,17 +139,17 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
         {cards.map((card: CardDTO) => (
           <Card key={card.id} className="hover:shadow-lg transition-shadow">
             <CardContent className="p-4">
-              <Button 
-                className="h-32 w-full flex items-center justify-center border-b text-left font-normal hover:bg-gray-50" 
+              <Button
+                className="h-32 w-full flex items-center justify-center border-b text-left font-normal hover:bg-gray-50"
                 variant="ghost"
                 onClick={() => setSelectedCard(card)}
               >
                 <span className="text-center">{card.front_content}</span>
               </Button>
               <div className="mt-4 flex justify-end space-x-2">
-                <Button 
+                <Button
                   variant="ghost"
-                  size="sm" 
+                  size="sm"
                   onClick={() => {
                     setSelectedCard(card);
                     setIsEditCardOpen(true);
@@ -180,19 +177,13 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
           <Pagination>
             <PaginationContent>
               <PaginationItem>
-                <PaginationPrevious 
-                  onClick={() => handlePageChange(page - 1)} 
-                  disabled={page === 1} 
-                />
+                <PaginationPrevious onClick={() => handlePageChange(page - 1)} disabled={page === 1} />
               </PaginationItem>
               <PaginationItem>
                 Page {page} of {cardPagination.pages}
               </PaginationItem>
               <PaginationItem>
-                <PaginationNext 
-                  onClick={() => handlePageChange(page + 1)} 
-                  disabled={page === cardPagination.pages} 
-                />
+                <PaginationNext onClick={() => handlePageChange(page + 1)} disabled={page === cardPagination.pages} />
               </PaginationItem>
             </PaginationContent>
           </Pagination>
