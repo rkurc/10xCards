@@ -7,11 +7,9 @@ import type { LoginResult, RegisterResult, User } from "../types/auth.types";
 // Helper to get supabase client on demand
 function getSupabaseClient() {
   if (typeof window === "undefined") {
-    console.log("[DEBUG] getSupabaseClient: Running server-side, returning null");
     return null;
   }
 
-  console.log("[DEBUG] getSupabaseClient: Running client-side, creating client");
   const client = createBrowserSupabaseClient();
   return client;
 }
@@ -22,11 +20,8 @@ function getSupabaseClient() {
  * @param password User password
  */
 export async function login(email: string, password: string): Promise<LoginResult> {
-  console.log("[DEBUG] authService.login CALLED for email:", email);
-
   // Get client on demand instead of using module-level variable
   const supabase = getSupabaseClient();
-  console.log("[DEBUG] authService.login supabase available:", !!supabase);
 
   if (!supabase) {
     console.error("[DEBUG] authService.login error: Supabase client not available (window not defined)");
@@ -34,7 +29,6 @@ export async function login(email: string, password: string): Promise<LoginResul
   }
 
   try {
-    console.log("[DEBUG] authService.login calling supabase.auth.signInWithPassword");
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -57,7 +51,6 @@ export async function login(email: string, password: string): Promise<LoginResul
       name: data.user.user_metadata?.name || data.user.email?.split("@")[0],
     };
 
-    console.log("[DEBUG] authService.login successful");
     return { success: true, user: userData };
   } catch (error) {
     console.error("[DEBUG] authService.login unhandled exception:", error);

@@ -84,10 +84,6 @@ export class GenerationService extends BaseService {
         .update({ status: "processing" })
         .eq("id", generationId);
 
-      if (updateStatusError) {
-      } else {
-      }
-
       // Get the generation log to access text and options
       const { data: generationLog, error: logError } = await this.supabase
         .from("generation_logs")
@@ -139,10 +135,6 @@ export class GenerationService extends BaseService {
         .update(updateData)
         .eq("id", generationId)
         .select();
-
-      if (completeError) {
-      } else {
-      }
     } catch (error) {
       // Update status to failed
       const failedUpdateData = {
@@ -160,9 +152,6 @@ export class GenerationService extends BaseService {
         .from("generation_logs")
         .update(failedUpdateData)
         .eq("id", generationId);
-
-      if (failedError) {
-      }
     }
   }
 

@@ -47,7 +47,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
   const login = async (email: string, password: string): Promise<LoginResult> => {
     // Handle server-side case explicitly
     if (isServer) {
-      console.log("[DEBUG] AuthContext.login called on server-side, returning error");
       return {
         success: false,
         error: "Authentication can only be performed in the browser",
@@ -55,7 +54,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
     }
 
     try {
-      console.log("[DEBUG] AuthContext.login calling serviceLogin function directly");
       const result = await serviceLogin(email, password);
       console.log(
         "[DEBUG] AuthContext.login result:",
@@ -69,17 +67,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
       );
 
       if (result.success) {
-        console.log("[DEBUG] AuthContext.login showing success toast");
         toast.success("Logowanie udane");
 
         if (result.user) {
-          console.log("[DEBUG] AuthContext.login setting user state:", result.user);
           setUser(result.user);
 
           // Add this verification to check if the user was actually set
-          setTimeout(() => {
-            console.log("[DEBUG] User state after login:", user);
-          }, 0);
+          setTimeout(() => {}, 0);
         }
       } else {
         const errorMsg = result.error || "Niepoprawny email lub hasło";

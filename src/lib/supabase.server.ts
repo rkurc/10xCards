@@ -14,8 +14,6 @@ export const cookieOptions: CookieOptionsWithName = {
 
 // Helper function to parse cookie header
 function parseCookieHeader(cookieHeader: string): { name: string; value: string }[] {
-  console.log("[DEBUG] Parsing cookie header:", cookieHeader ? cookieHeader.substring(0, 30) + "..." : "empty");
-
   if (!cookieHeader) {
     return [];
   }
@@ -26,7 +24,6 @@ function parseCookieHeader(cookieHeader: string): { name: string; value: string 
       return { name, value: rest.join("=") };
     });
 
-    console.log("[DEBUG] Parsed cookies count:", cookies.length);
     return cookies;
   } catch (error) {
     console.error("[DEBUG] Error parsing cookie header:", error);
@@ -35,11 +32,10 @@ function parseCookieHeader(cookieHeader: string): { name: string; value: string 
 }
 
 export const createSupabaseServerClient = (context: { headers: Headers; cookies: AstroCookies }) => {
-  console.log("[DEBUG] Creating Supabase server client...");
-  console.log("[DEBUG] Environment variables available:", {
-    supabaseUrl: !!import.meta.env.PUBLIC_SUPABASE_URL,
-    supabaseAnonKey: !!import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
-  });
+  // Validate environment variables
+  if (!import.meta.env.PUBLIC_SUPABASE_URL || !import.meta.env.PUBLIC_SUPABASE_ANON_KEY) {
+    console.error("Missing Supabase environment variables");
+  }
 
   const supabase = createServerClient<Database>(
     import.meta.env.PUBLIC_SUPABASE_URL,
@@ -67,10 +63,9 @@ export const createSupabaseServerClient = (context: { headers: Headers; cookies:
         },
         getAll() {
           try {
-            console.log("[DEBUG] cookie.getAll: Getting all cookies from header");
             const cookieHeader = context?.headers?.get("Cookie") ?? "";
             const cookies = parseCookieHeader(cookieHeader);
-            console.log("[DEBUG] cookie.getAll: Cookies found:", cookies.map((c) => c.name).join(", "));
+
             return cookies;
           } catch (error) {
             console.error("[DEBUG] cookie.getAll: Error getting cookies:", error);
@@ -79,11 +74,9 @@ export const createSupabaseServerClient = (context: { headers: Headers; cookies:
         },
         setAll(cookiesToSet) {
           try {
-            console.log("[DEBUG] cookie.setAll: Setting multiple cookies:", cookiesToSet.map((c) => c.name).join(", "));
             cookiesToSet?.forEach(({ name, value, ...options }) => {
               context?.cookies?.set(name, value, options);
             });
-            console.log("[DEBUG] cookie.setAll: All cookies set successfully");
           } catch (error) {
             console.error("[DEBUG] cookie.setAll: Error setting multiple cookies:", error);
           }
@@ -93,6 +86,5 @@ export const createSupabaseServerClient = (context: { headers: Headers; cookies:
     }
   );
 
-  console.log("[DEBUG] Supabase server client created successfully");
   return supabase;
 };

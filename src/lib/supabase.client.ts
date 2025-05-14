@@ -2,7 +2,7 @@ import { createBrowserClient, createServerClient } from "@supabase/ssr";
 
 export const createBrowserSupabaseClient = () => {
   // Add debugging for environment variables
-  console.log("[DEBUG] supabase.client: Initializing browser client");
+
   console.log(
     "[DEBUG] supabase.client: PUBLIC_SUPABASE_URL defined:",
     typeof import.meta.env.PUBLIC_SUPABASE_URL !== "undefined"
@@ -14,8 +14,7 @@ export const createBrowserSupabaseClient = () => {
 
   try {
     const client = createBrowserClient(import.meta.env.PUBLIC_SUPABASE_URL, import.meta.env.PUBLIC_SUPABASE_ANON_KEY);
-    console.log("[DEBUG] supabase.client: Client created successfully:", !!client);
-    console.log("[DEBUG] supabase.client: auth available:", !!client?.auth);
+
     return client;
   } catch (error) {
     console.error("[DEBUG] supabase.client: Error creating browser client:", error);

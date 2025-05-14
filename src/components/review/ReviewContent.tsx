@@ -101,7 +101,7 @@ export function ReviewContent({ generationId }: ReviewContentProps) {
   }, [generationId]);
 
   useEffect(() => {
-    console.log("[DEBUG] Fetched cards:", {
+    
       cards,
       firstCard: cards[0],
       totalCards: cards.length,
@@ -168,7 +168,7 @@ export function ReviewContent({ generationId }: ReviewContentProps) {
         accepted_cards: acceptedCardIds, // This matches the schema expectation
       };
 
-      console.log("[DEBUG] Finalization payload:", payload);
+      
 
       const response = await fetch(`/api/generation/${generationId}/finalize`, {
         method: "POST",
