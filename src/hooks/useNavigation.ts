@@ -1,5 +1,11 @@
-import { useCallback } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { toast } from "sonner";
+
+interface NavigationState {
+  path: string | null;
+  replace: boolean;
+  storageState?: Record<string, string>;
+}
 
 /**
  * A custom hook that provides navigation functionality
@@ -8,6 +14,36 @@ import { toast } from "sonner";
  * approach to navigation within the application.
  */
 export function useNavigation() {
+  const [navigationState, setNavigationState] = useState<NavigationState>({
+    path: null,
+    replace: false,
+  });
+
+  // Handle actual navigation in an effect
+  useEffect(() => {
+    if (!navigationState.path) return;
+
+    try {
+      // Store any state in sessionStorage before navigation
+      if (navigationState.storageState) {
+        Object.entries(navigationState.storageState).forEach(([key, value]) => {
+          sessionStorage.setItem(key, value);
+        });
+        console.debug("[NAVIGATION] State preserved in sessionStorage");
+      }
+
+      // Perform the navigation
+      if (navigationState.replace) {
+        window.location.replace(navigationState.path);
+      } else {
+        window.location.href = navigationState.path;
+      }
+    } catch (error) {
+      console.error("[NAVIGATION] Navigation error:", error);
+      toast.error("Navigation failed. Please try again.");
+    }
+  }, [navigationState]);
+
   /**
    * Navigate to a specified path
    *
@@ -23,30 +59,18 @@ export function useNavigation() {
         replace?: boolean;
         state?: Record<string, string>;
       }
-    ) => {
+    ): Promise<boolean> => {
       try {
-        console.log(`[NAVIGATION] Navigating to: ${path}`);
-
-        // Store state in sessionStorage if provided
-        if (options?.state) {
-          Object.entries(options.state).forEach(([key, value]) => {
-            sessionStorage.setItem(key, value);
-          });
-          console.log("[NAVIGATION] State preserved in sessionStorage");
-        }
-
-        // Perform the navigation
-        if (options?.replace) {
-          window.location.replace(path);
-        } else {
-          window.location.href = path;
-        }
-
-        return true;
+        setNavigationState({
+          path,
+          replace: options?.replace ?? false,
+          storageState: options?.state,
+        });
+        return Promise.resolve(true);
       } catch (error) {
         console.error("[NAVIGATION] Navigation error:", error);
         toast.error("Navigation failed. Please try again.");
-        return false;
+        return Promise.resolve(false);
       }
     },
     []

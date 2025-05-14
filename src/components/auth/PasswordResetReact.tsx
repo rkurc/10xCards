@@ -18,11 +18,11 @@ export function PasswordResetReact({ redirectUrl = "/login" }: PasswordResetProp
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
       // Direct call to auth service - no context needed
       const result = await resetPassword(email);
-      
+
       if (result.success) {
         toast({
           title: "Link do resetowania hasła wysłany",
@@ -39,48 +39,41 @@ export function PasswordResetReact({ redirectUrl = "/login" }: PasswordResetProp
         });
       }
     } catch (error) {
-      // Unexpected error
-      console.error("Password reset error:", error);
       toast({
         title: "Błąd",
-        description: "Wystąpił nieoczekiwany błąd",
+        description: "Wystąpił nieoczekiwany błąd: " + (error as Error).message,
         variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
   if (isSuccess) {
     return (
       <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Link wysłany!</h1>
           <p className="text-sm text-gray-600 mt-4">
-            Wysłaliśmy link do resetowania hasła na adres <strong>{email}</strong>.
-            Sprawdź swoją skrzynkę email i postępuj zgodnie z instrukcjami.
+            Wysłaliśmy link do resetowania hasła na adres <strong>{email}</strong>. Sprawdź swoją skrzynkę email i
+            postępuj zgodnie z instrukcjami.
           </p>
         </div>
         <div className="pt-4">
-          <Button 
-            className="w-full" 
-            variant="outline" 
-            onClick={() => window.location.href = redirectUrl}
-          >
+          <Button className="w-full" variant="outline" onClick={() => (window.location.href = redirectUrl)}>
             Wróć do strony logowania
           </Button>
         </div>
       </div>
     );
   }
-  
+
   return (
     <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md">
       <div className="text-center">
         <h1 className="text-2xl font-bold">Resetowanie hasła</h1>
         <p className="text-sm text-gray-600 mt-2">
-          Podaj adres email powiązany z Twoim kontem, a my wyślemy link do
-          resetowania hasła.
+          Podaj adres email powiązany z Twoim kontem, a my wyślemy link do resetowania hasła.
         </p>
       </div>
 
@@ -101,12 +94,7 @@ export function PasswordResetReact({ redirectUrl = "/login" }: PasswordResetProp
           </div>
         </div>
 
-        <Button 
-          type="submit" 
-          className="w-full" 
-          disabled={isSubmitting}
-          data-testid="reset-button"
-        >
+        <Button type="submit" className="w-full" disabled={isSubmitting} data-testid="reset-button">
           {isSubmitting ? "Wysyłanie..." : "Wyślij link resetujący"}
         </Button>
 

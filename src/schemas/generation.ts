@@ -17,13 +17,12 @@ export const processTextSchema = z.object({
  * Allows both numeric timestamp IDs and UUIDs
  */
 export const generationIdSchema = z.object({
-  generation_id: z.string()
-    .refine((val) => {
-      // Accept both UUID and timestamp formats
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      const timestampRegex = /^\d+$/;
-      return uuidRegex.test(val) || timestampRegex.test(val);
-    }, "Invalid generation ID format")
+  generation_id: z.string().refine((val) => {
+    // Accept both UUID and timestamp formats
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const timestampRegex = /^\d+$/;
+    return uuidRegex.test(val) || timestampRegex.test(val);
+  }, "Invalid generation ID format"),
 });
 
 /**

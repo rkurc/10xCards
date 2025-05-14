@@ -9,12 +9,12 @@ import { createAuthErrorResponse, createAuthSuccessResponse } from "../../../uti
 export const POST: APIRoute = async ({ request, cookies }) => {
   console.log("[AUTH] Login API endpoint called (DEPRECATED) - " + new Date().toISOString());
   console.warn("This API route is deprecated. Use AuthService directly with Supabase client instead.");
-  
+
   try {
     // Parse request body
     let email: string | null = null;
     let password: string | null = null;
-    
+
     try {
       const body = await request.json();
       email = body.email;
@@ -38,23 +38,29 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     if (error) {
       // Return 401 for authentication errors
-      return new Response(JSON.stringify({
-        success: false,
-        error: error.message
-      }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" }
-      });
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: error.message,
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     if (!data?.user) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: "Authentication failed - no user returned"
-      }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" }
-      });
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Authentication failed - no user returned",
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
     }
 
     // Return successful response
@@ -63,9 +69,8 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         id: data.user.id,
         email: data.user.email || "",
         name: data.user.user_metadata?.name || data.user.email?.split("@")[0] || "",
-      }
+      },
     });
-
   } catch (error) {
     return createAuthErrorResponse("Unexpected error during login", 500);
   }

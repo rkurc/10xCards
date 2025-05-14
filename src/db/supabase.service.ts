@@ -1,7 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from './database.types';
-import { env } from '../config/environment';
+import { createClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "./database.types";
+import { env } from "../config/environment";
 
 // Export the typed SupabaseClient for use throughout the application
 export type TypedSupabaseClient = SupabaseClient<Database>;
@@ -12,23 +12,23 @@ export type TypedSupabaseClient = SupabaseClient<Database>;
  * @returns Typed Supabase client
  */
 export function createSupabaseClient(authToken?: string): TypedSupabaseClient {
-  const options = authToken 
-    ? { 
-        global: { 
-          headers: { Authorization: `Bearer ${authToken}` } 
+  const options = authToken
+    ? {
+        global: {
+          headers: { Authorization: `Bearer ${authToken}` },
         },
         auth: {
           persistSession: true,
           autoRefreshToken: true,
-        }
+        },
       }
     : {
         auth: {
           persistSession: true,
           autoRefreshToken: true,
-        }
+        },
       };
-  
+
   return createClient<Database>(env.supabase.url, env.supabase.anonKey, options);
 }
 
@@ -39,19 +39,15 @@ export function createSupabaseClient(authToken?: string): TypedSupabaseClient {
  */
 export function createSupabaseAdminClient(): TypedSupabaseClient {
   if (!env.supabase.serviceKey) {
-    throw new Error('SUPABASE_SERVICE_KEY is required for admin operations');
+    throw new Error("SUPABASE_SERVICE_KEY is required for admin operations");
   }
-  
-  return createClient<Database>(
-    env.supabase.url, 
-    env.supabase.serviceKey, 
-    { 
-      auth: { 
-        persistSession: false,
-        autoRefreshToken: false,
-      } 
-    }
-  );
+
+  return createClient<Database>(env.supabase.url, env.supabase.serviceKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
 }
 
 /**

@@ -101,11 +101,13 @@ export function ReviewContent({ generationId }: ReviewContentProps) {
   }, [generationId]);
 
   useEffect(() => {
-    console.log("[DEBUG] Fetched cards:", {
-      cards,
-      firstCard: cards[0],
-      totalCards: cards.length,
-    });
+    if (!cards.length) return;
+
+    // TODO: Add state updates or side effects based on cards here
+    // Currently these values are not being used:
+    // cards,
+    // firstCard: cards[0],
+    // totalCards: cards.length
   }, [cards]);
 
   const handleAcceptCard = async (cardId: string) => {
@@ -159,18 +161,14 @@ export function ReviewContent({ generationId }: ReviewContentProps) {
 
     try {
       // Get only IDs of accepted cards
-      const acceptedCardIds = cards
-        .filter((card) => card.isAccepted)
-        .map((card) => card.id);
+      const acceptedCardIds = cards.filter((card) => card.isAccepted).map((card) => card.id);
 
       // Match the schema structure exactly
       const payload = {
         name: `Generated Set - ${new Date().toLocaleDateString()}`,
         description: "Automatically generated flashcards",
-        accepted_cards: acceptedCardIds  // This matches the schema expectation
+        accepted_cards: acceptedCardIds, // This matches the schema expectation
       };
-
-      console.log('[DEBUG] Finalization payload:', payload);
 
       const response = await fetch(`/api/generation/${generationId}/finalize`, {
         method: "POST",

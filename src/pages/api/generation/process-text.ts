@@ -32,7 +32,7 @@ export async function POST({ request, locals }: APIContext) {
       return createApiError({
         code: "RATE_LIMIT_EXCEEDED",
         message: "Rate limit exceeded. Try again later.",
-        status: 429
+        status: 429,
       });
     }
 
@@ -45,7 +45,7 @@ export async function POST({ request, locals }: APIContext) {
         code: "INVALID_REQUEST",
         message: "Invalid request data",
         details: result.error.format(),
-        status: 400
+        status: 400,
       });
     }
 
@@ -60,12 +60,12 @@ export async function POST({ request, locals }: APIContext) {
           .maybeSingle();
 
         if (error) throw error;
-        
+
         if (!cardSet) {
           return createApiError({
             code: "FORBIDDEN",
             message: "The specified card set does not exist or you do not have access to it",
-            status: 403
+            status: 403,
           });
         }
       } catch (error) {

@@ -21,7 +21,7 @@ export default defineConfig({
   server: { port: 3000 },
   vite: {
     // Remove the tailwindcss() call since it's not imported and not needed
-    plugins: [], 
+    plugins: [],
     css: {
       preprocessorOptions: {
         scss: {
@@ -39,6 +39,6 @@ export default defineConfig({
     mode: "standalone",
   }),
   experimental: {
-    session: true  // Enable experimental sessions support
+    session: true, // Enable experimental sessions support
   },
 });

@@ -80,7 +80,6 @@ export function GenerateForm() {
 
       // Check if the API response includes a redirect URL
       if (data.redirect_url) {
-        console.log(`[DEBUG] Will redirect to: ${data.redirect_url} after processing completes`);
         // Store the redirect URL to be used after processing completes
         sessionStorage.setItem("flashcard_redirect_url", data.redirect_url);
       }

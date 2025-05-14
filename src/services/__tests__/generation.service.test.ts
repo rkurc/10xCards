@@ -14,21 +14,21 @@ const mockSupabase = {
   single: vi.fn(),
   maybeSingle: vi.fn().mockReturnValue({
     data: null,
-    error: null
+    error: null,
   }),
   rpc: vi.fn().mockImplementation((procedure, params) => {
-    if (procedure === 'finalize_generation') {
+    if (procedure === "finalize_generation") {
       return Promise.resolve({
         data: {
           set_id: "new-set-id",
           name: params?.p_name || "Test Set",
-          card_count: params?.p_accepted_cards?.length || 2
+          card_count: params?.p_accepted_cards?.length || 2,
         },
-        error: null
+        error: null,
       });
     }
     return Promise.resolve({ data: null, error: { message: "Unknown procedure" } });
-  })
+  }),
 };
 
 describe("GenerationService", () => {

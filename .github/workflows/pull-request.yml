@@ -74,8 +74,7 @@ jobs:
     env:
       NODE_ENV: integration
       PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      # Add any additional environment variables for E2E tests
+      PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}      
     
     steps:
       - name: Checkout repository
@@ -109,7 +108,7 @@ jobs:
 
   status-comment:
     name: Comment on PR
-    needs: [unit-tests, e2e-tests]
+    needs: [unit-tests, e2e-tests, lint]
     runs-on: ubuntu-latest
     if: always()
     
@@ -128,9 +127,9 @@ jobs:
               '',
               `| Check | Status |`,
               `|-------|--------|`,
-              `| Linting | ${linting === 'success' ? '✅' : '❌'} |`,
-              `| Unit Tests | ${unitTests === 'success' ? '✅' : '❌'} |`,
-              `| E2E Tests | ${e2eTests === 'success' ? '✅' : '❌'} |`,
+              `| Linting | ${linting === 'success' ? '✅' : linting} |`,
+              `| Unit Tests | ${unitTests === 'success' ? '✅' : unitTests} |`,
+              `| E2E Tests | ${e2eTests === 'success' ? '✅' : e2eTests} |`,
               ''
             ].join('\n');
             

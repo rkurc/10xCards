@@ -26,7 +26,8 @@ export function useAuth() {
 
   // Logging to track migration progress (will be removed in cleanup phase)
   useEffect(() => {
-    console.log("[DEBUG] useAuth wrapper initializing with", {
+    // TODO: Add any necessary side effects based on auth state changes
+    console.debug("[Auth Debug]", {
       hasUser: !!user,
       loading,
       authLoading,

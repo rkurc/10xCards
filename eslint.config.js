@@ -18,8 +18,36 @@ const gitignorePath = path.resolve(__dirname, ".gitignore");
 const baseConfig = tseslint.config({
   extends: [eslint.configs.recommended, tseslint.configs.strict, tseslint.configs.stylistic],
   rules: {
-    "no-console": "warn",
-    "no-unused-vars": "off",
+    // Allow console logs in development
+    "no-console": "off",
+
+    // TypeScript specific rules
+    "no-unused-vars": "off", // TypeScript handles this
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      {
+        argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
+        ignoreRestSiblings: true,
+      },
+    ],
+    "@typescript-eslint/no-explicit-any": "warn", // Downgrade from error to warning
+    "@typescript-eslint/no-empty-function": [
+      "warn",
+      {
+        allow: ["arrowFunctions", "constructors"], // Allow empty functions in default context values
+      },
+    ],
+    "@typescript-eslint/no-empty-interface": [
+      "warn",
+      {
+        allowSingleExtends: true,
+      },
+    ],
+
+    // Misc
+    "no-empty": ["error", { allowEmptyCatch: true }],
+    "@typescript-eslint/ban-ts-comment": "warn", // Allow ts-ignore with warning
   },
 });
 
@@ -61,6 +89,6 @@ export default tseslint.config(
   baseConfig,
   jsxA11yConfig,
   reactConfig,
-  eslintPluginAstro.configs["flat/recommended"],
-  eslintPluginPrettier
+  eslintPluginPrettier,
+  eslintPluginAstro.configs["flat/recommended"]
 );

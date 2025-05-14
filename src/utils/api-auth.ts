@@ -19,14 +19,14 @@ export interface ApiError {
 export function requireAuth({ locals, request }: APIContext): Response | null {
   if (!locals.user) {
     return new Response(
-      JSON.stringify({ 
-        code: "UNAUTHORIZED", 
+      JSON.stringify({
+        code: "UNAUTHORIZED",
         message: "Authentication required to access this resource",
-        status: 401 
+        status: 401,
       } as ApiError),
-      { 
-        status: 401, 
-        headers: { "Content-Type": "application/json" } 
+      {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
       }
     );
   }
@@ -39,46 +39,40 @@ export function requireAuth({ locals, request }: APIContext): Response | null {
  * @param status HTTP status code
  * @returns Formatted API error response
  */
-export function createApiError(
-  error: string | Error | ApiError | unknown, 
-  status = 500
-): Response {
+export function createApiError(error: string | Error | ApiError | unknown, status = 500): Response {
   let apiError: ApiError;
-  
-  if (typeof error === 'string') {
+
+  if (typeof error === "string") {
     apiError = {
-      code: 'API_ERROR',
+      code: "API_ERROR",
       message: error,
-      status
+      status,
     };
   } else if (error instanceof Error) {
     apiError = {
-      code: 'API_ERROR',
+      code: "API_ERROR",
       message: error.message,
       status,
-      details: error.stack
+      details: error.stack,
     };
-  } else if (typeof error === 'object' && error !== null && 'code' in error && 'message' in error) {
+  } else if (typeof error === "object" && error !== null && "code" in error && "message" in error) {
     apiError = {
       ...(error as ApiError),
-      status: (error as ApiError).status || status
+      status: (error as ApiError).status || status,
     };
   } else {
     apiError = {
-      code: 'UNKNOWN_ERROR',
-      message: 'An unknown error occurred',
+      code: "UNKNOWN_ERROR",
+      message: "An unknown error occurred",
       status,
-      details: error
+      details: error,
     };
   }
-  
-  return new Response(
-    JSON.stringify(apiError),
-    { 
-      status: apiError.status, 
-      headers: { "Content-Type": "application/json" } 
-    }
-  );
+
+  return new Response(JSON.stringify(apiError), {
+    status: apiError.status,
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 /**
@@ -88,11 +82,8 @@ export function createApiError(
  * @returns Formatted API success response
  */
 export function createApiResponse<T>(data: T, status = 200): Response {
-  return new Response(
-    JSON.stringify(data),
-    { 
-      status, 
-      headers: { "Content-Type": "application/json" } 
-    }
-  );
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
 }

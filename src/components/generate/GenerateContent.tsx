@@ -17,22 +17,18 @@ import { GenerationWrapper } from "./GenerationWrapper";
 function GenerateContentInner() {
   const { currentStep, generationId, cards, updateGenerationState } = useGenerationContext();
   const { toast } = useToast();
-  
+
   // Get URL parameters without using react-router-dom
   const getUrlParams = () => {
     const searchParams = new URLSearchParams(window.location.search);
     return {
-      id: searchParams.get('id'),
-      state: searchParams.get('state')
+      id: searchParams.get("id"),
+      state: searchParams.get("state"),
     };
   };
 
-  const { 
-    handleProcessingComplete, 
-    handleGenerationComplete, 
-    handleStartNewGeneration, 
-    manualNavigateToReview 
-  } = useGenerationActions();
+  const { handleProcessingComplete, handleGenerationComplete, handleStartNewGeneration, manualNavigateToReview } =
+    useGenerationActions();
 
   // Add force update mechanism for potential UI sync issues
   const [, forceUpdate] = useState({});
@@ -40,11 +36,11 @@ function GenerateContentInner() {
   // Check URL query parameters for possible state recovery
   useEffect(() => {
     const { id: idFromUrl, state: stateFromUrl } = getUrlParams();
-    
+
     if (idFromUrl && !generationId) {
       console.log(`[GENERATE-CONTENT] Recovering state from URL: id=${idFromUrl}, state=${stateFromUrl}`);
-      
-      if (stateFromUrl && (stateFromUrl === 'processing' || stateFromUrl === 'review')) {
+
+      if (stateFromUrl && (stateFromUrl === "processing" || stateFromUrl === "review")) {
         updateGenerationState(idFromUrl, stateFromUrl);
         toast({
           title: "State Recovered",
@@ -60,7 +56,6 @@ function GenerateContentInner() {
   useEffect(() => {
     // Log critical state changes for debugging
     if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
       console.log("[GENERATE-CONTENT] Critical state change detected:", { currentStep, generationId });
     }
 
@@ -70,7 +65,6 @@ function GenerateContentInner() {
 
     // If we're in processing state, make sure status UI is displayed
     if (currentStep === "processing" && generationId && process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
       console.log("[GENERATE-CONTENT] In processing state with ID:", generationId);
     }
   }, [currentStep, generationId]);
@@ -78,7 +72,6 @@ function GenerateContentInner() {
   // Add this to debug component updates
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
       console.log("[GENERATE-CONTENT] Rendering with state:", {
         currentStep,
         generationId,

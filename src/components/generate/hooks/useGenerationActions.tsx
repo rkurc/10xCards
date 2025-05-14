@@ -22,7 +22,6 @@ export function useGenerationActions() {
     const fetchResults = async () => {
       if (generationId && currentStep === "review" && cards.length === 0) {
         try {
-          console.log(`[GENERATION-ACTIONS] Fetching results for ID: ${generationId}`);
           const response = await fetch(`/api/generation/${generationId}/results`);
 
           if (!response.ok) {
@@ -32,9 +31,7 @@ export function useGenerationActions() {
           const data = await response.json();
           setCards(data.cards);
           setStats(data.stats);
-          console.log(`[GENERATION-ACTIONS] Results fetched successfully: ${data.cards.length} cards`);
         } catch (error) {
-          // eslint-disable-next-line no-console
           console.error("Error fetching generation results:", error);
           toast.error("Failed to load generation results. Please try again.");
         }
@@ -46,19 +43,15 @@ export function useGenerationActions() {
 
   // Handle processing complete
   const handleProcessingComplete = useCallback(async (): Promise<void> => {
-    console.log(`[GENERATION-DEBUG] handleProcessingComplete called for generation ID: ${generationId}`);
-
     try {
       // First fetch the results to ensure they're in the state
       if (cards.length === 0 && generationId) {
-        console.log(`[GENERATION-DEBUG] Fetching results before redirection`);
         const response = await fetch(`/api/generation/${generationId}/results`);
 
         if (response.ok) {
           const data = await response.json();
           setCards(data.cards);
           setStats(data.stats);
-          console.log(`[GENERATION-DEBUG] Successfully loaded ${data.cards.length} cards`);
         } else {
           throw new Error(`Failed to fetch results: ${response.status}`);
         }
@@ -70,7 +63,6 @@ export function useGenerationActions() {
 
       // Use the atomic update function instead of individual setters
       updateGenerationState(generationId, "review");
-      console.log(`[GENERATION-DEBUG] Updated generation state to review`);
 
       // Check if we have a redirect URL from sessionStorage (set in GenerateForm)
       const redirectUrl = sessionStorage.getItem("flashcard_redirect_url");
@@ -80,11 +72,8 @@ export function useGenerationActions() {
 
       // If we have a redirect URL from the API, use it instead
       if (redirectUrl && typeof redirectUrl === "string" && redirectUrl.includes(generationId)) {
-        console.log(`[GENERATION-DEBUG] Using redirect URL from API: ${redirectUrl}`);
         reviewUrl = redirectUrl;
       }
-
-      console.log(`[GENERATION-DEBUG] Redirecting to: ${reviewUrl}`);
 
       // Add debug query parameters to help track state
       reviewUrl = `${reviewUrl}?source=callback&id=${generationId}&state=review`;
@@ -96,7 +85,7 @@ export function useGenerationActions() {
       window.location.href = reviewUrl;
 
       // Return a promise that never resolves, since we're navigating away
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
+
       return new Promise<void>(() => {});
     } catch (error) {
       console.error(`[GENERATION-DEBUG] Error in handleProcessingComplete:`, error);
@@ -128,13 +117,11 @@ export function useGenerationActions() {
 
   // Handle generation complete
   const handleGenerationComplete = useCallback(() => {
-    console.log(`[GENERATION-DEBUG] Completing generation, setting step to complete`);
     setCurrentStep("complete");
   }, [setCurrentStep]);
 
   // Handle starting a new generation
   const handleStartNewGeneration = useCallback(() => {
-    console.log(`[GENERATION-DEBUG] Starting new generation, resetting state`);
     resetGeneration();
   }, [resetGeneration]);
 

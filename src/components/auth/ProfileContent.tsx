@@ -57,7 +57,7 @@ export default function ProfileContent() {
     setIsSaving(true);
     try {
       const result = await updateProfile({ name });
-      
+
       if (result.success) {
         toast({
           title: "Zapisano zmiany",
@@ -95,19 +95,14 @@ export default function ProfileContent() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  value={user.email} 
-                  disabled 
-                  aria-disabled="true"
-                />
+                <Input id="email" value={user.email} disabled aria-disabled="true" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="name">Nazwa użytkownika</Label>
-                <Input 
-                  id="name" 
-                  value={name} 
-                  onChange={(e) => setName(e.target.value)} 
+                <Input
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   placeholder="Podaj swoją nazwę"
                 />
               </div>
@@ -128,33 +123,21 @@ export default function ProfileContent() {
         <CardFooter>
           {editMode ? (
             <div className="flex gap-2 w-full">
-              <Button 
-                variant="outline" 
-                className="flex-1" 
-                onClick={() => setEditMode(false)}
-                disabled={isSaving}
-              >
+              <Button variant="outline" className="flex-1" onClick={() => setEditMode(false)} disabled={isSaving}>
                 Anuluj
               </Button>
-              <Button 
-                className="flex-1" 
-                onClick={handleSave}
-                disabled={isSaving}
-              >
+              <Button className="flex-1" onClick={handleSave} disabled={isSaving}>
                 {isSaving ? "Zapisywanie..." : "Zapisz"}
               </Button>
             </div>
           ) : (
-            <Button 
-              variant="outline" 
-              onClick={() => setEditMode(true)}
-            >
+            <Button variant="outline" onClick={() => setEditMode(true)}>
               Edytuj dane
             </Button>
           )}
         </CardFooter>
       </Card>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Bezpieczeństwo</CardTitle>
@@ -162,17 +145,15 @@ export default function ProfileContent() {
         </CardHeader>
         <CardContent>
           <p className="mb-4">Twoje hasło powinno być silne i unikalne dla każdego konta.</p>
-          <p className="text-sm text-muted-foreground">
-            Ostatnia zmiana hasła: Nigdy
-          </p>
+          <p className="text-sm text-muted-foreground">Ostatnia zmiana hasła: Nigdy</p>
         </CardContent>
         <CardFooter>
-          <Button variant="outline" onClick={() => window.location.href = "/reset-password"}>
+          <Button variant="outline" onClick={() => (window.location.href = "/reset-password")}>
             Zmień hasło
           </Button>
         </CardFooter>
       </Card>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Eksport danych</CardTitle>
@@ -182,10 +163,12 @@ export default function ProfileContent() {
           <p>Możesz pobrać wszystkie dane związane z Twoim kontem w formacie JSON.</p>
         </CardContent>
         <CardFooter>
-          <Button variant="outline" disabled>Eksportuj dane</Button>
+          <Button variant="outline" disabled>
+            Eksportuj dane
+          </Button>
         </CardFooter>
       </Card>
-      
+
       <Card>
         <CardHeader>
           <CardTitle className="text-destructive">Usunięcie konta</CardTitle>
@@ -195,7 +178,9 @@ export default function ProfileContent() {
           <p>Usunięcie konta spowoduje trwałe usunięcie wszystkich Twoich danych, w tym fiszek i historii nauki.</p>
         </CardContent>
         <CardFooter>
-          <Button variant="destructive" disabled>Usuń konto</Button>
+          <Button variant="destructive" disabled>
+            Usuń konto
+          </Button>
         </CardFooter>
       </Card>
     </div>

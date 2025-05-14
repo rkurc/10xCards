@@ -12,29 +12,27 @@ export async function POST({ params, locals }: APIContext) {
       return new Response(
         JSON.stringify({
           error: "Nieprawidłowy format identyfikatorów",
-          details: paramValidation.error.format()
+          details: paramValidation.error.format(),
         }),
         { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
     // Pobieranie ID użytkownika z sesji
-    const { data: { user } } = await locals.supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await locals.supabase.auth.getUser();
     if (!user) {
-      return new Response(
-        JSON.stringify({ error: "Wymagana autoryzacja" }),
-        { status: 401, headers: { "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Wymagana autoryzacja" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     // Odrzucanie fiszki
     const generationService = new GenerationService(locals.supabase);
     try {
-      await generationService.rejectCard(
-        user.id,
-        params.generation_id,
-        params.card_id
-      );
+      await generationService.rejectCard(user.id, params.generation_id, params.card_id);
 
       // Zwracanie pustej odpowiedzi (204 No Content)
       return new Response(null, { status: 204 });
@@ -45,20 +43,20 @@ export async function POST({ params, locals }: APIContext) {
           { status: 404, headers: { "Content-Type": "application/json" } }
         );
       } else if (serviceError.message?.includes("denied") || serviceError.code === "ACCESS_DENIED") {
-        return new Response(
-          JSON.stringify({ error: "Brak dostępu do tego zasobu" }),
-          { status: 403, headers: { "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "Brak dostępu do tego zasobu" }), {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        });
       } else {
         throw serviceError;
       }
     }
   } catch (error) {
     console.error("Błąd podczas odrzucania fiszki:", error);
-    
-    return new Response(
-      JSON.stringify({ error: "Wystąpił błąd wewnętrzny" }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+
+    return new Response(JSON.stringify({ error: "Wystąpił błąd wewnętrzny" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }

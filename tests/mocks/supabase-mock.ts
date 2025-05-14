@@ -62,7 +62,7 @@ export function createSupabaseTestClient(): TypedSupabaseClient {
     const insertSpy = vi.fn().mockImplementation((data: any | any[]) => {
       // Track the method call
       methodCalls.insert[tableName] = { data };
-      
+
       const dataArray = Array.isArray(data) ? data : [data];
       const insertedIds = dataArray.map((item, index) => ({
         ...item,
@@ -91,7 +91,7 @@ export function createSupabaseTestClient(): TypedSupabaseClient {
           count: filtered.length,
           maybeSingle: () => ({
             data: filtered.length > 0 ? filtered[0] : null,
-            error: null
+            error: null,
           }),
           single: () => {
             if (filtered.length === 0) {
@@ -100,20 +100,20 @@ export function createSupabaseTestClient(): TypedSupabaseClient {
             return { data: filtered[0], error: null };
           },
           eq: vi.fn().mockImplementation((column2: string, value2: any) => {
-            const doubleFiltered = filtered.filter(row => row[column2] === value2);
+            const doubleFiltered = filtered.filter((row) => row[column2] === value2);
             return {
               data: doubleFiltered.length > 0 ? doubleFiltered : null,
               count: doubleFiltered.length,
               maybeSingle: () => ({
                 data: doubleFiltered.length > 0 ? doubleFiltered[0] : null,
-                error: null
+                error: null,
               }),
               single: () => {
                 if (doubleFiltered.length === 0) {
                   return { data: null, error: { message: "No rows found", code: "PGRST116" } };
                 }
                 return { data: doubleFiltered[0], error: null };
-              }
+              },
             };
           }),
           // Add limit method
@@ -127,9 +127,9 @@ export function createSupabaseTestClient(): TypedSupabaseClient {
                   return { data: null, error: { message: "No rows found", code: "PGRST116" } };
                 }
                 return { data: limitedData[0], error: null };
-              }
+              },
             };
-          })
+          }),
         };
         return methods;
       }),
@@ -139,7 +139,7 @@ export function createSupabaseTestClient(): TypedSupabaseClient {
           ...selectMethods,
           data: filtered.length > 0 ? filtered : null,
           count: filtered.length,
-          error: null
+          error: null,
         };
       }),
       match: vi.fn().mockImplementation((conditions: Record<string, any>) => {
@@ -155,16 +155,16 @@ export function createSupabaseTestClient(): TypedSupabaseClient {
               return { data: null, error: { message: "No rows found", code: "PGRST116" } };
             }
             return { data: filtered[0], error: null };
-          }
+          },
         };
       }),
     };
 
     const tableMethods = {
-      select: vi.fn().mockImplementation((columns: string = "*") => {
+      select: vi.fn().mockImplementation((columns = "*") => {
         // Track the method call
         methodCalls.select[tableName] = { columns };
-        
+
         return {
           ...selectMethods,
           data: tableData.length > 0 ? tableData : null,
@@ -180,7 +180,7 @@ export function createSupabaseTestClient(): TypedSupabaseClient {
       update: vi.fn().mockImplementation((data: any) => {
         // Track the method call
         methodCalls.update[tableName] = { data };
-        
+
         return {
           eq: vi.fn().mockImplementation((column: string, value: any) => {
             return { data: { ...data, [column]: value }, error: null };
@@ -197,7 +197,7 @@ export function createSupabaseTestClient(): TypedSupabaseClient {
       delete: vi.fn().mockImplementation(() => {
         // Track the method call
         methodCalls.delete[tableName] = { called: true };
-        
+
         return {
           eq: vi.fn().mockImplementation((column: string, value: any) => {
             return { data: { deleted: true }, error: null };
@@ -228,7 +228,7 @@ export function createSupabaseTestClient(): TypedSupabaseClient {
   const rpcSpy = vi.fn().mockImplementation((procedureName: string, params: any) => {
     // Track the method call
     methodCalls.rpc[procedureName] = { params };
-    
+
     // Mock successful finalize_generation procedure
     if (procedureName === "finalize_generation") {
       return Promise.resolve({

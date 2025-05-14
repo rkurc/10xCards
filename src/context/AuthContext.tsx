@@ -11,7 +11,7 @@ import {
   onAuthStateChange,
 } from "../services/auth.service";
 
-export type AuthContextType = {
+export interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: Error | null;
@@ -19,15 +19,14 @@ export type AuthContextType = {
   register: (email: string, password: string, options?: { name?: string }) => Promise<any>;
   logout: () => Promise<void>;
   resetPassword?: (email: string) => Promise<any>;
-};
+}
 
 // Default context value
 const defaultContextValue: AuthContextType = {
   user: null,
   loading: false,
   error: null,
-  login: async () => (
-    console.error("[DEBUG] AuthContext.login called without implementation"), { success: false }),
+  login: async () => (console.error("[DEBUG] AuthContext.login called without implementation"), { success: false }),
   register: async () => {},
   logout: async () => {},
 };
@@ -41,14 +40,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
   const [user, setUser] = useState<User | null>(initialUser || null);
   const [loading, setLoading] = useState<boolean>(!initialUser);
   const [error, setError] = useState<Error | null>(null);
-  
+
   // Check if code is running on server
   const isServer = typeof window === "undefined";
 
   const login = async (email: string, password: string): Promise<LoginResult> => {
     // Handle server-side case explicitly
     if (isServer) {
-      console.log("[DEBUG] AuthContext.login called on server-side, returning error");
       return {
         success: false,
         error: "Authentication can only be performed in the browser",
@@ -56,42 +54,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
     }
 
     try {
-      console.log("[DEBUG] AuthContext.login calling serviceLogin function directly");
       const result = await serviceLogin(email, password);
-      console.log(
-        "[DEBUG] AuthContext.login result:",
-        JSON.stringify({
-          success: result.success,
-          hasError: !!result.error,
-          errorMessage: result.error,
-          hasUser: !!result.user,
-          user: result.user ? { id: result.user.id, email: result.user.email } : null
-        })
-      );
 
       if (result.success) {
-        console.log("[DEBUG] AuthContext.login showing success toast");
         toast.success("Logowanie udane");
 
         if (result.user) {
-          console.log("[DEBUG] AuthContext.login setting user state:", result.user);
           setUser(result.user);
-          
+
           // Add this verification to check if the user was actually set
-          setTimeout(() => {
-            console.log("[DEBUG] User state after login:", user);
-          }, 0);
+          setTimeout(() => {}, 0);
         }
       } else {
         const errorMsg = result.error || "Niepoprawny email lub hasło";
-        console.error("[DEBUG] AuthContext.login error:", errorMsg);
         toast.error(errorMsg);
       }
 
       return result;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Wystąpił błąd podczas logowania";
-      console.error("[DEBUG] AuthContext.login caught exception:", errorMsg);
       toast.error(errorMsg);
       return { success: false, error: errorMsg };
     }
@@ -119,8 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
       setUser(null);
       toast.success("Wylogowano pomyślnie");
     } catch (error) {
-      toast.error("Wystąpił błąd podczas wylogowywania");
-      console.error("Logout error:", error);
+      toast.error("Wystąpił błąd podczas wylogowywania" + (error instanceof Error ? error.message : ""));
     }
   };
 
@@ -150,7 +130,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
         const currentUser = await getCurrentUser();
         setUser(currentUser);
       } catch (error) {
-        console.error("Error checking auth status:", error);
         setError(error instanceof Error ? error : new Error(String(error)));
       } finally {
         setLoading(false);

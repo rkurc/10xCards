@@ -10,11 +10,11 @@ interface ProcessingStageProps {
 
 export function ProcessingStage({ onProcessingComplete, onManualNavigate }: ProcessingStageProps) {
   const { generationId } = useGenerationContext();
-  
+
   if (!generationId) {
     return null;
   }
-  
+
   return (
     <>
       <ProcessingStatusCard generationId={generationId} onComplete={onProcessingComplete} />

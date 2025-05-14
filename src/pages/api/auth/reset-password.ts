@@ -1,10 +1,6 @@
 import type { APIRoute } from "astro";
 import { createSupabaseServerClient } from "../../../lib/supabase.server";
-import { 
-  createAuthErrorResponse, 
-  createAuthSuccessResponse,
-  handleAuthResponse
-} from "../../../utils/auth/responses";
+import { createAuthErrorResponse, createAuthSuccessResponse, handleAuthResponse } from "../../../utils/auth/responses";
 
 /**
  * @deprecated This API route is deprecated and will be removed in a future release.

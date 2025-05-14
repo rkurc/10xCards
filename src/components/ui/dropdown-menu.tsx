@@ -15,7 +15,7 @@ const DropdownMenuContext = React.createContext<{
 
 export function DropdownMenu({ children }: DropdownMenuProps) {
   const [open, setOpen] = React.useState(false);
-  
+
   // Click outside handler moved inside component
   React.useEffect(() => {
     function handleOutsideClick(event: MouseEvent) {
@@ -24,11 +24,11 @@ export function DropdownMenu({ children }: DropdownMenuProps) {
         setOpen(false);
       }
     }
-    
+
     if (open) {
       document.addEventListener("click", handleOutsideClick);
     }
-    
+
     return () => {
       document.removeEventListener("click", handleOutsideClick);
     };
@@ -46,10 +46,7 @@ interface DropdownMenuTriggerProps {
   children: React.ReactNode;
 }
 
-export function DropdownMenuTrigger({
-  asChild = false,
-  children,
-}: DropdownMenuTriggerProps) {
+export function DropdownMenuTrigger({ asChild = false, children }: DropdownMenuTriggerProps) {
   const { open, setOpen } = React.useContext(DropdownMenuContext);
 
   const handleClick = (e: React.MouseEvent) => {
@@ -66,11 +63,7 @@ export function DropdownMenuTrigger({
   }
 
   return (
-    <button
-      onClick={handleClick}
-      aria-expanded={open}
-      aria-haspopup={true}
-    >
+    <button onClick={handleClick} aria-expanded={open} aria-haspopup={true}>
       {children}
     </button>
   );
@@ -112,34 +105,15 @@ export function DropdownMenuContent({
   );
 }
 
-export function DropdownMenuLabel({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn("px-2 py-1.5 text-sm font-semibold", className)}
-      {...props}
-    />
-  );
+export function DropdownMenuLabel({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn("px-2 py-1.5 text-sm font-semibold", className)} {...props} />;
 }
 
-export function DropdownMenuSeparator({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn("-mx-1 my-1 h-px bg-muted", className)}
-      {...props}
-    />
-  );
+export function DropdownMenuSeparator({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn("-mx-1 my-1 h-px bg-muted", className)} {...props} />;
 }
 
-export function DropdownMenuItem({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+export function DropdownMenuItem({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(

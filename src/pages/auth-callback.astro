@@ -5,19 +5,19 @@ import { createSupabaseServerClient } from "../lib/supabase.server";
 console.log("Auth callback page reached");
 
 // Get auth code from URL if present
-const code = Astro.url.searchParams.get('code');
+const code = Astro.url.searchParams.get("code");
 console.log("Auth code present:", !!code);
 
 if (code) {
   const supabase = createSupabaseServerClient({
     cookies: Astro.cookies,
-    headers: Astro.request.headers
+    headers: Astro.request.headers,
   });
 
   try {
     // Exchange code for session
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-    
+
     if (error) {
       console.error("Error exchanging code for session:", error);
     } else {
@@ -30,7 +30,7 @@ if (code) {
 
 // Redirect to dashboard after processing
 console.log("Redirecting to dashboard");
-return Astro.redirect('/dashboard');
+return Astro.redirect("/dashboard");
 ---
 
 <!-- Display a loading message for a moment while the redirect happens -->

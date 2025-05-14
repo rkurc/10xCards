@@ -11,17 +11,17 @@ export function ReviewStage({ onComplete }: ReviewStageProps) {
   const { generationId, cards, stats } = useGenerationContext();
 
   // Add debug logging
-  console.log('[DEBUG-REVIEW-STAGE]', {
+  console.log("[DEBUG-REVIEW-STAGE]", {
     generationId,
     cardsCount: cards.length,
-    hasStats: !!stats
+    hasStats: !!stats,
   });
 
   if (!generationId || cards.length === 0 || !stats) {
-    console.log('[DEBUG-REVIEW-STAGE] Showing loading state because:', {
+    console.log("[DEBUG-REVIEW-STAGE] Showing loading state because:", {
       noGenerationId: !generationId,
       noCards: cards.length === 0,
-      noStats: !stats
+      noStats: !stats,
     });
     return <LoadingResults />;
   }

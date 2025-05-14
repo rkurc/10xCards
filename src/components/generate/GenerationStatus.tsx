@@ -17,12 +17,9 @@ export function GenerationStatus({ generationId, onComplete }: GenerationStatusP
 
   // Critical fix: Implement proper status polling
   useEffect(() => {
-    console.log(`[GENERATION-STATUS] Setting up polling for generation ID: ${generationId}`);
-
     // Define the polling function
     const checkStatus = async () => {
       try {
-        console.log(`[GENERATION-STATUS] Checking status for generation ID: ${generationId}`);
         const response = await fetch(`/api/generation/${generationId}/status`);
 
         if (!response.ok) {
@@ -31,7 +28,6 @@ export function GenerationStatus({ generationId, onComplete }: GenerationStatusP
         }
 
         const data = await response.json();
-        console.log(`[GENERATION-STATUS] Status response:`, data);
 
         setStatus(data.status);
         setProgress(data.progress || 0);
@@ -41,7 +37,6 @@ export function GenerationStatus({ generationId, onComplete }: GenerationStatusP
         }
 
         if (data.status === "completed") {
-          console.log(`[GENERATION-STATUS] Generation completed, calling onComplete`);
           onComplete();
         } else if (data.status !== "failed") {
           // Continue polling if not completed or failed
@@ -63,9 +58,7 @@ export function GenerationStatus({ generationId, onComplete }: GenerationStatusP
     checkStatus();
 
     // Cleanup function to cancel any pending timeouts
-    return () => {
-      console.log(`[GENERATION-STATUS] Polling stopped - component unmounting`);
-    };
+    return () => {};
   }, [generationId, onComplete]);
 
   // Render the UI

@@ -66,8 +66,8 @@ export function LoginFormReact({ redirectUrl = "/dashboard" }: LoginFormProps) {
       </div>
 
       {error && (
-        <div 
-          className="bg-destructive/10 text-destructive rounded-md p-3 mb-4" 
+        <div
+          className="bg-destructive/10 text-destructive rounded-md p-3 mb-4"
           data-testid="error-message"
           role="alert"
         >
@@ -93,7 +93,11 @@ export function LoginFormReact({ redirectUrl = "/dashboard" }: LoginFormProps) {
           <div>
             <div className="flex items-center justify-between">
               <Label htmlFor="password">Hasło</Label>
-              <a href="/reset-password" className="text-xs text-primary-600 hover:underline" data-testid="forgot-password-link">
+              <a
+                href="/reset-password"
+                className="text-xs text-primary-600 hover:underline"
+                data-testid="forgot-password-link"
+              >
                 Zapomniałeś hasła?
               </a>
             </div>
@@ -110,12 +114,7 @@ export function LoginFormReact({ redirectUrl = "/dashboard" }: LoginFormProps) {
           </div>
         </div>
 
-        <Button 
-          type="submit" 
-          className="w-full" 
-          disabled={isSubmitting} 
-          data-testid="submit-button"
-        >
+        <Button type="submit" className="w-full" disabled={isSubmitting} data-testid="submit-button">
           {isSubmitting ? "Logowanie..." : "Zaloguj się"}
         </Button>
 
@@ -131,21 +130,13 @@ export function LoginFormReact({ redirectUrl = "/dashboard" }: LoginFormProps) {
 
         <div className="text-center mt-4">
           <span className="text-sm text-gray-600">Nie masz jeszcze konta? </span>
-          <a 
-            href="/register" 
-            className="font-medium text-primary-600 hover:underline" 
-            data-testid="register-link"
-          >
+          <a href="/register" className="font-medium text-primary-600 hover:underline" data-testid="register-link">
             Zarejestruj się
           </a>
         </div>
 
         {successMessage && (
-          <div 
-            role="alert" 
-            data-testid="success-message" 
-            className="bg-success/10 text-success rounded-md p-3 mt-4"
-          >
+          <div role="alert" data-testid="success-message" className="bg-success/10 text-success rounded-md p-3 mt-4">
             {successMessage}
           </div>
         )}

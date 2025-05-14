@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  authStore, 
+  authStore,
   getCurrentUser,
   login as authLogin,
   register as authRegister,
@@ -24,14 +24,14 @@ export function useDirectAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authLoading, setAuthLoading] = useState(false);
-  
+
   useEffect(() => {
     // Check if we're in the browser
     if (typeof window === "undefined") {
       setLoading(false);
       return;
     }
-    
+
     // First try to get user from store immediately
     if (authStore) {
       const currentUser = authStore.getCurrentUser();
@@ -39,13 +39,13 @@ export function useDirectAuth() {
         setUser(currentUser);
         setLoading(false);
       }
-      
+
       // Then subscribe to changes
       const unsubscribe = authStore.subscribe((updatedUser) => {
         setUser(updatedUser);
         setLoading(false);
       });
-      
+
       return unsubscribe;
     } else {
       // Fallback in case authStore isn't available
@@ -61,13 +61,13 @@ export function useDirectAuth() {
     setAuthLoading(true);
     try {
       const result = await authLogin(email, password);
-      
+
       if (result.success) {
         toast.success("Logowanie udane");
       } else if (result.error) {
         toast.error(result.error);
       }
-      
+
       return result;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Wystąpił błąd podczas logowania";
@@ -84,7 +84,7 @@ export function useDirectAuth() {
       setAuthLoading(true);
       try {
         const result = await authRegister(email, password, options);
-        
+
         if (result.success) {
           if (result.requiresEmailConfirmation) {
             toast.success("Rejestracja udana. Sprawdź swoją skrzynkę email, aby potwierdzić konto.");
@@ -94,7 +94,7 @@ export function useDirectAuth() {
         } else if (result.error) {
           toast.error(result.error);
         }
-        
+
         return result;
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : "Wystąpił błąd podczas rejestracji";
@@ -128,13 +128,13 @@ export function useDirectAuth() {
     setAuthLoading(true);
     try {
       const result = await authResetPassword(email);
-      
+
       if (result.success) {
         toast.success("Instrukcje resetowania hasła zostały wysłane na Twój adres email.");
       } else if (result.error) {
         toast.error(result.error);
       }
-      
+
       return result;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Wystąpił błąd podczas resetowania hasła";
@@ -150,13 +150,13 @@ export function useDirectAuth() {
     setAuthLoading(true);
     try {
       const result = await authUpdatePassword(password);
-      
+
       if (result.success) {
         toast.success("Hasło zostało zaktualizowane.");
       } else if (result.error) {
         toast.error(result.error);
       }
-      
+
       return result;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Wystąpił błąd podczas aktualizacji hasła";
@@ -172,13 +172,13 @@ export function useDirectAuth() {
     setAuthLoading(true);
     try {
       const result = await authUpdateProfile(profile);
-      
+
       if (result.success) {
         toast.success("Profil został zaktualizowany.");
       } else if (result.error) {
         toast.error(result.error);
       }
-      
+
       return result;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Wystąpił błąd podczas aktualizacji profilu";
@@ -189,16 +189,16 @@ export function useDirectAuth() {
     }
   }, []);
 
-  return { 
-    user, 
+  return {
+    user,
     loading,
-    authLoading, 
+    authLoading,
     isAuthenticated: !!user,
     login,
     register,
     logout,
     resetPassword,
     updatePassword,
-    updateProfile
+    updateProfile,
   };
 }

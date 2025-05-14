@@ -8,11 +8,7 @@ interface AuthStatusProps {
   className?: string;
 }
 
-export function AuthStatus({ 
-  showLoginButton = true, 
-  showName = true,
-  className = ""
-}: AuthStatusProps) {
+export function AuthStatus({ showLoginButton = true, showName = true, className = "" }: AuthStatusProps) {
   const { user, loading, isAuthenticated } = useDirectAuth();
 
   if (loading) {
@@ -44,9 +40,7 @@ export function AuthStatus({
           Zalogowano jako <span className="font-medium">{user?.name || user?.email}</span>
         </span>
       )}
-      {!showName && (
-        <span className="text-sm text-muted-foreground">Zalogowano</span>
-      )}
+      {!showName && <span className="text-sm text-muted-foreground">Zalogowano</span>}
     </div>
   );
 }

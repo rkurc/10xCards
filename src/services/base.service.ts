@@ -25,8 +25,6 @@ export class BaseService {
 
       return result;
     } catch (error: any) {
-      console.error(`[DEBUG] executeDbOperation: Error encountered:`, error);
-
       // Transform Postgres error codes
       if (error && error.code === "23505") {
         throw {
@@ -139,14 +137,9 @@ export class BaseService {
    * @returns True if the record exists, false otherwise
    */
   protected async recordExists(table: string, column: string, value: any): Promise<boolean> {
-    try {
-      const { data, error } = await this.supabase.from(table).select(column).eq(column, value).limit(1);
+    const { data, error } = await this.supabase.from(table).select(column).eq(column, value).limit(1);
 
-      return data && data.length > 0;
-    } catch (error) {
-      console.error(`[DEBUG] recordExists: Unexpected error checking if record exists:`, error);
-      throw error;
-    }
+    return data && data.length > 0;
   }
 
   /**
@@ -164,7 +157,6 @@ export class BaseService {
 
       return exists;
     } catch (error) {
-      console.error(`[DEBUG] verifyOwnership: Error verifying ownership in ${table}:`, error);
       return false;
     }
   }

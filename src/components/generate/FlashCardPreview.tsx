@@ -59,7 +59,18 @@ export function FlashCardPreview({
     <Card
       className={`w-full max-w-md h-64 cursor-pointer transition-all duration-300 ${isEditing ? "cursor-default" : ""}`}
     >
-      <div className={`relative w-full h-full ${isFlipped ? "rotate-y-180" : ""}`} onClick={handleFlip}>
+      <button
+        type="button"
+        className={`relative w-full h-full border-0 bg-transparent p-0 ${isFlipped ? "rotate-y-180" : ""}`}
+        onClick={handleFlip}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleFlip();
+          }
+        }}
+        disabled={isEditing}
+      >
         <CardContent className={`p-6 absolute inset-0 backface-hidden ${isFlipped ? "hidden" : "block"}`}>
           {!isEditing ? (
             <div className="h-full flex flex-col">
@@ -102,7 +113,7 @@ export function FlashCardPreview({
             />
           )}
         </CardContent>
-      </div>
+      </button>
 
       <CardFooter className="absolute bottom-0 w-full bg-background border-t p-2 flex justify-between">
         {!isEditing ? (

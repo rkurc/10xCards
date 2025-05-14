@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 interface AuthGuardProps {
@@ -10,20 +8,17 @@ interface AuthGuardProps {
   redirectUrl?: string;
 }
 
-export function AuthGuard({ 
-  children, 
-  redirectUrl = "/login" 
-}: AuthGuardProps) {
+export function AuthGuard({ children, redirectUrl = "/login" }: AuthGuardProps) {
   const { user, loading } = useAuth();
   const [pathname, setPathname] = useState<string>("");
 
   useEffect(() => {
     // Get current path for redirect parameter
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       setPathname(window.location.pathname);
     }
   }, []);
-  
+
   // Handle redirection if not authenticated
   useEffect(() => {
     if (!loading && !user && pathname) {
@@ -37,7 +32,7 @@ export function AuthGuard({
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen" data-testid="auth-guard-loading">
-        <Spinner size="lg" />
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -46,7 +41,7 @@ export function AuthGuard({
   if (!user) {
     return (
       <div className="flex justify-center items-center h-screen" data-testid="auth-guard-redirecting">
-        <Spinner size="lg" />
+        <Loader2 className="h-8 w-8 animate-spin" />
         <span className="ml-2">Redirecting to login...</span>
       </div>
     );
