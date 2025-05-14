@@ -32,13 +32,22 @@ export function useCardSet(setId: string, params: UseCardSetParams = {}): UseCar
       setIsLoading(true);
       setError(null);
 
-      // TODO: Replace with actual API call
-      const response = await fetch(`/api/card-sets/${setId}`, {
+      const searchParams = new URLSearchParams({
+        page: String(params.page || 1),
+        limit: String(params.limit || 10),
+      });
+
+      const response = await fetch(`/api/card-sets/${setId}?${searchParams.toString()}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
         },
-      }).then((res) => res.json());
+      }).then((res) => {
+        if (!res.ok) {
+          throw new Error("Failed to fetch card set");
+        }
+        return res.json();
+      });
 
       setCardSet(response);
       setCards(response.cards.data);
@@ -48,7 +57,7 @@ export function useCardSet(setId: string, params: UseCardSetParams = {}): UseCar
     } finally {
       setIsLoading(false);
     }
-  }, [setId, params]);
+  }, [setId, params.page, params.limit]);
 
   useEffect(() => {
     fetchCardSet();
