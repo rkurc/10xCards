@@ -100,7 +100,7 @@ export function RegisterFormReact({ redirectUrl = "/registration-success" }: Reg
         });
 
         // Ensure toast is visible before redirect
-        
+
         if (result.requiresEmailConfirmation) {
           window.location.href = `/registration-success?email=${encodeURIComponent(email)}`;
         } else {
@@ -185,7 +185,10 @@ export function RegisterFormReact({ redirectUrl = "/registration-success" }: Reg
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs">Siła hasła:</span>
-                  <span className="text-xs font-semibold" data-testid="password-strength">
+                  <span
+                    className={`text-xs font-semibold ${passwordStrength < 40 ? "weak" : passwordStrength < 80 ? "medium" : "strong"}`}
+                    data-testid="password-strength"
+                  >
                     {passwordStrength < 40 ? "Słabe" : passwordStrength < 80 ? "Średnie" : "Silne"}
                   </span>
                 </div>

@@ -35,8 +35,22 @@ test.describe("Authentication Flow", () => {
       expect(errorMessage).toContain("For security purposes,");
     });
 
-    test("should validate password strength", async () => {
-      test.skip();
+    test("should validate password strength", async ({ page }) => {
+      // Arrange
+      const registerPage = new RegisterPage(page);
+      await registerPage.goto();
+
+      // Act & Assert - Weak password
+      await registerPage.passwordInput.fill("weak");
+      await registerPage.expectPasswordStrength("weak");
+
+      // Act & Assert - Medium password
+      await registerPage.passwordInput.fill("Password");
+      await registerPage.expectPasswordStrength("medium");
+
+      // Act & Assert - Strong password
+      await registerPage.passwordInput.fill("StrongP@ssword123");
+      await registerPage.expectPasswordStrength("strong");
     });
   });
 
