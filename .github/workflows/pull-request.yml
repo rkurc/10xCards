@@ -74,8 +74,7 @@ jobs:
     env:
       NODE_ENV: integration
       PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      # Add any additional environment variables for E2E tests
+      PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}      
     
     steps:
       - name: Checkout repository
