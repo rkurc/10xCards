@@ -56,7 +56,6 @@ function GenerateContentInner() {
   useEffect(() => {
     // Log critical state changes for debugging
     if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
       console.log("[GENERATE-CONTENT] Critical state change detected:", { currentStep, generationId });
     }
 
@@ -66,7 +65,6 @@ function GenerateContentInner() {
 
     // If we're in processing state, make sure status UI is displayed
     if (currentStep === "processing" && generationId && process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
       console.log("[GENERATE-CONTENT] In processing state with ID:", generationId);
     }
   }, [currentStep, generationId]);
@@ -74,7 +72,6 @@ function GenerateContentInner() {
   // Add this to debug component updates
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
       console.log("[GENERATE-CONTENT] Rendering with state:", {
         currentStep,
         generationId,

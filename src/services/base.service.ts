@@ -137,13 +137,11 @@ export class BaseService {
    * @returns True if the record exists, false otherwise
    */
   protected async recordExists(table: string, column: string, value: any): Promise<boolean> {
-    try {
+
       const { data, error } = await this.supabase.from(table).select(column).eq(column, value).limit(1);
 
       return data && data.length > 0;
-    } catch (error) {
-      throw error;
-    }
+
   }
 
   /**

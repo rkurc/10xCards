@@ -32,7 +32,6 @@ export function useGenerationActions() {
           setCards(data.cards);
           setStats(data.stats);
         } catch (error) {
-          // eslint-disable-next-line no-console
           console.error("Error fetching generation results:", error);
           toast.error("Failed to load generation results. Please try again.");
         }
@@ -86,7 +85,7 @@ export function useGenerationActions() {
       window.location.href = reviewUrl;
 
       // Return a promise that never resolves, since we're navigating away
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
+
       return new Promise<void>(() => {});
     } catch (error) {
       console.error(`[GENERATION-DEBUG] Error in handleProcessingComplete:`, error);

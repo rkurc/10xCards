@@ -18,73 +18,59 @@ function parseCookieHeader(cookieHeader: string): { name: string; value: string 
     return [];
   }
 
-  try {
-    const cookies = cookieHeader.split(";").map((cookie) => {
-      const [name, ...rest] = cookie.trim().split("=");
-      return { name, value: rest.join("=") };
-    });
+  const cookies = cookieHeader.split(";").map((cookie) => {
+    const [name, ...rest] = cookie.trim().split("=");
+    return { name, value: rest.join("=") };
+  });
 
-    return cookies;
-  } catch (error) {
-    console.error("[DEBUG] Error parsing cookie header:", error);
-    return [];
-  }
+  return cookies;
+}
+
+interface CookieToSet {
+  name: string;
+  value: string;
+  [key: string]: unknown;
 }
 
 export const createSupabaseServerClient = (context: { headers: Headers; cookies: AstroCookies }) => {
-  // Validate environment variables
   if (!import.meta.env.PUBLIC_SUPABASE_URL || !import.meta.env.PUBLIC_SUPABASE_ANON_KEY) {
-    console.error("Missing Supabase environment variables");
+    throw new Error("Missing Supabase environment variables");
   }
 
-  const supabase = createServerClient<Database>(
-    import.meta.env.PUBLIC_SUPABASE_URL,
-    import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookieOptions,
-      cookies: {
-        get(name) {
-          try {
-            const value = context?.cookies?.get(name)?.value;
-            return value ?? "";
-          } catch (error) {
-            return "";
-          }
-        },
-        set(name, value, options) {
-          try {
-            context?.cookies?.set(name, value, options);
-          } catch (error) {}
-        },
-        remove(name, options) {
-          try {
-            context?.cookies?.delete(name, options);
-          } catch (error) {}
-        },
-        getAll() {
-          try {
-            const cookieHeader = context?.headers?.get("Cookie") ?? "";
-            const cookies = parseCookieHeader(cookieHeader);
-
-            return cookies;
-          } catch (error) {
-            console.error("[DEBUG] cookie.getAll: Error getting cookies:", error);
-            return [];
-          }
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet?.forEach(({ name, value, ...options }) => {
-              context?.cookies?.set(name, value, options);
-            });
-          } catch (error) {
-            console.error("[DEBUG] cookie.setAll: Error setting multiple cookies:", error);
-          }
-        },
-      },
+  return createServerClient<Database>(import.meta.env.PUBLIC_SUPABASE_URL, import.meta.env.PUBLIC_SUPABASE_ANON_KEY, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
       detectSessionInUrl: false,
-    }
-  );
-
-  return supabase;
+    },
+    global: {
+      headers: {
+        "X-Client-Info": "supabase-js-server",
+      },
+    },
+    cookies: {
+      get(name) {
+        try {
+          return context?.cookies?.get(name)?.value ?? "";
+        } catch {
+          return "";
+        }
+      },
+      set(name, value, options) {
+        try {
+          context?.cookies?.set(name, value, options);
+        } catch {
+          throw new Error(`Failed to set cookie ${name}`);
+        }
+      },
+      remove(name, options) {
+        try {
+          context?.cookies?.delete(name, options);
+        } catch {
+          throw new Error(`Failed to remove cookie ${name}`);
+        }
+      },
+    },
+    cookieOptions,
+  });
 };

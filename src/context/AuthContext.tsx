@@ -55,16 +55,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
 
     try {
       const result = await serviceLogin(email, password);
-      console.log(
-        "[DEBUG] AuthContext.login result:",
-        JSON.stringify({
-          success: result.success,
-          hasError: !!result.error,
-          errorMessage: result.error,
-          hasUser: !!result.user,
-          user: result.user ? { id: result.user.id, email: result.user.email } : null,
-        })
-      );
 
       if (result.success) {
         toast.success("Logowanie udane");
@@ -77,14 +67,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
         }
       } else {
         const errorMsg = result.error || "Niepoprawny email lub hasło";
-        console.error("[DEBUG] AuthContext.login error:", errorMsg);
         toast.error(errorMsg);
       }
 
       return result;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Wystąpił błąd podczas logowania";
-      console.error("[DEBUG] AuthContext.login caught exception:", errorMsg);
       toast.error(errorMsg);
       return { success: false, error: errorMsg };
     }
@@ -112,8 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
       setUser(null);
       toast.success("Wylogowano pomyślnie");
     } catch (error) {
-      toast.error("Wystąpił błąd podczas wylogowywania");
-      console.error("Logout error:", error);
+      toast.error("Wystąpił błąd podczas wylogowywania" + (error instanceof Error ? error.message : ""));
     }
   };
 
@@ -143,7 +130,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode; initialUser?: U
         const currentUser = await getCurrentUser();
         setUser(currentUser);
       } catch (error) {
-        console.error("Error checking auth status:", error);
         setError(error instanceof Error ? error : new Error(String(error)));
       } finally {
         setLoading(false);

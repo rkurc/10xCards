@@ -117,7 +117,6 @@ export function RegisterFormReact({ redirectUrl = "/registration-success" }: Reg
         setIsSubmitting(false);
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error("Registration error:", error);
       const errorMessage = "Wystąpił nieoczekiwany błąd podczas rejestracji";
       toast({

@@ -16,9 +16,7 @@ import type {
 import { ErrorCode } from "../utils/db-error-handler";
 
 export class GenerationService extends BaseService {
-  constructor(supabase: TypedSupabaseClient) {
-    super(supabase);
-  }
+
 
   /**
    * Starts a flashcard generation process from the provided text

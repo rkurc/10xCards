@@ -1,23 +1,10 @@
-import { createBrowserClient, createServerClient } from "@supabase/ssr";
+import { createBrowserClient } from "@supabase/ssr";
 
 export const createBrowserSupabaseClient = () => {
-  // Add debugging for environment variables
-
-  console.log(
-    "[DEBUG] supabase.client: PUBLIC_SUPABASE_URL defined:",
-    typeof import.meta.env.PUBLIC_SUPABASE_URL !== "undefined"
-  );
-  console.log(
-    "[DEBUG] supabase.client: PUBLIC_SUPABASE_ANON_KEY defined:",
-    typeof import.meta.env.PUBLIC_SUPABASE_ANON_KEY !== "undefined"
-  );
-
-  try {
-    const client = createBrowserClient(import.meta.env.PUBLIC_SUPABASE_URL, import.meta.env.PUBLIC_SUPABASE_ANON_KEY);
-
-    return client;
-  } catch (error) {
-    console.error("[DEBUG] supabase.client: Error creating browser client:", error);
-    throw error;
+  if (!import.meta.env.PUBLIC_SUPABASE_URL || !import.meta.env.PUBLIC_SUPABASE_ANON_KEY) {
+    throw new Error(
+      "Missing required environment variables: PUBLIC_SUPABASE_URL and PUBLIC_SUPABASE_ANON_KEY must be defined"
+    );
   }
+  return createBrowserClient(import.meta.env.PUBLIC_SUPABASE_URL, import.meta.env.PUBLIC_SUPABASE_ANON_KEY);
 };
