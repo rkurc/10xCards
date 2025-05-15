@@ -480,4 +480,63 @@ export class CardSetService extends BaseService {
       };
     }, "Failed to get available cards");
   }
+
+  /**
+   * Test method to diagnose RLS policy issues
+   * @param userId The ID of the requesting user
+   * @returns True if basic queries work, false otherwise
+   */
+  async testPermissions(userId: string): Promise<boolean> {
+    try {
+      console.info(`[DIAGNOSTIC] Testing card_sets table permissions for user: ${userId}`);
+
+      // Test 1: Simple count without user filtering
+      const { count: totalCount, error: countError } = await this.supabase
+        .from("card_sets")
+        .select("*", { count: "exact" });
+
+      console.info(
+        "Test 1 - Total count result:",
+        totalCount,
+        countError ? `Error: ${JSON.stringify(countError)}` : "No error"
+      );
+
+      // Test 2: Select with user_id filter
+      const { data: userSets, error: userError } = await this.supabase
+        .from("card_sets")
+        .select("id")
+        .eq("user_id", userId)
+        .limit(1);
+
+      console.info(
+        "Test 2 - User filter result:",
+        userSets?.length || 0,
+        userError ? `Error: ${JSON.stringify(userError)}` : "No error"
+      );
+
+      // Test 3: Try a simpler relationship query
+      const { data: testJoin, error: joinError } = await this.supabase
+        .from("card_sets")
+        .select(
+          `
+          id,
+          name,
+          cards_to_sets(count)
+        `
+        )
+        .eq("user_id", userId)
+        .limit(1);
+
+      console.info(
+        "Test 3 - Join test result:",
+        testJoin?.length || 0,
+        joinError ? `Error: ${JSON.stringify(joinError)}` : "No error"
+      );
+
+      return !countError && !userError && !joinError;
+    } catch (error) {
+      console.error("Permission test failed with error:", error);
+      return false;
+    }
+  }
 }
