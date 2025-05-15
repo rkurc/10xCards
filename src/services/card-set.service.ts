@@ -184,7 +184,7 @@ export class CardSetService extends BaseService {
       // Get total count of cards in this set
       const { count, error: countError } = await this.supabase
         .from("cards_to_sets")
-        .select("*", { count: "exact" })
+        .select("*, card:cards!inner(*)", { count: "exact" })
         .eq("set_id", setId)
         .eq("card.is_deleted", false);
 
@@ -420,20 +420,29 @@ export class CardSetService extends BaseService {
       // Calculate offset for pagination
       const offset = (page - 1) * limit;
 
-      // Get subquery for cards already in set
-      const cardsInSetQuery = this.supabase
+      // Get cards already in the set
+      const cardsInSetResult = await this.supabase
         .from("cards_to_sets")
         .select("card_id")
-        .eq("set_id", setId)
-        .then((result) => result.data?.map((r) => r.card_id) || []);
-
-      // Get total count of available cards
-      const { count, error: countError } = await this.supabase
+        .eq("set_id", setId);
+      
+      // Extract card IDs from the result
+      const cardIdsInSet = (cardsInSetResult.data || []).map((r) => r.card_id);
+      
+      // If no cards are in the set yet, we can return all cards
+      let countQuery = this.supabase
         .from("cards")
         .select("*", { count: "exact" })
         .eq("user_id", userId)
-        .eq("is_deleted", false)
-        .not("id", "in", await cardsInSetQuery);
+        .eq("is_deleted", false);
+      
+      // Only apply the not-in filter if there are cards in the set
+      if (cardIdsInSet.length > 0) {
+        countQuery = countQuery.not("id", "in", `(${cardIdsInSet.map((id) => `"${id}"`).join(",")})`);
+      }
+
+      // Get total count of available cards  
+      const { count, error: countError } = await countQuery;
 
       if (countError) {
         console.error("Supabase count error in getAvailableCards:", countError);
@@ -455,12 +464,18 @@ export class CardSetService extends BaseService {
       }
 
       // Get paginated available cards
-      const { data: cards, error: cardsError } = await this.supabase
+      let cardsQuery = this.supabase
         .from("cards")
         .select()
         .eq("user_id", userId)
-        .eq("is_deleted", false)
-        .not("id", "in", await cardsInSetQuery)
+        .eq("is_deleted", false);
+      
+      // Only apply the not-in filter if there are cards in the set
+      if (cardIdsInSet.length > 0) {
+        cardsQuery = cardsQuery.not("id", "in", `(${cardIdsInSet.map((id) => `"${id}"`).join(",")})`);
+      }
+      
+      const { data: cards, error: cardsError } = await cardsQuery
         .range(offset, offset + limit - 1)
         .order("created_at", { ascending: false });
 
