@@ -6,6 +6,7 @@ import { useCardSets } from "../../hooks/useCardSets";
 import DeleteAlertDialog from "./DeleteAlertDialog";
 import { useDialog } from "../DialogProvider";
 import CardSetFilters from "./CardSetFilters";
+import { Grid3X3, List } from "lucide-react";
 
 interface Filters {
   search: string;
@@ -52,9 +53,9 @@ export default function CardSetList() {
   if (error) {
     return (
       <div className="text-center py-8">
-        <p className="text-red-500">Failed to load flashcard sets</p>
+        <p className="text-red-500">Nie udało się załadować zestawów fiszek</p>
         <Button variant="outline" className="mt-4" onClick={refetch}>
-          Try Again
+          Spróbuj ponownie
         </Button>
       </div>
     );
@@ -63,9 +64,9 @@ export default function CardSetList() {
   if (!cardSets?.length) {
     return (
       <div className="text-center py-16">
-        <h3 className="text-xl font-semibold mb-4">No flashcard sets yet</h3>
-        <p className="text-gray-600 mb-8">Create your first set to start learning</p>
-        <Button onClick={openCreateCardSetModal}>Create New Set</Button>
+        <h3 className="text-xl font-semibold mb-4">Nie masz jeszcze żadnych zestawów fiszek</h3>
+        <p className="text-gray-600 mb-8">Utwórz swój pierwszy zestaw, aby rozpocząć naukę</p>
+        <Button onClick={openCreateCardSetModal}>Utwórz nowy zestaw</Button>
       </div>
     );
   }
@@ -77,13 +78,15 @@ export default function CardSetList() {
           <CardSetFilters filters={filters} onFilterChange={handleFilterChange} />
         </div>
         <div className="flex flex-col md:flex-row gap-4">
-          <Button onClick={openCreateCardSetModal}>Create New Set</Button>
+          <Button onClick={openCreateCardSetModal}>Utwórz nowy zestaw</Button>
           <div className="flex space-x-2">
             <Button variant={viewMode === "grid" ? "default" : "outline"} onClick={() => setViewMode("grid")}>
-              Grid
+              <Grid3X3 className="h-4 w-4 mr-2" />
+              Siatka
             </Button>
             <Button variant={viewMode === "list" ? "default" : "outline"} onClick={() => setViewMode("list")}>
-              List
+              <List className="h-4 w-4 mr-2" />
+              Lista
             </Button>
           </div>
         </div>
@@ -98,12 +101,16 @@ export default function CardSetList() {
             <CardContent>
               <p className="text-sm text-gray-600">{set.description}</p>
               <div className="mt-4 flex justify-between items-center">
-                <span className="text-sm text-gray-500">{set.card_count} cards</span>
+                <span className="text-sm text-gray-500">{set.card_count} fiszek</span>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={() => (window.location.href = `/sets/${set.id}`)}>
-                    View Set
+                    Zobacz zestaw
                   </Button>
-                  <DeleteAlertDialog onConfirm={() => handleDeleteSet(set.id)} />
+                  <DeleteAlertDialog
+                    title="Usuń zestaw"
+                    description="Czy na pewno chcesz usunąć ten zestaw? Wszystkie fiszki zostaną usunięte."
+                    onConfirm={() => handleDeleteSet(set.id)}
+                  />
                 </div>
               </div>
             </CardContent>

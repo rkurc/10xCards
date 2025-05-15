@@ -1,12 +1,27 @@
 ---
-import Layout from "../../layouts/Layout.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
 import CardSetDetail from "../../components/card-sets/CardSetDetail";
+import Breadcrumb from "../../components/navigation/Breadcrumb.astro";
+import { checkAuth } from "../../utils/auth";
+
+// Authentication check
+const user = await checkAuth(Astro);
+if (!user) {
+  return Astro.redirect("/login?redirect=/sets");
+}
 
 const { id } = Astro.params;
 ---
 
-<Layout title="Flashcard Set Details">
-  <div class="container py-8">
+<BaseLayout title="Szczegóły zestawu | 10xCards">
+  <div class="container mx-auto py-8">
+    <Breadcrumb
+      items={[
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Moje zestawy", href: "/sets" },
+        { label: "Szczegóły zestawu", href: `/sets/${id}` },
+      ]}
+    />
     <CardSetDetail setId={id} client:load />
   </div>
-</Layout>
+</BaseLayout>

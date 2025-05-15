@@ -14,6 +14,7 @@ import EditCardSetModal from "./EditCardSetModal";
 import EditCardModal from "./EditCardModal";
 import CardToSetModal from "./CardToSetModal";
 import DeleteAlertDialog from "./DeleteAlertDialog";
+import { ArrowLeft } from "lucide-react";
 
 interface CardSetDetailProps {
   setId: string;
@@ -106,32 +107,38 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
   if (error || !cardSet) {
     return (
       <div className="text-center py-8">
-        <p className="text-red-500">Failed to load flashcard set</p>
+        <p className="text-red-500">Nie udało się załadować zestawu fiszek</p>
         <Button variant="outline" className="mt-4" onClick={() => (window.location.href = "/sets")}>
-          Back to Sets
+          Powrót do zestawów
         </Button>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="mb-8">
-        <div className="flex justify-between items-center">
-          <div>
-            <Button variant="outline" size="sm" className="mb-4" onClick={() => (window.location.href = "/sets")}>
-              ← Back to Sets
-            </Button>
-            <h1 className="text-3xl font-bold mb-2">{cardSet.name}</h1>
-            <p className="text-gray-600">{cardSet.description}</p>
-          </div>
-          <div className="space-x-2">
-            <Button variant="outline" onClick={() => setIsEditSetOpen(true)}>
-              Edit Set
-            </Button>
-            <Button onClick={() => setIsAddCardsOpen(true)}>Add Cards</Button>
-            <DeleteAlertDialog onConfirm={handleDeleteSet} />
-          </div>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
+        <div>
+          <Button variant="ghost" size="sm" className="mb-2" onClick={() => (window.location.href = "/sets")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Powrót do listy zestawów
+          </Button>
+          <h1 className="text-3xl font-bold">{isLoading ? "Ładowanie..." : cardSet?.name || "Szczegóły zestawu"}</h1>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setIsAddCardsOpen(true)}>
+            Dodaj fiszki
+          </Button>
+          <Button variant="outline" onClick={() => setIsEditSetOpen(true)}>
+            Edytuj zestaw
+          </Button>
+          <DeleteAlertDialog
+            title="Usuń zestaw"
+            description="Czy na pewno chcesz usunąć ten zestaw? Wszystkie fiszki zostaną usunięte."
+            onConfirm={handleDeleteSet}
+          >
+            <Button variant="destructive">Usuń zestaw</Button>
+          </DeleteAlertDialog>
         </div>
       </div>
 
@@ -155,9 +162,13 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
                     setIsEditCardOpen(true);
                   }}
                 >
-                  Edit
+                  Edytuj
                 </Button>
-                <DeleteAlertDialog onConfirm={() => handleDeleteCard(card.id)} />
+                <DeleteAlertDialog 
+                  title="Usuń fiszkę"
+                  description="Czy na pewno chcesz usunąć tę fiszkę?"
+                  onConfirm={() => handleDeleteCard(card.id)} 
+                />
               </div>
             </CardContent>
           </Card>
@@ -166,9 +177,9 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
 
       {cards.length === 0 && (
         <div className="text-center py-16">
-          <h3 className="text-xl font-semibold mb-4">No cards in this set yet</h3>
-          <p className="text-gray-600 mb-8">Add your first card to start learning</p>
-          <Button onClick={() => setIsAddCardsOpen(true)}>Add Cards</Button>
+          <h3 className="text-xl font-semibold mb-4">Brak fiszek w tym zestawie</h3>
+          <p className="text-gray-600 mb-8">Dodaj swoją pierwszą fiszkę, aby rozpocząć naukę</p>
+          <Button onClick={() => setIsAddCardsOpen(true)}>Dodaj fiszki</Button>
         </div>
       )}
 
@@ -180,7 +191,7 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
                 <PaginationPrevious onClick={() => handlePageChange(page - 1)} disabled={page === 1} />
               </PaginationItem>
               <PaginationItem>
-                Page {page} of {cardPagination.pages}
+                Strona {page} z {cardPagination.pages}
               </PaginationItem>
               <PaginationItem>
                 <PaginationNext onClick={() => handlePageChange(page + 1)} disabled={page === cardPagination.pages} />
@@ -190,25 +201,32 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
         </div>
       )}
 
-      {cardSet && (
+      {isEditSetOpen && cardSet && (
         <EditCardSetModal
           cardSet={cardSet}
-          onSubmit={handleUpdateSet}
           open={isEditSetOpen}
-          onOpenChange={setIsEditSetOpen}
+          onOpenChange={(open) => setIsEditSetOpen(open)}
+          onSubmit={handleUpdateSet}
         />
       )}
 
-      {selectedCard && (
+      {isEditCardOpen && selectedCard && (
         <EditCardModal
           card={selectedCard}
-          onSubmit={handleUpdateCard}
           open={isEditCardOpen}
-          onOpenChange={setIsEditCardOpen}
+          onOpenChange={(open) => setIsEditCardOpen(open)}
+          onSubmit={(cardId, frontContent, backContent) => handleUpdateCard(cardId, frontContent, backContent)}
         />
       )}
 
-      <CardToSetModal setId={setId} onSubmit={handleAddCards} open={isAddCardsOpen} onOpenChange={setIsAddCardsOpen} />
+      {isAddCardsOpen && (
+        <CardToSetModal
+          setId={setId}
+          open={isAddCardsOpen}
+          onOpenChange={(open) => setIsAddCardsOpen(open)}
+          onSubmit={handleAddCards}
+        />
+      )}
     </div>
   );
 }

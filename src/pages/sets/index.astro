@@ -1,15 +1,31 @@
 ---
-import Layout from "../../layouts/Layout.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
 import CardSetList from "../../components/card-sets/CardSetList";
 import CreateCardSetModal from "../../components/card-sets/CreateCardSetModal";
+import Breadcrumb from "../../components/navigation/Breadcrumb.astro";
+import { checkAuth } from "../../utils/auth";
+import { DialogProvider } from "../../components/DialogProvider";
+
+// Authentication check
+const user = await checkAuth(Astro);
+if (!user) {
+  return Astro.redirect("/login?redirect=/sets");
+}
 ---
 
-<Layout title="Flashcard Sets">
-  <div class="container py-8">
+<BaseLayout title="Moje zestawy fiszek | 10xCards">
+  <div class="container mx-auto py-8">
+    <Breadcrumb
+      items={[
+        { label: "Dashboard", href: "/dashboard" },
+        { label: "Moje zestawy", href: "/sets" },
+      ]}
+    />
     <div class="flex justify-between items-center mb-8">
-      <h1 class="text-3xl font-bold">My Flashcard Sets</h1>
-      <CreateCardSetModal client:load />
+      <h1 class="text-3xl font-bold">Moje zestawy fiszek</h1>
     </div>
-    <CardSetList client:load />
+    <DialogProvider client:load>
+      <CardSetList client:load />
+    </DialogProvider>
   </div>
-</Layout>
+</BaseLayout>

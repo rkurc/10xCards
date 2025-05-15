@@ -10,7 +10,6 @@ import type {
   CardToSetAddResponse,
   CardSetListResponse,
 } from "../types";
-import type { TypedSupabaseClient } from "../db/supabase.service";
 
 /**
  * Service for managing card sets

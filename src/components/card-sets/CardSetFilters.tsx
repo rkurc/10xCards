@@ -15,7 +15,7 @@ export default function CardSetFilters({ filters, onFilterChange }: CardSetFilte
     <div className="flex flex-col md:flex-row gap-4 mb-6">
       <div className="flex-1">
         <Input
-          placeholder="Search flashcard sets..."
+          placeholder="Szukaj zestawów fiszek..."
           value={filters.search || ""}
           onChange={(e) => onFilterChange({ search: e.target.value })}
           className="max-w-sm"
@@ -31,13 +31,13 @@ export default function CardSetFilters({ filters, onFilterChange }: CardSetFilte
           }
         >
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Sort by" />
+            <SelectValue placeholder="Sortuj według" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="name">Name</SelectItem>
-            <SelectItem value="created_at">Creation Date</SelectItem>
-            <SelectItem value="updated_at">Last Updated</SelectItem>
-            <SelectItem value="card_count">Card Count</SelectItem>
+            <SelectItem value="name">Nazwa</SelectItem>
+            <SelectItem value="created_at">Data utworzenia</SelectItem>
+            <SelectItem value="updated_at">Ostatnia aktualizacja</SelectItem>
+            <SelectItem value="card_count">Liczba fiszek</SelectItem>
           </SelectContent>
         </Select>
 
@@ -50,11 +50,11 @@ export default function CardSetFilters({ filters, onFilterChange }: CardSetFilte
           }
         >
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Direction" />
+            <SelectValue placeholder="Kierunek" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="asc">Ascending</SelectItem>
-            <SelectItem value="desc">Descending</SelectItem>
+            <SelectItem value="asc">Rosnąco</SelectItem>
+            <SelectItem value="desc">Malejąco</SelectItem>
           </SelectContent>
         </Select>
       </div>

@@ -14,13 +14,22 @@ import { Button } from "@/components/ui/button";
 interface DeleteAlertDialogProps {
   onConfirm: () => Promise<void>;
   trigger?: React.ReactNode;
+  title?: string;
+  description?: string;
+  children?: React.ReactNode;
 }
 
-export default function DeleteAlertDialog({ onConfirm, trigger }: DeleteAlertDialogProps) {
+export default function DeleteAlertDialog({ 
+  onConfirm, 
+  trigger, 
+  title = "Are you sure?", 
+  description = "This action cannot be undone. This will permanently delete this item.", 
+  children 
+}: DeleteAlertDialogProps) {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        {trigger || (
+        {children || trigger || (
           <Button variant="destructive" size="icon">
             <svg
               xmlns="http://www.w3.org/2000/svg"

@@ -44,38 +44,38 @@ export default function CreateCardSetModal({ onSubmit, open, onOpenChange }: Cre
       <DialogContent>
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Create New Flashcard Set</DialogTitle>
+            <DialogTitle>Utwórz nowy zestaw fiszek</DialogTitle>
             <DialogDescription>
-              Create a new set of flashcards to help you learn and memorize information.
+              Utwórz nowy zestaw fiszek, który pomoże Ci w nauce i zapamiętywaniu informacji.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <label htmlFor="name">Name</label>
+              <label htmlFor="name">Nazwa</label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter a name for your flashcard set"
+                placeholder="Wprowadź nazwę zestawu fiszek"
                 required
               />
             </div>
             <div className="grid gap-2">
-              <label htmlFor="description">Description</label>
+              <label htmlFor="description">Opis</label>
               <Textarea
                 id="description"
                 value={formData.description || ""}
                 onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-                placeholder="Enter a description for your flashcard set"
+                placeholder="Wprowadź opis zestawu fiszek"
               />
             </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
-              Cancel
+              Anuluj
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Creating..." : "Create Set"}
+              {isLoading ? "Tworzenie..." : "Utwórz zestaw"}
             </Button>
           </DialogFooter>
         </form>
