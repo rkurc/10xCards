@@ -14,6 +14,7 @@ import EditCardSetModal from "./EditCardSetModal";
 import EditCardModal from "./EditCardModal";
 import CardToSetModal from "./CardToSetModal";
 import DeleteAlertDialog from "./DeleteAlertDialog";
+import CardViewDialog from "./CardViewDialog";
 import { ArrowLeft } from "lucide-react";
 
 interface CardSetDetailProps {
@@ -30,6 +31,8 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
   const [isEditSetOpen, setIsEditSetOpen] = useState(false);
   const [isEditCardOpen, setIsEditCardOpen] = useState(false);
   const [isAddCardsOpen, setIsAddCardsOpen] = useState(false);
+  const [isViewCardOpen, setIsViewCardOpen] = useState(false);
+  const [currentCardIndex, setCurrentCardIndex] = useState<number>(-1);
 
   const handleUpdateSet = async (data: CardSetUpdateCommand) => {
     try {
@@ -95,6 +98,28 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
     setPage(newPage);
   };
 
+  const handleViewCard = (card: CardDTO) => {
+    setSelectedCard(card);
+    setCurrentCardIndex(cards.findIndex((c) => c.id === card.id));
+    setIsViewCardOpen(true);
+  };
+
+  const handlePreviousCard = () => {
+    if (currentCardIndex > 0) {
+      const prevCard = cards[currentCardIndex - 1];
+      setSelectedCard(prevCard);
+      setCurrentCardIndex(currentCardIndex - 1);
+    }
+  };
+
+  const handleNextCard = () => {
+    if (currentCardIndex < cards.length - 1) {
+      const nextCard = cards[currentCardIndex + 1];
+      setSelectedCard(nextCard);
+      setCurrentCardIndex(currentCardIndex + 1);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -149,7 +174,7 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
               <Button
                 className="h-32 w-full flex items-center justify-center border-b text-left font-normal hover:bg-gray-50"
                 variant="ghost"
-                onClick={() => setSelectedCard(card)}
+                onClick={() => handleViewCard(card)}
               >
                 <span className="text-center">{card.front_content}</span>
               </Button>
@@ -225,6 +250,18 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
           open={isAddCardsOpen}
           onOpenChange={(open) => setIsAddCardsOpen(open)}
           onSubmit={handleAddCards}
+        />
+      )}
+
+      {isViewCardOpen && selectedCard && (
+        <CardViewDialog
+          card={selectedCard}
+          open={isViewCardOpen}
+          onOpenChange={(open) => setIsViewCardOpen(open)}
+          onPrevious={handlePreviousCard}
+          onNext={handleNextCard}
+          hasPrevious={currentCardIndex > 0}
+          hasNext={currentCardIndex < cards.length - 1}
         />
       )}
     </div>

@@ -22,8 +22,8 @@ interface DeleteAlertDialogProps {
 export default function DeleteAlertDialog({ 
   onConfirm, 
   trigger, 
-  title = "Are you sure?", 
-  description = "This action cannot be undone. This will permanently delete this item.", 
+  title = "Czy jesteś pewien?", 
+  description = "Tej operacji nie można cofnąć. Spowoduje to trwałe usunięcie tego elementu.", 
   children 
 }: DeleteAlertDialogProps) {
   return (
@@ -53,14 +53,14 @@ export default function DeleteAlertDialog({
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete the flashcard set and all its cards.
+            {description}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>Delete</AlertDialogAction>
+          <AlertDialogCancel>Anuluj</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm}>Usuń</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
