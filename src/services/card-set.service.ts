@@ -1,5 +1,15 @@
 import { BaseService } from "./base.service";
-import type { CardSetDTO, CardSetCreateCommand, CardSetUpdateCommand, CardSetWithCardCount, CardSetWithCardsDTO, CardListResponse, CardToSetAddCommand, CardToSetAddResponse, CardSetListResponse } from "../types";
+import type {
+  CardSetDTO,
+  CardSetCreateCommand,
+  CardSetUpdateCommand,
+  CardSetWithCardCount,
+  CardSetWithCardsDTO,
+  CardListResponse,
+  CardToSetAddCommand,
+  CardToSetAddResponse,
+  CardSetListResponse,
+} from "../types";
 import type { TypedSupabaseClient } from "../db/supabase.service";
 
 /**
@@ -24,11 +34,18 @@ export class CardSetService extends BaseService {
       const offset = (page - 1) * limit;
 
       // Get total count of user's non-deleted card sets
-      const { count } = await this.supabase
+      console.info(`[DEBUG] listCardSets - Getting count for user_id: ${userId}`);
+      const { count, error: countError } = await this.supabase
         .from("card_sets")
         .select("*", { count: "exact" })
         .eq("user_id", userId)
         .eq("is_deleted", false);
+
+      if (countError) {
+        console.error("Supabase count error:", countError);
+        throw countError; // Preserve original error for better debugging
+      }
+
       console.info("Total card sets count:", count);
       const total = count || 0;
 
@@ -44,7 +61,8 @@ export class CardSetService extends BaseService {
         };
       }
 
-      // Get card sets with card counts
+      // Get card sets with card counts - simplified query for debugging
+      console.info(`[DEBUG] listCardSets - Getting card sets for user_id: ${userId}`);
       const { data: cardSets, error } = await this.supabase
         .from("card_sets")
         .select(
@@ -63,22 +81,22 @@ export class CardSetService extends BaseService {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Supabase error:", error);
-        throw new Error("Failed to fetch card sets");
+        console.error("Supabase error in listCardSets:", error);
+        throw error; // Preserve original error for better debugging
       }
 
       // Transform the response to include card_count
       const transformedData: CardSetWithCardCount[] = cardSets.map((set) => {
         // Safely check if cards exists and handle it properly
         const cardCount = set.cards && typeof set.cards === "object" ? set.cards.length || 0 : 0;
-        
+
         return {
           id: set.id,
           name: set.name,
           description: set.description,
           created_at: set.created_at,
           updated_at: set.updated_at,
-          card_count: cardCount
+          card_count: cardCount,
         };
       });
 
@@ -102,6 +120,21 @@ export class CardSetService extends BaseService {
    */
   async createCardSet(userId: string, command: CardSetCreateCommand): Promise<CardSetDTO> {
     return this.executeDbOperation(async () => {
+      // Try a simple count query first to verify basic connectivity and permissions
+      console.info(`[DEBUG] createCardSet - Testing connection with simple count for user_id: ${userId}`);
+      try {
+        const { count, error: countError } = await this.supabase.from("card_sets").select("*", { count: "exact" });
+
+        if (countError) {
+          console.error("Supabase error in test count:", countError);
+        } else {
+          console.info("Test count result:", count);
+        }
+      } catch (testError) {
+        console.error("Error in test count query:", testError);
+      }
+
+      // Proceed with the actual create operation
       const { data: cardSet, error } = await this.supabase
         .from("card_sets")
         .insert({
@@ -113,7 +146,8 @@ export class CardSetService extends BaseService {
         .single();
 
       if (error) {
-        throw new Error("Failed to create card set");
+        console.error("Supabase error in createCardSet:", error);
+        throw error; // Preserve original error for better debugging
       }
 
       return cardSet;
@@ -140,7 +174,8 @@ export class CardSetService extends BaseService {
         .single();
 
       if (setError || !cardSet) {
-        throw new Error("Card set not found");
+        console.error("Supabase error in getCardSet:", setError);
+        throw setError || new Error("Card set not found");
       }
 
       // Calculate offset for pagination
@@ -152,12 +187,12 @@ export class CardSetService extends BaseService {
         .select("*", { count: "exact" })
         .eq("set_id", setId)
         .eq("card.is_deleted", false);
-        
+
       if (countError) {
-        console.error("Supabase count error:", countError);
-        throw new Error("Failed to count cards in set");
+        console.error("Supabase count error in getCardSet:", countError);
+        throw countError; // Throw the original error
       }
-      
+
       const total = count || 0;
 
       if (!total) {
@@ -197,13 +232,12 @@ export class CardSetService extends BaseService {
         .order("created_at", { ascending: false });
 
       if (cardsError) {
-        throw new Error("Failed to fetch cards");
+        console.error("Supabase cards error in getCardSet:", cardsError);
+        throw cardsError; // Throw the original error
       }
 
       // Transform the response to flatten the card data
-      const transformedCards = cards
-        .map((item) => item.card)
-        .filter((card) => card !== null);
+      const transformedCards = cards.map((item) => item.card).filter((card) => card !== null);
 
       return {
         ...cardSet,
@@ -238,7 +272,8 @@ export class CardSetService extends BaseService {
         .single();
 
       if (checkError || !existingSet) {
-        throw new Error("Card set not found");
+        console.error("Supabase error in updateCardSet:", checkError);
+        throw checkError || new Error("Card set not found");
       }
 
       const { data: cardSet, error } = await this.supabase
@@ -253,7 +288,8 @@ export class CardSetService extends BaseService {
         .single();
 
       if (error) {
-        throw new Error("Failed to update card set");
+        console.error("Supabase error updating card set:", error);
+        throw error; // Preserve original error
       }
 
       return cardSet;
@@ -276,7 +312,8 @@ export class CardSetService extends BaseService {
         .single();
 
       if (checkError || !existingSet) {
-        throw new Error("Card set not found");
+        console.error("Supabase error checking card set existence:", checkError);
+        throw checkError || new Error("Card set not found");
       }
 
       const { error } = await this.supabase
@@ -288,7 +325,8 @@ export class CardSetService extends BaseService {
         .eq("id", setId);
 
       if (error) {
-        throw new Error("Failed to delete card set");
+        console.error("Supabase error deleting card set:", error);
+        throw error; // Preserve original error
       }
     }, "Failed to delete card set");
   }
@@ -312,7 +350,8 @@ export class CardSetService extends BaseService {
         .single();
 
       if (setError || !existingSet) {
-        throw new Error("Card set not found");
+        console.error("Supabase error checking card set in addCardsToSet:", setError);
+        throw setError || new Error("Card set not found");
       }
 
       // Check if all cards exist and belong to user
@@ -324,12 +363,16 @@ export class CardSetService extends BaseService {
         .eq("is_deleted", false);
 
       if (cardsError || !cards || cards.length !== command.card_ids.length) {
-        throw new Error("One or more cards not found");
+        console.error("Supabase error checking cards in addCardsToSet:", cardsError);
+        if (cardsError) throw cardsError;
+        throw new Error(
+          `One or more cards not found. Found ${cards?.length || 0} of ${command.card_ids.length} requested cards.`
+        );
       }
 
       // Add cards to set, ignore duplicates
       const { error: insertError } = await this.supabase.from("cards_to_sets").upsert(
-        command.card_ids.map((cardId) => ({
+        command.card_ids.map((cardId: string) => ({
           set_id: setId,
           card_id: cardId,
         })),
@@ -337,7 +380,8 @@ export class CardSetService extends BaseService {
       );
 
       if (insertError) {
-        throw new Error("Failed to add cards to set");
+        console.error("Supabase error inserting cards to set:", insertError);
+        throw insertError; // Preserve original error
       }
 
       return {
@@ -369,7 +413,8 @@ export class CardSetService extends BaseService {
         .single();
 
       if (setError || !existingSet) {
-        throw new Error("Card set not found");
+        console.error("Supabase error checking card set in getAvailableCards:", setError);
+        throw setError || new Error("Card set not found");
       }
 
       // Calculate offset for pagination
@@ -389,12 +434,12 @@ export class CardSetService extends BaseService {
         .eq("user_id", userId)
         .eq("is_deleted", false)
         .not("id", "in", await cardsInSetQuery);
-        
+
       if (countError) {
-        console.error("Supabase count error:", countError);
-        throw new Error("Failed to count available cards");
+        console.error("Supabase count error in getAvailableCards:", countError);
+        throw countError; // Throw the original error
       }
-      
+
       const total = count || 0;
 
       if (!total) {
@@ -420,7 +465,8 @@ export class CardSetService extends BaseService {
         .order("created_at", { ascending: false });
 
       if (cardsError) {
-        throw new Error("Failed to fetch available cards");
+        console.error("Supabase error fetching available cards:", cardsError);
+        throw cardsError; // Throw the original error
       }
 
       return {
