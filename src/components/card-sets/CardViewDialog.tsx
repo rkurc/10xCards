@@ -36,7 +36,7 @@ export default function CardViewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg dialog-content-opaque">
         <DialogHeader>
           <DialogTitle>Fiszka</DialogTitle>
           <DialogDescription>Kliknij na treść, aby odwrócić fiszkę</DialogDescription>

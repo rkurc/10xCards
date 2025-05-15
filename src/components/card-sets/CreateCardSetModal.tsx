@@ -41,7 +41,7 @@ export default function CreateCardSetModal({ onSubmit, open, onOpenChange }: Cre
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="dialog-content-opaque">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Utwórz nowy zestaw fiszek</DialogTitle>

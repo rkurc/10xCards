@@ -40,7 +40,7 @@ export default function EditCardModal({ card, onSubmit, open, onOpenChange }: Ed
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="dialog-content-opaque">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Edit Card</DialogTitle>

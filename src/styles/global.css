@@ -7,6 +7,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import modal fixes */
+@import "./modal-fix.css";
+
 /* Keep your custom variant if needed */
 @custom-variant dark (&:is(.dark *));
 

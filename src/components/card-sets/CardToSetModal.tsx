@@ -44,7 +44,7 @@ export default function CardToSetModal({ setId, onSubmit, open, onOpenChange }: 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh]">
+      <DialogContent className="max-w-3xl max-h-[80vh] dialog-content-opaque">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Add Cards to Set</DialogTitle>
