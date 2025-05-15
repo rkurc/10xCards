@@ -191,16 +191,19 @@ export class CardSetService extends BaseService {
       const offset = (page - 1) * limit;
 
       // Get total count of cards in this set
+      console.info(`[DEBUG] getCardSet - Getting card count for set_id: ${setId}`);
+      // First, just count the junction table entries without filters on the cards table
       const { count, error: countError } = await this.supabase
         .from("cards_to_sets")
-        .select("*, card:cards!inner(*)", { count: "exact" })
-        .eq("set_id", setId)
-        .eq("card.is_deleted", false);
+        .select("*", { count: "exact" })
+        .eq("set_id", setId);
 
       if (countError) {
         console.error("Supabase count error in getCardSet:", countError);
         throw countError; // Throw the original error
       }
+      
+      console.info(`[DEBUG] getCardSet - Found ${count} cards in set`); 
 
       const total = count || 0;
 
@@ -220,11 +223,14 @@ export class CardSetService extends BaseService {
       }
 
       // Get paginated cards for this set
-      const { data: cards, error: cardsError } = await this.supabase
+      console.info(`[DEBUG] getCardSet - Fetching cards for set_id: ${setId}`);
+      // Join with cards table to get card details
+      const { data: cardData, error: cardsError } = await this.supabase
         .from("cards_to_sets")
         .select(
           `
-          card:cards(
+          card_id,
+          cards:cards!inner(
             id,
             front_content,
             back_content,
@@ -236,7 +242,6 @@ export class CardSetService extends BaseService {
         `
         )
         .eq("set_id", setId)
-        .eq("card.is_deleted", false)
         .range(offset, offset + limit - 1)
         .order("created_at", { ascending: false });
 
@@ -245,8 +250,13 @@ export class CardSetService extends BaseService {
         throw cardsError; // Throw the original error
       }
 
+      console.info(`[DEBUG] getCardSet - Fetched ${cardData?.length || 0} card_to_sets entries`);
+
       // Transform the response to flatten the card data
-      const transformedCards = cards.map((item) => item.card).filter((card) => card !== null);
+      // Filter out any null cards (if there are any)
+      const transformedCards = cardData.map((item) => item.cards).filter((card) => card !== null);
+
+      console.info(`[DEBUG] getCardSet - Extracted ${transformedCards.length} valid cards`);
 
       return {
         ...cardSet,
