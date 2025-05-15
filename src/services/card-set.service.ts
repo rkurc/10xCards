@@ -1,13 +1,13 @@
 import { BaseService } from "./base.service";
 import type { CardSetDTO, CardSetCreateCommand, CardSetUpdateCommand, CardSetWithCardCount, CardSetWithCardsDTO, CardListResponse, CardToSetAddCommand, CardToSetAddResponse, CardSetListResponse } from "../types";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { TypedSupabaseClient } from "../db/supabase.service";
 
 /**
  * Service for managing card sets
  * Provides methods for CRUD operations on card sets and managing cards within sets
  */
 export class CardSetService extends BaseService {
-  constructor(supabase: SupabaseClient) {
+  constructor(supabase: TypedSupabaseClient) {
     super(supabase);
   }
 
@@ -24,11 +24,13 @@ export class CardSetService extends BaseService {
       const offset = (page - 1) * limit;
 
       // Get total count of user's non-deleted card sets
-      const { count: total } = await this.supabase
+      const { count } = await this.supabase
         .from("card_sets")
-        .select("*", { count: "exact", head: true })
+        .select("*", { count: "exact" })
         .eq("user_id", userId)
         .eq("is_deleted", false);
+      console.info("Total card sets count:", count);
+      const total = count || 0;
 
       if (!total) {
         return {
@@ -61,18 +63,24 @@ export class CardSetService extends BaseService {
         .order("created_at", { ascending: false });
 
       if (error) {
+        console.error("Supabase error:", error);
         throw new Error("Failed to fetch card sets");
       }
 
       // Transform the response to include card_count
-      const transformedData: CardSetWithCardCount[] = cardSets.map((set) => ({
-        id: set.id,
-        name: set.name,
-        description: set.description,
-        created_at: set.created_at,
-        updated_at: set.updated_at,
-        card_count: set.cards?.length ?? 0,
-      }));
+      const transformedData: CardSetWithCardCount[] = cardSets.map((set) => {
+        // Safely check if cards exists and handle it properly
+        const cardCount = set.cards && typeof set.cards === "object" ? set.cards.length || 0 : 0;
+        
+        return {
+          id: set.id,
+          name: set.name,
+          description: set.description,
+          created_at: set.created_at,
+          updated_at: set.updated_at,
+          card_count: cardCount
+        };
+      });
 
       return {
         data: transformedData,
@@ -139,11 +147,18 @@ export class CardSetService extends BaseService {
       const offset = (page - 1) * limit;
 
       // Get total count of cards in this set
-      const { count: total } = await this.supabase
+      const { count, error: countError } = await this.supabase
         .from("cards_to_sets")
-        .select("*", { count: "exact", head: true })
+        .select("*", { count: "exact" })
         .eq("set_id", setId)
         .eq("card.is_deleted", false);
+        
+      if (countError) {
+        console.error("Supabase count error:", countError);
+        throw new Error("Failed to count cards in set");
+      }
+      
+      const total = count || 0;
 
       if (!total) {
         return {
@@ -187,8 +202,8 @@ export class CardSetService extends BaseService {
 
       // Transform the response to flatten the card data
       const transformedCards = cards
-        .map((item: any) => item.card)
-        .filter((card: any) => card !== null);
+        .map((item) => item.card)
+        .filter((card) => card !== null);
 
       return {
         ...cardSet,
@@ -368,12 +383,19 @@ export class CardSetService extends BaseService {
         .then((result) => result.data?.map((r) => r.card_id) || []);
 
       // Get total count of available cards
-      const { count: total } = await this.supabase
+      const { count, error: countError } = await this.supabase
         .from("cards")
-        .select("*", { count: "exact", head: true })
+        .select("*", { count: "exact" })
         .eq("user_id", userId)
         .eq("is_deleted", false)
         .not("id", "in", await cardsInSetQuery);
+        
+      if (countError) {
+        console.error("Supabase count error:", countError);
+        throw new Error("Failed to count available cards");
+      }
+      
+      const total = count || 0;
 
       if (!total) {
         return {

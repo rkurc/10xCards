@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { AstroCookies } from "astro";
 import type { CookieOptions } from "@supabase/ssr";
 import type { APIContext } from "astro";
-import type { SupabaseClient, User } from "@supabase/supabase-js";
-import type { Database } from "../../../db/database.types";
+import type { User } from "@supabase/supabase-js";
+import type { SupabaseClient } from "../../../db/supabase.service";
 import { POST as loginHandler } from "../auth/login";
 import { POST as registerHandler } from "../auth/register";
 import { POST as resetPasswordHandler } from "../auth/reset-password";
@@ -152,7 +152,7 @@ const createMockContext = (request: Request): APIContext => ({
     supabase: {
       auth: mockSupabaseAuth.auth,
       ...mockCookieHandling,
-    } as unknown as SupabaseClient<Database>,
+    } as unknown as SupabaseClient,
   },
 });
 
