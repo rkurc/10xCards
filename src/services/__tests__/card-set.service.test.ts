@@ -145,9 +145,9 @@ describe("CardSetService", () => {
         }),
       } as any);
 
-      await expect(
-        service.createCardSet(userId, { name: "Test", description: "Test" })
-      ).rejects.toThrow("Failed to create card set");
+      await expect(service.createCardSet(userId, { name: "Test", description: "Test" })).rejects.toThrow(
+        "Failed to create card set"
+      );
     });
   });
 
@@ -393,9 +393,7 @@ describe("CardSetService", () => {
         }),
       } as any);
 
-      await expect(service.deleteCardSet(userId, setId)).rejects.toThrow(
-        "Card set not found"
-      );
+      await expect(service.deleteCardSet(userId, setId)).rejects.toThrow("Card set not found");
     });
   });
 
@@ -465,9 +463,9 @@ describe("CardSetService", () => {
         }),
       } as any);
 
-      await expect(
-        service.addCardsToSet(userId, setId, { card_ids: ["card-1"] })
-      ).rejects.toThrow("Card set not found");
+      await expect(service.addCardsToSet(userId, setId, { card_ids: ["card-1"] })).rejects.toThrow(
+        "Card set not found"
+      );
     });
 
     it("should throw error if cards do not exist", async () => {
@@ -501,9 +499,9 @@ describe("CardSetService", () => {
         }),
       } as any);
 
-      await expect(
-        service.addCardsToSet(userId, setId, { card_ids: ["card-1", "card-2"] })
-      ).rejects.toThrow("One or more cards not found");
+      await expect(service.addCardsToSet(userId, setId, { card_ids: ["card-1", "card-2"] })).rejects.toThrow(
+        "One or more cards not found"
+      );
     });
   });
 });

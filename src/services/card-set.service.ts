@@ -17,10 +17,6 @@ import type { TypedSupabaseClient } from "../db/supabase.service";
  * Provides methods for CRUD operations on card sets and managing cards within sets
  */
 export class CardSetService extends BaseService {
-  constructor(supabase: TypedSupabaseClient) {
-    super(supabase);
-  }
-
   /**
    * Get a paginated list of card sets for a user
    * @param userId The ID of the requesting user
@@ -202,8 +198,8 @@ export class CardSetService extends BaseService {
         console.error("Supabase count error in getCardSet:", countError);
         throw countError; // Throw the original error
       }
-      
-      console.info(`[DEBUG] getCardSet - Found ${count} cards in set`); 
+
+      console.info(`[DEBUG] getCardSet - Found ${count} cards in set`);
 
       const total = count || 0;
 

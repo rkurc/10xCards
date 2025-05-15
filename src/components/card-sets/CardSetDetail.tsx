@@ -208,12 +208,7 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
         />
       )}
 
-      <CardToSetModal
-        setId={setId}
-        onSubmit={handleAddCards}
-        open={isAddCardsOpen}
-        onOpenChange={setIsAddCardsOpen}
-      />
+      <CardToSetModal setId={setId} onSubmit={handleAddCards} open={isAddCardsOpen} onOpenChange={setIsAddCardsOpen} />
     </div>
   );
 }

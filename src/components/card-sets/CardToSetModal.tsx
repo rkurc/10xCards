@@ -85,7 +85,12 @@ export default function CardToSetModal({ setId, onSubmit, open, onOpenChange }: 
               <span className="text-sm text-gray-600">
                 {selectedCards.length} card{selectedCards.length !== 1 ? "s" : ""} selected
               </span>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading || isLoadingCards}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isLoading || isLoadingCards}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={isLoading || isLoadingCards || selectedCards.length === 0}>
