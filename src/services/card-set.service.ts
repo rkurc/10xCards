@@ -87,8 +87,17 @@ export class CardSetService extends BaseService {
 
       // Transform the response to include card_count
       const transformedData: CardSetWithCardCount[] = cardSets.map((set) => {
-        // Safely check if cards exists and handle it properly
-        const cardCount = set.cards && typeof set.cards === "object" ? set.cards.length || 0 : 0;
+        // When using cards:cards_to_sets(count), Supabase returns an array with count objects
+        // Extract the count value properly based on its structure
+        let cardCount = 0;
+
+        if (Array.isArray(set.cards) && set.cards.length > 0) {
+          // If it's an array with a count property
+          cardCount = set.cards[0]?.count || 0;
+        } else if (typeof set.cards === "number") {
+          // If it's directly a number
+          cardCount = set.cards;
+        }
 
         return {
           id: set.id,
@@ -421,27 +430,24 @@ export class CardSetService extends BaseService {
       const offset = (page - 1) * limit;
 
       // Get cards already in the set
-      const cardsInSetResult = await this.supabase
-        .from("cards_to_sets")
-        .select("card_id")
-        .eq("set_id", setId);
-      
+      const cardsInSetResult = await this.supabase.from("cards_to_sets").select("card_id").eq("set_id", setId);
+
       // Extract card IDs from the result
       const cardIdsInSet = (cardsInSetResult.data || []).map((r) => r.card_id);
-      
+
       // If no cards are in the set yet, we can return all cards
       let countQuery = this.supabase
         .from("cards")
         .select("*", { count: "exact" })
         .eq("user_id", userId)
         .eq("is_deleted", false);
-      
+
       // Only apply the not-in filter if there are cards in the set
       if (cardIdsInSet.length > 0) {
         countQuery = countQuery.not("id", "in", `(${cardIdsInSet.map((id) => `"${id}"`).join(",")})`);
       }
 
-      // Get total count of available cards  
+      // Get total count of available cards
       const { count, error: countError } = await countQuery;
 
       if (countError) {
@@ -464,17 +470,13 @@ export class CardSetService extends BaseService {
       }
 
       // Get paginated available cards
-      let cardsQuery = this.supabase
-        .from("cards")
-        .select()
-        .eq("user_id", userId)
-        .eq("is_deleted", false);
-      
+      let cardsQuery = this.supabase.from("cards").select().eq("user_id", userId).eq("is_deleted", false);
+
       // Only apply the not-in filter if there are cards in the set
       if (cardIdsInSet.length > 0) {
         cardsQuery = cardsQuery.not("id", "in", `(${cardIdsInSet.map((id) => `"${id}"`).join(",")})`);
       }
-      
+
       const { data: cards, error: cardsError } = await cardsQuery
         .range(offset, offset + limit - 1)
         .order("created_at", { ascending: false });
