@@ -38,14 +38,6 @@ jobs:
       
       - name: Run unit tests
         run: npm run test:coverage
-      
-      - name: Upload coverage reports
-        uses: codecov/codecov-action@v3
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          files: ./coverage/coverage-final.json
-          fail_ci_if_error: true
           
   e2e-tests:
     name: E2E Tests
