@@ -1,10 +1,11 @@
+// filepath: /media/romank/f2e52197-b54f-4d91-b5f7-06e8d4d6ab25/Learning/10xDevs/10xCards/src/components/dashboard/DashboardContent.tsx
 import { useDirectAuth } from "@/hooks/useDirectAuth";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { supabaseClient } from "@/db/supabase.service";
 
-export default function DashboardContent() {
+export function DashboardContent() {
   const { user, loading } = useDirectAuth();
   const [cardSetsCount, setCardSetsCount] = useState<number | null>(null);
   const [isLoadingCardSets, setIsLoadingCardSets] = useState(true);
@@ -134,3 +135,5 @@ export default function DashboardContent() {
     </div>
   );
 }
+
+export default DashboardContent;
