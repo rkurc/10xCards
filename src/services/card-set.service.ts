@@ -336,7 +336,8 @@ export class CardSetService extends BaseService {
           is_deleted: true,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", setId);
+        .eq("id", setId)
+        .eq("user_id", userId); // Make sure to include user_id filter to match RLS policy
 
       if (error) {
         console.error("Supabase error deleting card set:", error);

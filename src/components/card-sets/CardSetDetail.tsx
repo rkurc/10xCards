@@ -162,7 +162,9 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
             description="Czy na pewno chcesz usunąć ten zestaw? Wszystkie fiszki zostaną usunięte."
             onConfirm={handleDeleteSet}
           >
-            <Button variant="destructive">Usuń zestaw</Button>
+            <Button variant="destructive" className="shadow-md hover:shadow-lg transition-shadow text-black font-bold">
+              Usuń zestaw
+            </Button>
           </DeleteAlertDialog>
         </div>
       </div>
@@ -193,6 +195,7 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
                   title="Usuń fiszkę"
                   description="Czy na pewno chcesz usunąć tę fiszkę?"
                   onConfirm={() => handleDeleteCard(card.id)}
+                  className="min-w-28 hover:shadow-md transition-shadow text-black"
                 />
               </div>
             </CardContent>
