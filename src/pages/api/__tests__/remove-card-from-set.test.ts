@@ -89,5 +89,59 @@ describe("Remove Card from Set API Endpoint", () => {
       const data = await response.json();
       expect(data.error).toBe("Card is not in this set");
     });
+
+    it("should return 401 if user is not authenticated", async () => {
+      // Arrange
+      mockSupabase.auth.getUser.mockResolvedValue({
+        data: { user: null },
+      });
+
+      // Act
+      const response = await DELETE(mockContext);
+
+      // Assert
+      expect(response.status).toBe(401);
+      const data = await response.json();
+      expect(data.error).toBe("Unauthorized");
+    });
+
+    it("should return 400 if set ID is not a valid UUID", async () => {
+      // Arrange
+      mockContext.params.id = "invalid-uuid";
+
+      // Act
+      const response = await DELETE(mockContext);
+
+      // Assert
+      expect(response.status).toBe(400);
+      const data = await response.json();
+      expect(data.error).toBe("Invalid card set ID");
+    });
+
+    it("should return 400 if card ID is not a valid UUID", async () => {
+      // Arrange
+      mockContext.params.cardId = "invalid-uuid";
+
+      // Act
+      const response = await DELETE(mockContext);
+
+      // Assert
+      expect(response.status).toBe(400);
+      const data = await response.json();
+      expect(data.error).toBe("Invalid card ID");
+    });
+
+    it("should return 500 on internal server error", async () => {
+      // Arrange
+      mockCardSetService.removeCardFromSet.mockRejectedValue(new Error("Database connection error"));
+
+      // Act
+      const response = await DELETE(mockContext);
+
+      // Assert
+      expect(response.status).toBe(500);
+      const data = await response.json();
+      expect(data.error).toBe("An error occurred while processing your request");
+    });
   });
 });

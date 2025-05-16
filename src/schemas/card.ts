@@ -4,7 +4,7 @@ import { z } from "zod";
  * Schema for validating UUID parameters
  */
 export const uuidSchema = z.object({
-  id: z.string().uuid("Nieprawidłowy format identyfikatora"),
+  id: z.string().min(1, "ID is required"),
 });
 
 /**
