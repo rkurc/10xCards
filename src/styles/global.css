@@ -2,13 +2,13 @@
 /* @import "tailwindcss"; */
 /* @import "tw-animate-css"; */
 
+/* Import modal fixes - moved to the top before other directives */
+@import "./modal-fix.css";
+
 /* These directives are correct and should be kept */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Import modal fixes */
-@import "./modal-fix.css";
 
 /* Keep your custom variant if needed */
 @custom-variant dark (&:is(.dark *));
