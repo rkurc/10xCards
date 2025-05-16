@@ -1,0 +1,5 @@
+/* Add custom styles for modal opacity */
+.dialog-content-opaque {
+  opacity: 1 !important;
+  background-color: var(--background) !important;
+}

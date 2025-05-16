@@ -6,6 +6,9 @@ import { ModeToggle } from "@/components/theme/ModeToggle";
 export function Header() {
   const { isAuthenticated, user, login, logout } = useContext(AuthContext);
 
+  // Log auth state for debugging
+  console.log("Auth state:", { isAuthenticated, user });
+
   return (
     <header className="border-b sticky top-0 z-40 bg-background">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">

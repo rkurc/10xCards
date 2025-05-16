@@ -1,10 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient as BaseSupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
 import { env } from "../config/environment";
 
 // Export the typed SupabaseClient for use throughout the application
-export type TypedSupabaseClient = SupabaseClient<Database>;
+export type TypedSupabaseClient = BaseSupabaseClient<Database>;
+
+// Also export a renamed type for direct import
+export type SupabaseClient = TypedSupabaseClient;
 
 /**
  * Creates a Supabase client with optional auth token
