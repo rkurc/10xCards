@@ -57,14 +57,6 @@ jobs:
       - name: Run unit tests
         run: npm run test:coverage
       
-      - name: Upload unit test coverage
-        uses: codecov/codecov-action@v3
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          files: ./coverage/coverage-final.json
-          flags: unit-tests
-
   e2e-tests:
     name: E2E Tests
     needs: lint
