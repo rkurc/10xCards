@@ -2,7 +2,6 @@ import { useDirectAuth } from "@/hooks/useDirectAuth";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import { supabaseClient } from "@/db/supabase.service";
 
 export default function DashboardContent() {
   const { user, loading } = useDirectAuth();
@@ -17,12 +16,23 @@ export default function DashboardContent() {
       try {
         setIsLoadingCardSets(true);
 
-        // Hard-code to 5 as specified in the requirements
-        setCardSetsCount(5);
+        // Use the API to get the actual card sets list and extract the count
+        const response = await fetch("/api/card-sets?page=1&limit=1", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch card sets");
+        }
+
+        const data = await response.json();
+        setCardSetsCount(data.pagination.total);
       } catch (err) {
         console.error("Failed to fetch card sets:", err);
-        // Hard-code to 5 as specified
-        setCardSetsCount(5);
+        setCardSetsCount(0);
       } finally {
         setIsLoadingCardSets(false);
       }
