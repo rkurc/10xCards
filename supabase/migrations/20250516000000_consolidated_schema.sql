@@ -1,5 +1,3 @@
-
-
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
@@ -214,6 +212,10 @@ ALTER FUNCTION "public"."handle_auth_user_sync"() OWNER TO "postgres";
 
 COMMENT ON FUNCTION "public"."handle_auth_user_sync"() IS 'Automatically creates or updates a user profile when an auth.user is created or updated';
 
+-- Create a trigger for the handle_auth_user_sync function
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT OR UPDATE ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_auth_user_sync();
 
 SET default_tablespace = '';
 
@@ -638,7 +640,55 @@ CREATE POLICY "users can view own card sets" ON "public"."card_sets" FOR SELECT 
 
 
 
+CREATE POLICY "users can insert own card sets" ON "public"."card_sets" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+COMMENT ON POLICY "users can insert own card sets" ON "public"."card_sets" IS 'Allow users to create their own card sets';
+
+
+
+CREATE POLICY "users can update own card sets" ON "public"."card_sets" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+
+
+
+COMMENT ON POLICY "users can update own card sets" ON "public"."card_sets" IS 'Allow users to update only their own card sets';
+
+
+
+CREATE POLICY "users can delete own card sets" ON "public"."card_sets" FOR DELETE USING (("auth"."uid"() = "user_id"));
+
+
+
+COMMENT ON POLICY "users can delete own card sets" ON "public"."card_sets" IS 'Allow users to delete only their own card sets';
+
+
+
 CREATE POLICY "users can view own cards" ON "public"."cards" FOR SELECT USING ((("auth"."uid"() = "user_id") AND ("is_deleted" = false)));
+
+
+
+CREATE POLICY "users can insert own cards" ON "public"."cards" FOR INSERT WITH CHECK (("auth"."uid"() = "user_id"));
+
+
+
+COMMENT ON POLICY "users can insert own cards" ON "public"."cards" IS 'Allow users to create their own cards';
+
+
+
+CREATE POLICY "users can update own cards" ON "public"."cards" FOR UPDATE USING (("auth"."uid"() = "user_id"));
+
+
+
+COMMENT ON POLICY "users can update own cards" ON "public"."cards" IS 'Allow users to update only their own cards';
+
+
+
+CREATE POLICY "users can delete own cards" ON "public"."cards" FOR DELETE USING (("auth"."uid"() = "user_id"));
+
+
+
+COMMENT ON POLICY "users can delete own cards" ON "public"."cards" IS 'Allow users to delete only their own cards';
 
 
 
