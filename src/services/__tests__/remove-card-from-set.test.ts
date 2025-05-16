@@ -5,7 +5,7 @@ import type { TypedSupabaseClient } from "../../db/supabase.service";
 describe("CardSetService - removeCardFromSet", () => {
   let service: CardSetService;
   let mockSupabase: any;
-  
+
   const userId = "test-user-id";
   const setId = "test-set-id";
   const cardId = "test-card-id";
@@ -15,13 +15,13 @@ describe("CardSetService - removeCardFromSet", () => {
     mockSupabase = {
       from: vi.fn(),
     };
-    
+
     service = new CardSetService(mockSupabase as TypedSupabaseClient);
   });
 
   it("should remove a card from a set", async () => {
     // Standard happy path setup
-    
+
     // 1. First call - check card set exists
     mockSupabase.from.mockReturnValueOnce({
       select: vi.fn().mockReturnValueOnce({
@@ -30,14 +30,14 @@ describe("CardSetService - removeCardFromSet", () => {
             eq: vi.fn().mockReturnValueOnce({
               single: vi.fn().mockResolvedValueOnce({
                 data: { id: setId, name: "Test Set" },
-                error: null
-              })
-            })
-          })
-        })
-      })
+                error: null,
+              }),
+            }),
+          }),
+        }),
+      }),
     });
-    
+
     // 2. Second call - check card exists
     mockSupabase.from.mockReturnValueOnce({
       select: vi.fn().mockReturnValueOnce({
@@ -46,12 +46,12 @@ describe("CardSetService - removeCardFromSet", () => {
             eq: vi.fn().mockReturnValueOnce({
               single: vi.fn().mockResolvedValueOnce({
                 data: { id: cardId, front_content: "Test Card" },
-                error: null
-              })
-            })
-          })
-        })
-      })
+                error: null,
+              }),
+            }),
+          }),
+        }),
+      }),
     });
 
     // 3. Third call - check relation exists
@@ -61,11 +61,11 @@ describe("CardSetService - removeCardFromSet", () => {
           eq: vi.fn().mockReturnValueOnce({
             single: vi.fn().mockResolvedValueOnce({
               data: { set_id: setId, card_id: cardId },
-              error: null
-            })
-          })
-        })
-      })
+              error: null,
+            }),
+          }),
+        }),
+      }),
     });
 
     // 4. Fourth call - delete relationship
@@ -73,10 +73,10 @@ describe("CardSetService - removeCardFromSet", () => {
       delete: vi.fn().mockReturnValueOnce({
         eq: vi.fn().mockReturnValueOnce({
           eq: vi.fn().mockResolvedValueOnce({
-            error: null
-          })
-        })
-      })
+            error: null,
+          }),
+        }),
+      }),
     });
 
     // Act
@@ -97,17 +97,16 @@ describe("CardSetService - removeCardFromSet", () => {
             eq: vi.fn().mockReturnValueOnce({
               single: vi.fn().mockResolvedValueOnce({
                 data: null,
-                error: new Error("Card set not found")
-              })
-            })
-          })
-        })
-      })
+                error: new Error("Card set not found"),
+              }),
+            }),
+          }),
+        }),
+      }),
     });
 
     // Act & Assert
-    await expect(service.removeCardFromSet(userId, setId, cardId))
-      .rejects.toThrow("Card set not found");
+    await expect(service.removeCardFromSet(userId, setId, cardId)).rejects.toThrow("Card set not found");
   });
 
   it("should throw an error if the card is not found", async () => {
@@ -119,14 +118,14 @@ describe("CardSetService - removeCardFromSet", () => {
             eq: vi.fn().mockReturnValueOnce({
               single: vi.fn().mockResolvedValueOnce({
                 data: { id: setId, name: "Test Set" },
-                error: null
-              })
-            })
-          })
-        })
-      })
+                error: null,
+              }),
+            }),
+          }),
+        }),
+      }),
     });
-    
+
     // 2. Second call - check card exists (failure)
     mockSupabase.from.mockReturnValueOnce({
       select: vi.fn().mockReturnValueOnce({
@@ -135,17 +134,16 @@ describe("CardSetService - removeCardFromSet", () => {
             eq: vi.fn().mockReturnValueOnce({
               single: vi.fn().mockResolvedValueOnce({
                 data: null,
-                error: new Error("Card not found")
-              })
-            })
-          })
-        })
-      })
+                error: new Error("Card not found"),
+              }),
+            }),
+          }),
+        }),
+      }),
     });
 
     // Act & Assert
-    await expect(service.removeCardFromSet(userId, setId, cardId))
-      .rejects.toThrow("Card not found");
+    await expect(service.removeCardFromSet(userId, setId, cardId)).rejects.toThrow("Card not found");
   });
 
   it("should throw an error if the card is not in the set", async () => {
@@ -157,14 +155,14 @@ describe("CardSetService - removeCardFromSet", () => {
             eq: vi.fn().mockReturnValueOnce({
               single: vi.fn().mockResolvedValueOnce({
                 data: { id: setId, name: "Test Set" },
-                error: null
-              })
-            })
-          })
-        })
-      })
+                error: null,
+              }),
+            }),
+          }),
+        }),
+      }),
     });
-    
+
     // 2. Second call - check card exists (success)
     mockSupabase.from.mockReturnValueOnce({
       select: vi.fn().mockReturnValueOnce({
@@ -173,14 +171,14 @@ describe("CardSetService - removeCardFromSet", () => {
             eq: vi.fn().mockReturnValueOnce({
               single: vi.fn().mockResolvedValueOnce({
                 data: { id: cardId, front_content: "Test Card" },
-                error: null
-              })
-            })
-          })
-        })
-      })
+                error: null,
+              }),
+            }),
+          }),
+        }),
+      }),
     });
-    
+
     // 3. Third call - check relation exists (failure)
     mockSupabase.from.mockReturnValueOnce({
       select: vi.fn().mockReturnValueOnce({
@@ -188,15 +186,14 @@ describe("CardSetService - removeCardFromSet", () => {
           eq: vi.fn().mockReturnValueOnce({
             single: vi.fn().mockResolvedValueOnce({
               data: null,
-              error: new Error("Card is not in this set")
-            })
-          })
-        })
-      })
+              error: new Error("Card is not in this set"),
+            }),
+          }),
+        }),
+      }),
     });
 
     // Act & Assert
-    await expect(service.removeCardFromSet(userId, setId, cardId))
-      .rejects.toThrow("Card is not in this set");
+    await expect(service.removeCardFromSet(userId, setId, cardId)).rejects.toThrow("Card is not in this set");
   });
 });

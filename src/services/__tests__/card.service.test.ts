@@ -6,7 +6,7 @@ describe("CardService", () => {
   let service: CardService;
   // Use explicit typing to avoid 'any' errors
   let mockSupabase: { from: ReturnType<typeof vi.fn> };
-  
+
   const userId = "test-user-id";
   const cardId = "test-card-id";
 
@@ -15,7 +15,7 @@ describe("CardService", () => {
     mockSupabase = {
       from: vi.fn(),
     };
-    
+
     service = new CardService(mockSupabase as unknown as TypedSupabaseClient);
   });
 
@@ -33,12 +33,12 @@ describe("CardService", () => {
               eq: vi.fn().mockReturnValueOnce({
                 single: vi.fn().mockResolvedValueOnce({
                   data: { id: cardId, front_content: "Test front", back_content: "Test back" },
-                  error: null
-                })
-              })
-            })
-          })
-        })
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
       });
 
       // Act
@@ -58,12 +58,12 @@ describe("CardService", () => {
               eq: vi.fn().mockReturnValueOnce({
                 single: vi.fn().mockResolvedValueOnce({
                   data: null,
-                  error: new Error("Card not found")
-                })
-              })
-            })
-          })
-        })
+                  error: new Error("Card not found"),
+                }),
+              }),
+            }),
+          }),
+        }),
       });
 
       // Act & Assert
@@ -86,10 +86,10 @@ describe("CardService", () => {
           select: vi.fn().mockReturnValueOnce({
             single: vi.fn().mockResolvedValueOnce({
               data: { id: cardId, ...command },
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       });
 
       // Act
@@ -117,12 +117,12 @@ describe("CardService", () => {
               eq: vi.fn().mockReturnValueOnce({
                 single: vi.fn().mockResolvedValueOnce({
                   data: { id: cardId, front_content: "Old front", back_content: "Old back" },
-                  error: null
-                })
-              })
-            })
-          })
-        })
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
       });
 
       // Second call - update card
@@ -133,12 +133,12 @@ describe("CardService", () => {
               select: vi.fn().mockReturnValueOnce({
                 single: vi.fn().mockResolvedValueOnce({
                   data: { id: cardId, ...command },
-                  error: null
-                })
-              })
-            })
-          })
-        })
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
       });
 
       // Act
@@ -158,12 +158,12 @@ describe("CardService", () => {
               eq: vi.fn().mockReturnValueOnce({
                 single: vi.fn().mockResolvedValueOnce({
                   data: null,
-                  error: new Error("Card not found")
-                })
-              })
-            })
-          })
-        })
+                  error: new Error("Card not found"),
+                }),
+              }),
+            }),
+          }),
+        }),
       });
 
       const command = {
@@ -187,12 +187,12 @@ describe("CardService", () => {
               eq: vi.fn().mockReturnValueOnce({
                 single: vi.fn().mockResolvedValueOnce({
                   data: { id: cardId },
-                  error: null
-                })
-              })
-            })
-          })
-        })
+                  error: null,
+                }),
+              }),
+            }),
+          }),
+        }),
       });
 
       // Second call - update card to be deleted
@@ -200,10 +200,10 @@ describe("CardService", () => {
         update: vi.fn().mockReturnValueOnce({
           eq: vi.fn().mockReturnValueOnce({
             eq: vi.fn().mockResolvedValueOnce({
-              error: null
-            })
-          })
-        })
+              error: null,
+            }),
+          }),
+        }),
       });
 
       // Act
@@ -222,12 +222,12 @@ describe("CardService", () => {
               eq: vi.fn().mockReturnValueOnce({
                 single: vi.fn().mockResolvedValueOnce({
                   data: null,
-                  error: new Error("Card not found")
-                })
-              })
-            })
-          })
-        })
+                  error: new Error("Card not found"),
+                }),
+              }),
+            }),
+          }),
+        }),
       });
 
       // Act & Assert
