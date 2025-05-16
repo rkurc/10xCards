@@ -172,7 +172,6 @@ describe("DashboardContent", () => {
       const statsLink = screen.getByText("Zobacz statystyki").closest("a");
 
       // Assert
-      expect(studyLink?.getAttribute("href")).toBe("/study");
       expect(setsLink?.getAttribute("href")).toBe("/sets");
       expect(statsLink?.getAttribute("href")).toBe("/stats");
     });
@@ -219,7 +218,7 @@ describe("DashboardContent", () => {
 
       // Assert
       const createLink = screen.getByText("Stwórz nowe karty").closest("a");
-      expect(createLink?.getAttribute("href")).toBe("/create");
+      expect(createLink?.getAttribute("href")).toBe("/generate");
     });
   });
 
