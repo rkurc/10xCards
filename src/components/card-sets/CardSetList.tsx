@@ -16,7 +16,7 @@ interface Filters {
 
 export default function CardSetList() {
   const { openCreateCardSetModal } = useDialog();
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [filters, setFilters] = useState<Filters>({
     search: "",
     sortBy: "updated_at",
@@ -80,13 +80,13 @@ export default function CardSetList() {
         <div className="flex flex-col md:flex-row gap-4">
           <Button onClick={openCreateCardSetModal}>Utwórz nowy zestaw</Button>
           <div className="flex space-x-2">
-            <Button variant={viewMode === "grid" ? "default" : "outline"} onClick={() => setViewMode("grid")}>
-              <Grid3X3 className="h-4 w-4 mr-2" />
-              Siatka
-            </Button>
-            <Button variant={viewMode === "list" ? "default" : "outline"} onClick={() => setViewMode("list")}>
+            <Button variant={viewMode === "list" ? "outline" : "default"} onClick={() => setViewMode("list")}>
               <List className="h-4 w-4 mr-2" />
               Lista
+            </Button>
+            <Button variant={viewMode === "grid" ? "outline" : "default"} onClick={() => setViewMode("grid")}>
+              <Grid3X3 className="h-4 w-4 mr-2" />
+              Siatka
             </Button>
           </div>
         </div>

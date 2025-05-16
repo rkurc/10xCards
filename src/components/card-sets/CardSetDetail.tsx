@@ -62,12 +62,12 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
     }
   };
 
-  const handleDeleteCard = async (cardId: string) => {
+  const handleRemoveCardFromSet = async (cardId: string) => {
     try {
-      await fetch(`/api/cards/${cardId}`, { method: "DELETE" });
+      await fetch(`/api/card-sets/${setId}/cards/${cardId}`, { method: "DELETE" });
       await refetch();
     } catch (error) {
-      console.error("Failed to delete card:", error);
+      console.error("Failed to remove card from set:", error);
     }
   };
 
@@ -192,10 +192,9 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
                   Edytuj
                 </Button>
                 <DeleteAlertDialog
-                  title="Usuń fiszkę"
-                  description="Czy na pewno chcesz usunąć tę fiszkę?"
-                  onConfirm={() => handleDeleteCard(card.id)}
-                  className="min-w-28 hover:shadow-md transition-shadow text-black"
+                  title="Usuń fiszkę z zestawu"
+                  description="Czy na pewno chcesz usunąć tę fiszkę z zestawu? Fiszka pozostanie w bazie i będzie dostępna do dodania do innych zestawów."
+                  onConfirm={() => handleRemoveCardFromSet(card.id)}
                 />
               </div>
             </CardContent>

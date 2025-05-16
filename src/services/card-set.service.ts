@@ -562,4 +562,63 @@ export class CardSetService extends BaseService {
       return false;
     }
   }
+
+  /**
+   * Remove a card from a set
+   * @param userId The ID of the requesting user
+   * @param setId The ID of the card set
+   * @param cardId The ID of the card to remove from the set
+   */
+  async removeCardFromSet(userId: string, setId: string, cardId: string): Promise<void> {
+    return this.executeDbOperation(async () => {
+      // Check if set exists and belongs to user
+      const { data: existingSet, error: setError } = await this.supabase
+        .from("card_sets")
+        .select()
+        .eq("id", setId)
+        .eq("user_id", userId)
+        .eq("is_deleted", false)
+        .single();
+
+      if (setError || !existingSet) {
+        console.error("Supabase error checking card set existence:", setError);
+        throw setError || new Error("Card set not found");
+      }
+
+      // Check if card exists and belongs to user
+      const { data: existingCard, error: cardError } = await this.supabase
+        .from("cards")
+        .select()
+        .eq("id", cardId)
+        .eq("user_id", userId)
+        .eq("is_deleted", false)
+        .single();
+
+      if (cardError || !existingCard) {
+        console.error("Supabase error checking card existence:", cardError);
+        throw cardError || new Error("Card not found");
+      }
+
+      // Check if the relationship exists
+      const { data: existingRelation, error: relationError } = await this.supabase
+        .from("cards_to_sets")
+        .select()
+        .eq("set_id", setId)
+        .eq("card_id", cardId)
+        .single();
+
+      if (relationError || !existingRelation) {
+        console.error("Supabase error checking card-set relationship:", relationError);
+        throw relationError || new Error("Card is not in this set");
+      }
+
+      // Delete the junction table record to remove the relationship
+      const { error } = await this.supabase.from("cards_to_sets").delete().eq("set_id", setId).eq("card_id", cardId);
+
+      if (error) {
+        console.error("Supabase error removing card from set:", error);
+        throw error; // Preserve original error
+      }
+    }, "Failed to remove card from set");
+  }
 }
