@@ -16,7 +16,7 @@ export default function DashboardContent() {
 
       try {
         setIsLoadingCardSets(true);
-        
+
         // Hard-code to 5 as specified in the requirements
         setCardSetsCount(5);
       } catch (err) {
