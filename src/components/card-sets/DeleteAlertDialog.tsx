@@ -19,12 +19,12 @@ interface DeleteAlertDialogProps {
   children?: React.ReactNode;
 }
 
-export default function DeleteAlertDialog({ 
-  onConfirm, 
-  trigger, 
-  title = "Czy jesteś pewien?", 
-  description = "Tej operacji nie można cofnąć. Spowoduje to trwałe usunięcie tego elementu.", 
-  children 
+export default function DeleteAlertDialog({
+  onConfirm,
+  trigger,
+  title = "Czy jesteś pewien?",
+  description = "Tej operacji nie można cofnąć. Spowoduje to trwałe usunięcie tego elementu.",
+  children,
 }: DeleteAlertDialogProps) {
   return (
     <AlertDialog>
@@ -54,9 +54,7 @@ export default function DeleteAlertDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {description}
-          </AlertDialogDescription>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Anuluj</AlertDialogCancel>

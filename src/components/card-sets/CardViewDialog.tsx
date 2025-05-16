@@ -41,16 +41,16 @@ export default function CardViewDialog({
           <DialogTitle>Fiszka</DialogTitle>
           <DialogDescription>Kliknij na treść, aby odwrócić fiszkę</DialogDescription>
         </DialogHeader>
-        
-        <div 
-          className="min-h-[200px] border rounded-lg flex items-center justify-center p-6 my-4 cursor-pointer select-none transition-all transform hover:shadow-md"
+
+        <button
+          type="button"
+          className="min-h-[200px] w-full border rounded-lg flex items-center justify-center p-6 my-4 cursor-pointer select-none transition-all transform hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary"
           onClick={() => setShowBack(!showBack)}
+          aria-label={showBack ? "Show card front" : "Show card back"}
         >
-          <div className="text-center text-lg">
-            {showBack ? card.back_content : card.front_content}
-          </div>
-        </div>
-        
+          <div className="text-center text-lg">{showBack ? card.back_content : card.front_content}</div>
+        </button>
+
         <DialogFooter className="flex justify-between items-center">
           <div className="flex gap-2">
             {hasPrevious && (
@@ -67,17 +67,17 @@ export default function CardViewDialog({
             )}
           </div>
           <div className="flex gap-2">
-            <Button 
-              variant={showBack ? "default" : "outline"} 
-              size="sm" 
+            <Button
+              variant={showBack ? "default" : "outline"}
+              size="sm"
               onClick={() => setShowBack(true)}
               disabled={showBack}
             >
               Tył
             </Button>
-            <Button 
-              variant={!showBack ? "default" : "outline"} 
-              size="sm" 
+            <Button
+              variant={!showBack ? "default" : "outline"}
+              size="sm"
               onClick={() => setShowBack(false)}
               disabled={!showBack}
             >

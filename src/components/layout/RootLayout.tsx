@@ -22,23 +22,45 @@ export const AuthContext = createContext<AuthContextType>({
 
 export function RootLayout({ children }: { children: ReactNode }) {
   // Simple authentication state management
-  const [authState, setAuthState] = useState({
-    isAuthenticated: false,
-    user: null as { id?: string; name?: string } | null,
+  const [authState, setAuthState] = useState(() => {
+    // Check if we have auth state in localStorage
+    const storedAuth = typeof window !== "undefined" ? localStorage.getItem("auth") : null;
+    if (storedAuth) {
+      try {
+        return JSON.parse(storedAuth);
+      } catch (e) {
+        console.error("Failed to parse stored auth state", e);
+      }
+    }
+    // Default state if no stored auth or parsing failed
+    return {
+      isAuthenticated: false,
+      user: null as { id?: string; name?: string } | null,
+    };
   });
 
   const login = () => {
-    setAuthState({
+    const newState = {
       isAuthenticated: true,
       user: { id: "user-1", name: "Test User" },
-    });
+    };
+    setAuthState(newState);
+    // Store in localStorage
+    if (typeof window !== "undefined") {
+      localStorage.setItem("auth", JSON.stringify(newState));
+    }
   };
 
   const logout = () => {
-    setAuthState({
+    const newState = {
       isAuthenticated: false,
       user: null,
-    });
+    };
+    setAuthState(newState);
+    // Remove from localStorage
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("auth");
+    }
   };
 
   return (

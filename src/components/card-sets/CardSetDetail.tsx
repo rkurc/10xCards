@@ -189,10 +189,10 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
                 >
                   Edytuj
                 </Button>
-                <DeleteAlertDialog 
+                <DeleteAlertDialog
                   title="Usuń fiszkę"
                   description="Czy na pewno chcesz usunąć tę fiszkę?"
-                  onConfirm={() => handleDeleteCard(card.id)} 
+                  onConfirm={() => handleDeleteCard(card.id)}
                 />
               </div>
             </CardContent>
