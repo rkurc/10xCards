@@ -386,8 +386,10 @@ describe("CardSetService", () => {
       // Mock update query
       mockSupabase.from.mockReturnValueOnce({
         update: vi.fn().mockReturnValueOnce({
-          eq: vi.fn().mockResolvedValueOnce({
-            error: null,
+          eq: vi.fn().mockReturnValueOnce({
+            eq: vi.fn().mockResolvedValueOnce({
+              error: null,
+            }),
           }),
         }),
       } as any);
