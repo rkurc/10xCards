@@ -1,9 +1,47 @@
 import { useDirectAuth } from "@/hooks/useDirectAuth";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 
-export function DashboardContent() {
+export default function DashboardContent() {
   const { user, loading } = useDirectAuth();
+  const [cardSetsCount, setCardSetsCount] = useState<number | null>(null);
+  const [isLoadingCardSets, setIsLoadingCardSets] = useState(true);
+
+  // Fetch card sets count
+  useEffect(() => {
+    const fetchCardSetsCount = async () => {
+      if (!user) return;
+
+      try {
+        setIsLoadingCardSets(true);
+
+        // Use the API to get the actual card sets list and extract the count
+        const response = await fetch("/api/card-sets?page=1&limit=1", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch card sets");
+        }
+
+        const data = await response.json();
+        setCardSetsCount(data.pagination.total);
+      } catch (err) {
+        console.error("Failed to fetch card sets:", err);
+        setCardSetsCount(0);
+      } finally {
+        setIsLoadingCardSets(false);
+      }
+    };
+
+    if (user) {
+      fetchCardSetsCount();
+    }
+  }, [user]);
 
   if (loading) {
     return (
@@ -33,25 +71,25 @@ export function DashboardContent() {
           <p className="text-muted-foreground">Oto Twoje karty do nauki i postępy</p>
         </div>
         <Button className="ml-auto" asChild>
-          <a href="/create">Stwórz nowe karty</a>
+          <a href="/generate">Stwórz nowe karty</a>
         </Button>
       </div>
 
       <div data-testid="dashboard-stats-grid" className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
+        <Card className="opacity-60">
           <CardHeader>
             <CardTitle>Karty do nauki</CardTitle>
             <CardDescription>Karty czekające na powtórzenie</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-center py-6">
-              <span className="text-5xl font-bold">12</span>
-              <p className="text-muted-foreground mt-2">kart do powtórzenia</p>
+              <span className="text-5xl font-bold">--</span>
+              <p className="text-muted-foreground mt-2">funkcja wkrótce dostępna</p>
             </div>
           </CardContent>
           <CardFooter>
-            <Button className="w-full" variant="outline" asChild>
-              <a href="/study">Rozpocznij naukę</a>
+            <Button className="w-full" variant="outline" disabled>
+              Rozpocznij naukę
             </Button>
           </CardFooter>
         </Card>
@@ -63,8 +101,19 @@ export function DashboardContent() {
           </CardHeader>
           <CardContent>
             <div className="text-center py-6">
-              <span className="text-5xl font-bold">3</span>
-              <p className="text-muted-foreground mt-2">utworzone zestawy</p>
+              {isLoadingCardSets ? (
+                <div className="flex flex-col items-center">
+                  <div className="h-12 w-12 bg-muted/20 rounded-md animate-pulse mb-2"></div>
+                  <div className="h-5 w-20 bg-muted/20 rounded-md animate-pulse"></div>
+                </div>
+              ) : (
+                <>
+                  <span className="text-5xl font-bold">{cardSetsCount}</span>
+                  <p className="text-muted-foreground mt-2">
+                    {cardSetsCount === 1 ? "utworzony zestaw" : "utworzone zestawy"}
+                  </p>
+                </>
+              )}
             </div>
           </CardContent>
           <CardFooter>
@@ -95,5 +144,3 @@ export function DashboardContent() {
     </div>
   );
 }
-
-export default DashboardContent;
