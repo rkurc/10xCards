@@ -110,7 +110,14 @@ export default function CardSetList() {
                     title="Usuń zestaw"
                     description="Czy na pewno chcesz usunąć ten zestaw? Wszystkie fiszki zostaną usunięte."
                     onConfirm={() => handleDeleteSet(set.id)}
-                  />
+                  >
+                    <Button
+                      variant="destructive"
+                      className="shadow-md hover:shadow-lg transition-shadow text-black font-bold"
+                    >
+                      Usuń zestaw
+                    </Button>
+                  </DeleteAlertDialog>
                 </div>
               </div>
             </CardContent>

@@ -155,7 +155,7 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
             Dodaj fiszki
           </Button>
           <Button variant="outline" onClick={() => setIsEditSetOpen(true)}>
-            Edytuj zestaw
+            Edytuj opis zestawu
           </Button>
           <DeleteAlertDialog
             title="Usuń zestaw"
@@ -195,7 +195,14 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
                   title="Usuń fiszkę z zestawu"
                   description="Czy na pewno chcesz usunąć tę fiszkę z zestawu? Fiszka pozostanie w bazie i będzie dostępna do dodania do innych zestawów."
                   onConfirm={() => handleRemoveCardFromSet(card.id)}
-                />
+                >
+                  <Button
+                    variant="destructive"
+                    className="shadow-md hover:shadow-lg transition-shadow text-black font-bold"
+                  >
+                    Usuń
+                  </Button>
+                </DeleteAlertDialog>
               </div>
             </CardContent>
           </Card>
