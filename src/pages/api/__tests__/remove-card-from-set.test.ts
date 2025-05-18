@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { DELETE } from "../card-sets/[id]/cards/[cardId]/index";
 import { CardSetService } from "../../../services/card-set.service";
+import { CardService } from "../../../services/card.service";
 
 // Mock the CardSetService
 vi.mock("../../../services/card-set.service", () => {
@@ -11,8 +12,18 @@ vi.mock("../../../services/card-set.service", () => {
   };
 });
 
+// Mock the CardService
+vi.mock("../../../services/card.service", () => {
+  return {
+    CardService: vi.fn().mockImplementation(() => ({
+      deleteCard: vi.fn(),
+    })),
+  };
+});
+
 describe("Remove Card from Set API Endpoint", () => {
   let mockCardSetService: any;
+  let mockCardService: any;
   let mockSupabase: any;
   let mockContext: any;
 
@@ -21,8 +32,13 @@ describe("Remove Card from Set API Endpoint", () => {
       removeCardFromSet: vi.fn(),
     };
 
+    mockCardService = {
+      deleteCard: vi.fn(),
+    };
+
     // Reset CardSetService constructor mock
     (CardSetService as any).mockImplementation(() => mockCardSetService);
+    (CardService as any).mockImplementation(() => mockCardService);
 
     mockSupabase = {
       auth: {
@@ -42,6 +58,7 @@ describe("Remove Card from Set API Endpoint", () => {
     it("should remove a card from a set", async () => {
       // Arrange
       mockCardSetService.removeCardFromSet.mockResolvedValue(undefined);
+      mockCardService.deleteCard.mockResolvedValue(undefined);
 
       // Act
       const response = await DELETE(mockContext);
@@ -49,6 +66,7 @@ describe("Remove Card from Set API Endpoint", () => {
       // Assert
       expect(response.status).toBe(204);
       expect(mockCardSetService.removeCardFromSet).toHaveBeenCalledWith("test-user-id", "test-set-id", "test-card-id");
+      expect(mockCardService.deleteCard).toHaveBeenCalledWith("test-user-id", "test-card-id");
     });
 
     it("should return 404 if card set not found", async () => {
