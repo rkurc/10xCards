@@ -1,6 +1,6 @@
 import type { APIContext } from "astro";
-import { addCardsToSetSchema, uuidSchema } from "../../../../schemas/card-set";
-import { CardSetService } from "../../../../services/card-set.service";
+import { addCardsToSetSchema, uuidSchema } from "../../../../../schemas/card-set";
+import { CardSetService } from "../../../../../services/card-set.service";
 
 export const prerender = false;
 

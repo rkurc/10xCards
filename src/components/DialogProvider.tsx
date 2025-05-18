@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react";
 import CreateCardSetModal from "./card-sets/CreateCardSetModal";
 
 interface DialogProviderProps {
@@ -7,9 +7,11 @@ interface DialogProviderProps {
 
 interface DialogContextType {
   openCreateCardSetModal: () => void;
+  isCreateCardSetModalOpen: boolean;
 }
 
 const DialogContext = createContext<DialogContextType>({
+  isCreateCardSetModalOpen: false,
   openCreateCardSetModal: () => undefined,
 });
 
@@ -20,17 +22,29 @@ export function useDialog() {
 export function DialogProvider({ children }: DialogProviderProps) {
   const [isCreateCardSetModalOpen, setIsCreateCardSetModalOpen] = useState(false);
 
-  const openCreateCardSetModal = () => setIsCreateCardSetModalOpen(true);
+  // Use effect to log the state change
+  useEffect(() => {
+    console.log("Modal state changed:", isCreateCardSetModalOpen);
+  }, [isCreateCardSetModalOpen]);
+
+  const openCreateCardSetModal = useCallback(() => {
+    console.log("Opening modal function called");
+    setIsCreateCardSetModalOpen(true);
+  }, []);
 
   return (
-    <DialogContext.Provider value={{ openCreateCardSetModal }}>
+    <DialogContext.Provider value={{ openCreateCardSetModal, isCreateCardSetModalOpen }}>
       {children}
 
       <CreateCardSetModal
         open={isCreateCardSetModalOpen}
-        onOpenChange={setIsCreateCardSetModalOpen}
+        onOpenChange={(open) => {
+          console.log("onOpenChange called with:", open);
+          setIsCreateCardSetModalOpen(open);
+        }}
         onSubmit={async (data) => {
           try {
+            console.log("Form submitted with data:", data);
             const response = await fetch("/api/card-sets", {
               method: "POST",
               headers: {

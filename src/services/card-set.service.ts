@@ -622,4 +622,24 @@ export class CardSetService extends BaseService {
       }
     }, "Failed to remove card from set");
   }
+
+  async checkCardInAnyUserSet(cardId: string): Promise<boolean> {
+    return this.executeDbOperation(async () => {
+      // Count the number of sets that contain this card
+      const { count, error } = await this.supabase
+        .from("cards_to_sets")
+        .select("*", { count: "exact" })
+        .eq("card_id", cardId);
+
+      if (error) {
+        console.error("Supabase error counting sets containing card:", error);
+        throw error;
+      }
+
+      console.info(`Card ${cardId} is in ${count || 0} sets`);
+
+      // Return true if card is in at least one set
+      return (count || 0) > 0;
+    }, "Failed to check card in any user set");
+  }
 }

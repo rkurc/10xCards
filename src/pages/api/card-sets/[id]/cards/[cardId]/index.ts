@@ -55,9 +55,12 @@ export async function DELETE({ params, locals }: APIContext) {
     const cardSetService = new CardSetService(locals.supabase);
     await cardSetService.removeCardFromSet(user.id, setId, cardId);
 
-    const cardService = new CardService(locals.supabase);
-    await cardService.deleteCard(user.id, cardId);
-    console.info("Card removed from set:", cardId, setId);
+    const isCardInAnySet = await cardSetService.checkCardInAnyUserSet(cardId);
+    // 5.1. Check if card exists in card to set relation
+    if (!isCardInAnySet) {
+      const cardService = new CardService(locals.supabase);
+      await cardService.deleteCard(user.id, cardId);
+    }
 
     // 6. Success response
     return new Response(null, { status: 204 });
