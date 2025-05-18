@@ -132,14 +132,14 @@ describe("Card API Endpoints", () => {
         id: "new-card-id",
         front_content: "New Front",
         back_content: "New Back",
-        source_type: "MANUAL",
+        source_type: "manual",
       };
       mockCardService.createCard.mockResolvedValue(mockCard);
       mockContext.request = {
         json: vi.fn().mockResolvedValue({
           front_content: "New Front",
           back_content: "New Back",
-          source_type: "MANUAL",
+          source_type: "manual",
         }),
       };
 
@@ -155,7 +155,7 @@ describe("Card API Endpoints", () => {
         expect.objectContaining({
           front_content: "New Front",
           back_content: "New Back",
-          source_type: "MANUAL",
+          source_type: "manual",
         })
       );
     });

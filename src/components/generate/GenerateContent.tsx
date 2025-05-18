@@ -1,15 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useGenerationContext } from "../../contexts/generation-context";
-import {
-  PageHeader,
-  DebugPanel,
-  InputStage,
-  ProcessingStage,
-  ReviewStage,
-  CompleteStage,
-  ErrorFallback,
-} from "./components";
+import { PageHeader, InputStage, ProcessingStage, ReviewStage, CompleteStage, ErrorFallback } from "./components";
 import { useGenerationActions } from "./hooks";
 import { useToast } from "../ui/use-toast";
 import { GenerationWrapper } from "./GenerationWrapper";
@@ -84,7 +76,6 @@ function GenerateContentInner() {
     <ErrorBoundary FallbackComponent={ErrorFallback}>
       <div className="container mx-auto py-8 space-y-8">
         <PageHeader />
-        <DebugPanel />
 
         {currentStep === "input" && <InputStage />}
 

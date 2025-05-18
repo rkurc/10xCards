@@ -174,7 +174,7 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
           <Card key={card.id} className="hover:shadow-lg transition-shadow">
             <CardContent className="p-4">
               <Button
-                className="h-32 w-full flex items-center justify-center border-b text-left font-normal hover:bg-gray-50"
+                className="h-32 w-full flex items-center justify-center border-b text-left font-normal hover:bg-gray-50 whitespace-normal break-words"
                 variant="ghost"
                 onClick={() => handleViewCard(card)}
               >
