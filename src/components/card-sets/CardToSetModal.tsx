@@ -47,8 +47,8 @@ export default function CardToSetModal({ setId, onSubmit, open, onOpenChange }: 
       <DialogContent className="max-w-3xl max-h-[80vh] dialog-content-opaque">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Add Cards to Set</DialogTitle>
-            <DialogDescription>Select the cards you want to add to this set.</DialogDescription>
+            <DialogTitle>Dodaj fiszki do zestawu</DialogTitle>
+            <DialogDescription>Zaznacz karty, które chcesz dodać do zestawu.</DialogDescription>
           </DialogHeader>
           <div className="py-4 overflow-y-auto max-h-[60vh]">
             <div className="grid grid-cols-1 gap-4">
@@ -60,7 +60,7 @@ export default function CardToSetModal({ setId, onSubmit, open, onOpenChange }: 
               ) : error ? (
                 <div className="text-center py-8 text-red-500">{error}</div>
               ) : cards.length === 0 ? (
-                <div className="text-center py-8 text-gray-600">No cards available to add</div>
+                <div className="text-center py-8 text-gray-600">Brak fiszek</div>
               ) : (
                 cards.map((card) => (
                   <Card key={card.id} className="cursor-pointer hover:shadow-md transition-shadow">
@@ -91,10 +91,14 @@ export default function CardToSetModal({ setId, onSubmit, open, onOpenChange }: 
                 onClick={() => onOpenChange(false)}
                 disabled={isLoading || isLoadingCards}
               >
-                Cancel
+                Anuluj
               </Button>
-              <Button type="submit" disabled={isLoading || isLoadingCards || selectedCards.length === 0}>
-                {isLoading ? "Adding..." : "Add to Set"}
+              <Button
+                type="submit"
+                variant="outline"
+                disabled={isLoading || isLoadingCards || selectedCards.length === 0}
+              >
+                {isLoading ? "Dodawanie..." : "Dodaj do zestawu"}
               </Button>
             </div>
           </DialogFooter>

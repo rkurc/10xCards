@@ -1,4 +1,5 @@
 import { BaseService } from "./base.service";
+import { CardService } from "./card.service";
 import type {
   CardSetDTO,
   CardSetCreateCommand,
@@ -311,12 +312,14 @@ export class CardSetService extends BaseService {
   }
 
   /**
-   * Soft delete a card set
+   * Soft delete a card set and handle cards within the set
+   * Cards that don't belong to any other active sets will also be soft-deleted
    * @param userId The ID of the requesting user
    * @param setId The ID of the card set to delete
    */
   async deleteCardSet(userId: string, setId: string): Promise<void> {
     return this.executeDbOperation(async () => {
+      // Check if set exists and belongs to user
       const { data: existingSet, error: checkError } = await this.supabase
         .from("card_sets")
         .select()
@@ -330,17 +333,66 @@ export class CardSetService extends BaseService {
         throw checkError || new Error("Card set not found");
       }
 
+      // Get all cards in this set before deleting it
+      const { data: cardsInSet, error: cardsError } = await this.supabase
+        .from("cards_to_sets")
+        .select("card_id")
+        .eq("set_id", setId);
+
+      if (cardsError) {
+        console.error("Supabase error retrieving cards in set:", cardsError);
+        // Continue with deleting the set even if we can't get the cards
+      }
+
+      if (cardsInSet && cardsInSet.length > 0) {
+        // Process each card
+        for (const { card_id } of cardsInSet) {
+          try {
+            await this.removeCardFromSet(userId, setId, card_id);
+            // Check if card is in any other active sets
+          } catch (cardError) {
+            // Log error but continue processing other cards
+            console.error(`Error processing card ${card_id} during card set deletion:`, cardError);
+          }
+        }
+      }
+
+      // Soft-delete the card set
       const { error } = await this.supabase
         .from("card_sets")
         .update({
           is_deleted: true,
           updated_at: new Date().toISOString(),
+          deleted_at: new Date().toISOString(),
         })
-        .eq("id", setId);
+        .eq("id", setId)
+        .eq("user_id", userId); // Make sure to include user_id filter to match RLS policy
 
       if (error) {
         console.error("Supabase error deleting card set:", error);
         throw error; // Preserve original error
+      }
+
+      // If we have cards in the set, process them
+      if (cardsInSet && cardsInSet.length > 0) {
+        const cardService = new CardService(this.supabase);
+
+        // Process each card
+        for (const { card_id } of cardsInSet) {
+          try {
+            // Check if card is in any other active sets
+            const isInOtherSets = await this.checkCardInAnyUserSet(card_id);
+
+            // If card is not in any other set, soft-delete it
+            if (!isInOtherSets) {
+              console.info(`Card ${card_id} is not in any other sets, soft-deleting it`);
+              await cardService.deleteCard(userId, card_id);
+            }
+          } catch (cardError) {
+            // Log error but continue processing other cards
+            console.error(`Error processing card ${card_id} during card set deletion:`, cardError);
+          }
+        }
       }
     }, "Failed to delete card set");
   }
@@ -560,5 +612,84 @@ export class CardSetService extends BaseService {
       console.error("Permission test failed with error:", error);
       return false;
     }
+  }
+
+  /**
+   * Remove a card from a set
+   * @param userId The ID of the requesting user
+   * @param setId The ID of the card set
+   * @param cardId The ID of the card to remove from the set
+   */
+  async removeCardFromSet(userId: string, setId: string, cardId: string): Promise<void> {
+    return this.executeDbOperation(async () => {
+      // Check if set exists and belongs to user
+      const { data: existingSet, error: setError } = await this.supabase
+        .from("card_sets")
+        .select()
+        .eq("id", setId)
+        .eq("user_id", userId)
+        .eq("is_deleted", false)
+        .single();
+
+      if (setError || !existingSet) {
+        console.error("Supabase error checking card set existence:", setError);
+        throw setError || new Error("Card set not found");
+      }
+
+      // Check if card exists and belongs to user
+      const { data: existingCard, error: cardError } = await this.supabase
+        .from("cards")
+        .select()
+        .eq("id", cardId)
+        .eq("user_id", userId)
+        .eq("is_deleted", false)
+        .single();
+
+      if (cardError || !existingCard) {
+        console.error("Supabase error checking card existence:", cardError);
+        throw cardError || new Error("Card not found");
+      }
+
+      // Check if the relationship exists
+      const { data: existingRelation, error: relationError } = await this.supabase
+        .from("cards_to_sets")
+        .select()
+        .eq("set_id", setId)
+        .eq("card_id", cardId)
+        .single();
+
+      if (relationError || !existingRelation) {
+        console.error("Supabase error checking card-set relationship:", relationError);
+        throw relationError || new Error("Card is not in this set");
+      }
+
+      // Delete the junction table record to remove the relationship
+      const { error } = await this.supabase.from("cards_to_sets").delete().eq("set_id", setId).eq("card_id", cardId);
+
+      if (error) {
+        console.error("Supabase error removing card from set:", error);
+        throw error; // Preserve original error
+      }
+    }, "Failed to remove card from set");
+  }
+
+  async checkCardInAnyUserSet(cardId: string): Promise<boolean> {
+    return this.executeDbOperation(async () => {
+      // Count the number of sets that contain this card
+      const { count, error } = await this.supabase
+        .from("cards_to_sets")
+        .select("*", { count: "exact" })
+        .eq("card_id", cardId);
+
+      if (error) {
+        console.error("Supabase error counting sets containing card:", error);
+        throw error;
+      }
+
+      console.info(`Card ${cardId} is in ${count || 0} sets`);
+
+      // Return true if card is in at least one set
+      return (count || 0) > 0;
+    }, "Failed to check card in any user set");
   }
 }

@@ -1,10 +1,8 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import CardSetList from "../../components/card-sets/CardSetList";
-import CreateCardSetModal from "../../components/card-sets/CreateCardSetModal";
 import Breadcrumb from "../../components/navigation/Breadcrumb.astro";
 import { checkAuth } from "../../utils/auth";
-import { DialogProvider } from "../../components/DialogProvider";
 
 // Authentication check
 const user = await checkAuth(Astro);
@@ -24,8 +22,6 @@ if (!user) {
     <div class="flex justify-between items-center mb-8">
       <h1 class="text-3xl font-bold">Moje zestawy fiszek</h1>
     </div>
-    <DialogProvider client:load>
-      <CardSetList client:load />
-    </DialogProvider>
+    <CardSetList client:load />
   </div>
 </BaseLayout>

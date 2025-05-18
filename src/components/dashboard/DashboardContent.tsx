@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 
 export default function DashboardContent() {
   const { user, loading } = useDirectAuth();
-  const [cardSetsCount, setCardSetsCount] = useState<number | null>(null);
+  const [cardSetsCount, setCardSetsCount] = useState<number>(0);
   const [isLoadingCardSets, setIsLoadingCardSets] = useState(true);
 
   // Fetch card sets count

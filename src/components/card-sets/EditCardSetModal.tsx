@@ -44,36 +44,36 @@ export default function EditCardSetModal({ cardSet, onSubmit, open, onOpenChange
       <DialogContent className="dialog-content-opaque">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Edit Flashcard Set</DialogTitle>
+            <DialogTitle>Edytuj zestaw fiszek</DialogTitle>
             <DialogDescription>Update your flashcard set details.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <label htmlFor="name">Name</label>
+              <label htmlFor="name">Nazwa</label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter a name for your flashcard set"
+                placeholder="Podaj nazwę zestawu"
                 required
               />
             </div>
             <div className="grid gap-2">
-              <label htmlFor="description">Description</label>
+              <label htmlFor="description">Opis</label>
               <Textarea
                 id="description"
                 value={formData.description || ""}
                 onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-                placeholder="Enter a description for your flashcard set"
+                placeholder="Podaj opis zestawu"
               />
             </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
-              Cancel
+              Anuluj
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Saving..." : "Save Changes"}
+              {isLoading ? "Zapisuje..." : "Zapisz"}
             </Button>
           </DialogFooter>
         </form>

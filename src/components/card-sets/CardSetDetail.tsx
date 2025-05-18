@@ -62,12 +62,12 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
     }
   };
 
-  const handleDeleteCard = async (cardId: string) => {
+  const handleRemoveCardFromSet = async (cardId: string) => {
     try {
-      await fetch(`/api/cards/${cardId}`, { method: "DELETE" });
+      await fetch(`/api/card-sets/${setId}/cards/${cardId}`, { method: "DELETE" });
       await refetch();
     } catch (error) {
-      console.error("Failed to delete card:", error);
+      console.error("Failed to remove card from set:", error);
     }
   };
 
@@ -155,14 +155,16 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
             Dodaj fiszki
           </Button>
           <Button variant="outline" onClick={() => setIsEditSetOpen(true)}>
-            Edytuj zestaw
+            Edytuj opis zestawu
           </Button>
           <DeleteAlertDialog
             title="Usuń zestaw"
             description="Czy na pewno chcesz usunąć ten zestaw? Wszystkie fiszki zostaną usunięte."
             onConfirm={handleDeleteSet}
           >
-            <Button variant="destructive">Usuń zestaw</Button>
+            <Button variant="destructive" className="shadow-md hover:shadow-lg transition-shadow text-black font-bold">
+              Usuń zestaw
+            </Button>
           </DeleteAlertDialog>
         </div>
       </div>
@@ -190,10 +192,17 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
                   Edytuj
                 </Button>
                 <DeleteAlertDialog
-                  title="Usuń fiszkę"
-                  description="Czy na pewno chcesz usunąć tę fiszkę?"
-                  onConfirm={() => handleDeleteCard(card.id)}
-                />
+                  title="Usuń fiszkę z zestawu"
+                  description="Czy na pewno chcesz usunąć tę fiszkę z zestawu? Fiszka pozostanie w bazie i będzie dostępna do dodania do innych zestawów."
+                  onConfirm={() => handleRemoveCardFromSet(card.id)}
+                >
+                  <Button
+                    variant="destructive"
+                    className="shadow-md hover:shadow-lg transition-shadow text-black font-bold"
+                  >
+                    Usuń
+                  </Button>
+                </DeleteAlertDialog>
               </div>
             </CardContent>
           </Card>
