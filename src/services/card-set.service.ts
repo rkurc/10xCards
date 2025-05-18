@@ -335,6 +335,7 @@ export class CardSetService extends BaseService {
         .update({
           is_deleted: true,
           updated_at: new Date().toISOString(),
+          deleted_at: new Date().toISOString(),
         })
         .eq("id", setId)
         .eq("user_id", userId); // Make sure to include user_id filter to match RLS policy

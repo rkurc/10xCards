@@ -130,7 +130,6 @@ export class CardService extends BaseService {
         console.error("Supabase error checking card existence:", checkError);
         throw checkError || new Error("Card not found");
       }
-
       // Soft-delete the card
       const { error } = await this.supabase
         .from("cards")

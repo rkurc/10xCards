@@ -1,5 +1,6 @@
 import type { APIContext } from "astro";
 import { CardSetService } from "../../../../../../services/card-set.service";
+import { CardService } from "../../../../../../services/card.service";
 
 export const prerender = false;
 
@@ -53,6 +54,10 @@ export async function DELETE({ params, locals }: APIContext) {
     // 5. Call service
     const cardSetService = new CardSetService(locals.supabase);
     await cardSetService.removeCardFromSet(user.id, setId, cardId);
+
+    const cardService = new CardService(locals.supabase);
+    await cardService.deleteCard(user.id, cardId);
+    console.info("Card removed from set:", cardId, setId);
 
     // 6. Success response
     return new Response(null, { status: 204 });
