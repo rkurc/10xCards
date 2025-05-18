@@ -173,11 +173,11 @@ export default function CardSetDetail({ setId }: CardSetDetailProps) {
         {cards.map((card: CardDTO) => (
           <Card key={card.id} className="hover:shadow-lg transition-shadow">
             <CardContent className="p-4">
-                <Button
+              <Button
                 className="h-32 w-full flex items-center justify-center border-b text-left font-normal hover:bg-gray-50 whitespace-normal break-words"
                 variant="ghost"
                 onClick={() => handleViewCard(card)}
-                >
+              >
                 <span className="text-center">{card.front_content}</span>
               </Button>
               <div className="mt-4 flex justify-end space-x-2">

@@ -1,6 +1,5 @@
 // Export all components for easier imports
 export { PageHeader } from "./PageHeader";
-export { DebugPanel } from "./DebugPanel";
 export { InputStage } from "./InputStage";
 export { ProcessingStage } from "./ProcessingStage";
 export { ReviewStage } from "./ReviewStage";
