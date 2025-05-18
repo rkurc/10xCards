@@ -44,7 +44,7 @@ export class CardService extends BaseService {
         user_id: userId,
         front_content: command.front_content,
         back_content: command.back_content,
-        source_type: command.source_type || "MANUAL",
+        source_type: command.source_type || "manual",
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         is_deleted: false,

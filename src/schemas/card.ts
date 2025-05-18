@@ -14,12 +14,12 @@ export const cardCreateSchema = z.object({
   front_content: z
     .string()
     .min(1, "Treść przedniej strony jest wymagana")
-    .max(1000, "Treść przedniej strony nie może przekraczać 1000 znaków"),
+    .max(200, "Treść przedniej strony nie może przekraczać 200 znaków"),
   back_content: z
     .string()
     .min(1, "Treść tylnej strony jest wymagana")
-    .max(10000, "Treść tylnej strony nie może przekraczać 10000 znaków"),
-  source_type: z.enum(["MANUAL", "AI_GENERATED", "IMPORTED"]).default("MANUAL"),
+    .max(500, "Treść tylnej strony nie może przekraczać 500 znaków"),
+  source_type: z.enum(["manual", "ai", "ai_edited"]).default("manual"),
 });
 
 /**
@@ -29,9 +29,9 @@ export const cardUpdateSchema = z.object({
   front_content: z
     .string()
     .min(1, "Treść przedniej strony jest wymagana")
-    .max(1000, "Treść przedniej strony nie może przekraczać 1000 znaków"),
+    .max(200, "Treść przedniej strony nie może przekraczać 200 znaków"),
   back_content: z
     .string()
     .min(1, "Treść tylnej strony jest wymagana")
-    .max(10000, "Treść tylnej strony nie może przekraczać 10000 znaków"),
+    .max(500, "Treść tylnej strony nie może przekraczać 500 znaków"),
 });

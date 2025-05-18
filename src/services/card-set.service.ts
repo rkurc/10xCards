@@ -87,9 +87,9 @@ export class CardSetService extends BaseService {
         // Extract the count value properly based on its structure
         let cardCount = 0;
 
-        if (Array.isArray(set.cards) && set.cards.length > 0) {
-          // Handle the count value from the Supabase response
-          cardCount = set.cards[0]?.count || set.cards.length;
+        if (Array.isArray(set.cards)) {
+          // When cards is an array, use the count from first item if available
+          cardCount = set.cards[0]?.count ?? 0;
         } else if (typeof set.cards === "number") {
           // If it's directly a number
           cardCount = set.cards;
