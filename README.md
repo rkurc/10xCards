@@ -127,14 +127,13 @@ AI-powered flashcard generator for efficient learning through spaced repetition.
 
 ### Included Features
 
-- AI-powered flashcard generation from text input
-- Manual flashcard creation and management
-- User authentication system
+- ✅ AI-powered flashcard generation from text input
+- ✅ Manual flashcard creation and management
+- ✅ User authentication system
 - Integration with existing spaced repetition algorithms
 - Learning sessions with spaced repetition
 - Personalization options for flashcards
-- Generation statistics
-- Flashcard set management
+- Statistics on flashcard generation and acceptance rates  
 
 ### Not Included in MVP
 
