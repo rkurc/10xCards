@@ -30,6 +30,7 @@ describe("Remove Card from Set API Endpoint", () => {
   beforeEach(() => {
     mockCardSetService = {
       removeCardFromSet: vi.fn(),
+      checkCardInAnyUserSet: vi.fn().mockResolvedValue(false),
     };
 
     mockCardService = {
@@ -55,9 +56,10 @@ describe("Remove Card from Set API Endpoint", () => {
   });
 
   describe("DELETE /api/card-sets/[id]/cards/[cardId]", () => {
-    it("should remove a card from a set", async () => {
+    it("should remove a card from a set and delete it if not in any other set", async () => {
       // Arrange
       mockCardSetService.removeCardFromSet.mockResolvedValue(undefined);
+      mockCardSetService.checkCardInAnyUserSet.mockResolvedValue(false);
       mockCardService.deleteCard.mockResolvedValue(undefined);
 
       // Act
@@ -66,7 +68,23 @@ describe("Remove Card from Set API Endpoint", () => {
       // Assert
       expect(response.status).toBe(204);
       expect(mockCardSetService.removeCardFromSet).toHaveBeenCalledWith("test-user-id", "test-set-id", "test-card-id");
+      expect(mockCardSetService.checkCardInAnyUserSet).toHaveBeenCalledWith("test-card-id");
       expect(mockCardService.deleteCard).toHaveBeenCalledWith("test-user-id", "test-card-id");
+    });
+
+    it("should remove a card from a set but not delete it if it's in other sets", async () => {
+      // Arrange
+      mockCardSetService.removeCardFromSet.mockResolvedValue(undefined);
+      mockCardSetService.checkCardInAnyUserSet.mockResolvedValue(true);
+
+      // Act
+      const response = await DELETE(mockContext);
+
+      // Assert
+      expect(response.status).toBe(204);
+      expect(mockCardSetService.removeCardFromSet).toHaveBeenCalledWith("test-user-id", "test-set-id", "test-card-id");
+      expect(mockCardSetService.checkCardInAnyUserSet).toHaveBeenCalledWith("test-card-id");
+      expect(mockCardService.deleteCard).not.toHaveBeenCalled();
     });
 
     it("should return 404 if card set not found", async () => {

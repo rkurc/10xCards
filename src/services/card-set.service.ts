@@ -1,4 +1,5 @@
 import { BaseService } from "./base.service";
+import { CardService } from "./card.service";
 import type {
   CardSetDTO,
   CardSetCreateCommand,
@@ -311,12 +312,14 @@ export class CardSetService extends BaseService {
   }
 
   /**
-   * Soft delete a card set
+   * Soft delete a card set and handle cards within the set
+   * Cards that don't belong to any other active sets will also be soft-deleted
    * @param userId The ID of the requesting user
    * @param setId The ID of the card set to delete
    */
   async deleteCardSet(userId: string, setId: string): Promise<void> {
     return this.executeDbOperation(async () => {
+      // Check if set exists and belongs to user
       const { data: existingSet, error: checkError } = await this.supabase
         .from("card_sets")
         .select()
@@ -330,6 +333,31 @@ export class CardSetService extends BaseService {
         throw checkError || new Error("Card set not found");
       }
 
+      // Get all cards in this set before deleting it
+      const { data: cardsInSet, error: cardsError } = await this.supabase
+        .from("cards_to_sets")
+        .select("card_id")
+        .eq("set_id", setId);
+
+      if (cardsError) {
+        console.error("Supabase error retrieving cards in set:", cardsError);
+        // Continue with deleting the set even if we can't get the cards
+      }
+
+      if (cardsInSet && cardsInSet.length > 0) {
+        // Process each card
+        for (const { card_id } of cardsInSet) {
+          try {
+            await this.removeCardFromSet(userId, setId, card_id);
+            // Check if card is in any other active sets
+          } catch (cardError) {
+            // Log error but continue processing other cards
+            console.error(`Error processing card ${card_id} during card set deletion:`, cardError);
+          }
+        }
+      }
+
+      // Soft-delete the card set
       const { error } = await this.supabase
         .from("card_sets")
         .update({
@@ -343,6 +371,28 @@ export class CardSetService extends BaseService {
       if (error) {
         console.error("Supabase error deleting card set:", error);
         throw error; // Preserve original error
+      }
+
+      // If we have cards in the set, process them
+      if (cardsInSet && cardsInSet.length > 0) {
+        const cardService = new CardService(this.supabase);
+
+        // Process each card
+        for (const { card_id } of cardsInSet) {
+          try {
+            // Check if card is in any other active sets
+            const isInOtherSets = await this.checkCardInAnyUserSet(card_id);
+
+            // If card is not in any other set, soft-delete it
+            if (!isInOtherSets) {
+              console.info(`Card ${card_id} is not in any other sets, soft-deleting it`);
+              await cardService.deleteCard(userId, card_id);
+            }
+          } catch (cardError) {
+            // Log error but continue processing other cards
+            console.error(`Error processing card ${card_id} during card set deletion:`, cardError);
+          }
+        }
       }
     }, "Failed to delete card set");
   }
