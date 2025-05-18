@@ -4,10 +4,10 @@ import { useDialog } from "../DialogProvider";
 
 export default function DialogDebug() {
   const dialogContext = useDialog();
-  
+
   useEffect(() => {
     console.log("Dialog context:", dialogContext);
   }, [dialogContext]);
-  
+
   return null;
 }
