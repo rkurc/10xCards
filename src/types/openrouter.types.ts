@@ -19,7 +19,11 @@ export interface OpenRouterResponseFormat {
   /** Typ formatu odpowiedzi */
   type: 'json_schema';
   /** Schemat JSON dla odpowiedzi */
-  schema: Record<string, any>;
+  json_schema: {
+    name: string;
+    strict: boolean;
+    schema: JsonSchema;
+  };
 }
 
 /**
@@ -68,20 +72,20 @@ export interface OpenRouterModel {
  */
 export interface FlashcardGenerationResult {
   /** Wygenerowane fiszki */
-  cards: Array<{
+  cards: {
     /** Pytanie na fiszce */
     question: string;
     /** Odpowiedź na fiszce */
     answer: string;
     /** Dodatkowe notatki lub wyjaśnienia */
     notes?: string;
-  }>;
+  }[];
 }
 
 /**
  * Schemat JSON dla walidacji odpowiedzi
  */
-export type JsonSchema = Record<string, any>;
+export type JsonSchema = Record<string, unknown>;
 
 /**
  * Błędy specyficzne dla API OpenRouter
@@ -90,7 +94,7 @@ export interface OpenRouterError extends Error {
   /** Kod błędu */
   code: string;
   /** Oryginalny błąd z API */
-  originalError?: any;
+  originalError?: unknown;
   /** Status HTTP */
   status?: number;
 }
