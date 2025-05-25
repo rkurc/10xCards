@@ -4,11 +4,11 @@ import type { TypedSupabaseClient } from "../../../src/db/supabase.service";
 
 describe("OpenRouterService (with mocks)", () => {
   let service: OpenRouterService;
-  let mockBuildChatRequest: vi.SpyInstance;
-  let mockBuildFlashcardSystemPrompt: vi.SpyInstance;
-  let mockExecuteRequest: vi.SpyInstance;
-  let mockShouldRetry: vi.SpyInstance;
-  let mockRetryRequest: vi.SpyInstance;
+  let mockBuildChatRequest: any;
+  let mockBuildFlashcardSystemPrompt: any;
+  let mockExecuteRequest: any;
+  let mockShouldRetry: any;
+  let mockRetryRequest: any;
 
   const mockSupabase = {} as TypedSupabaseClient;
 
@@ -25,11 +25,16 @@ describe("OpenRouterService (with mocks)", () => {
     mockFetch.mockReset();
 
     // Tworzenie mocków dla metod prywatnych
-    mockBuildChatRequest = vi.spyOn(OpenRouterService.prototype as any, "buildChatRequest");
-    mockBuildFlashcardSystemPrompt = vi.spyOn(OpenRouterService.prototype as any, "buildFlashcardSystemPrompt");
-    mockExecuteRequest = vi.spyOn(OpenRouterService.prototype as any, "executeRequest");
-    mockShouldRetry = vi.spyOn(OpenRouterService.prototype as any, "shouldRetry");
-    mockRetryRequest = vi.spyOn(OpenRouterService.prototype as any, "retryRequest");
+    // @ts-expect-error - Access to private methods
+    mockBuildChatRequest = vi.spyOn(OpenRouterService.prototype, "buildChatRequest");
+    // @ts-expect-error - Access to private methods
+    mockBuildFlashcardSystemPrompt = vi.spyOn(OpenRouterService.prototype, "buildFlashcardSystemPrompt");
+    // @ts-expect-error - Access to private methods
+    mockExecuteRequest = vi.spyOn(OpenRouterService.prototype, "executeRequest");
+    // @ts-expect-error - Access to private methods
+    mockShouldRetry = vi.spyOn(OpenRouterService.prototype, "shouldRetry");
+    // @ts-expect-error - Access to private methods
+    mockRetryRequest = vi.spyOn(OpenRouterService.prototype, "retryRequest");
 
     service = new OpenRouterService(mockSupabase, {
       apiKey: "test-api-key",
@@ -46,7 +51,8 @@ describe("OpenRouterService (with mocks)", () => {
         // Przywracamy oryginalną implementację dla tego testu
         mockBuildChatRequest.mockRestore();
 
-        const request = (service as any).buildChatRequest("test message", "system message", "test-model", {
+        // @ts-expect-error - Access to private method
+        const request = service.buildChatRequest("test message", "system message", "test-model", {
           temperature: 0.7,
         });
 
@@ -65,7 +71,8 @@ describe("OpenRouterService (with mocks)", () => {
       it("should build request without system message", () => {
         mockBuildChatRequest.mockRestore();
 
-        const request = (service as any).buildChatRequest("test message", null, "test-model", { temperature: 0.7 });
+        // @ts-expect-error - Access to private method
+        const request = service.buildChatRequest("test message", null, "test-model", { temperature: 0.7 });
 
         expect(request.messages).toHaveLength(1);
         expect(request.messages[0]).toEqual({
@@ -79,7 +86,8 @@ describe("OpenRouterService (with mocks)", () => {
       it("should include count in prompt", () => {
         mockBuildFlashcardSystemPrompt.mockRestore();
 
-        const prompt = (service as any).buildFlashcardSystemPrompt({
+        // @ts-expect-error - Access to private method
+        const prompt = service.buildFlashcardSystemPrompt({
           count: 5,
         });
 
@@ -90,10 +98,12 @@ describe("OpenRouterService (with mocks)", () => {
       it("should handle difficulty levels", () => {
         mockBuildFlashcardSystemPrompt.mockRestore();
 
-        const beginnerPrompt = (service as any).buildFlashcardSystemPrompt({
+        // @ts-expect-error - Access to private method
+        const beginnerPrompt = service.buildFlashcardSystemPrompt({
           difficulty: "beginner",
         });
-        const advancedPrompt = (service as any).buildFlashcardSystemPrompt({
+        // @ts-expect-error - Access to private method
+        const advancedPrompt = service.buildFlashcardSystemPrompt({
           difficulty: "advanced",
         });
 
@@ -146,38 +156,88 @@ describe("OpenRouterService (with mocks)", () => {
       const authError = { status: 401 };
       const rateLimitError = { status: 429 };
 
-      expect((service as any).shouldRetry(networkError, "/test")).toBe(true);
-      expect((service as any).shouldRetry(authError, "/test")).toBe(false);
-      expect((service as any).shouldRetry(rateLimitError, "/test")).toBe(true);
+      // @ts-expect-error - Access to private method
+      expect(service.shouldRetry(networkError, "/test")).toBe(true);
+      // @ts-expect-error - Access to private method
+      expect(service.shouldRetry(authError, "/test")).toBe(false);
+      // @ts-expect-error - Access to private method
+      expect(service.shouldRetry(rateLimitError, "/test")).toBe(true);
     });
   });
 
   describe("Retry integration", () => {
-    let originalExecuteRequest: any;
-    let originalGetAvailableModels: any;
-
     beforeEach(() => {
-      // Store original methods
-      originalExecuteRequest = (service as any).executeRequest;
-      originalGetAvailableModels = service.getAvailableModels;
+      mockRetryRequest.mockClear();
+      mockShouldRetry.mockClear();
+      mockExecuteRequest.mockClear();
+      vi.useFakeTimers();
     });
 
     afterEach(() => {
-      // Restore original methods
-      (service as any).executeRequest = originalExecuteRequest;
-      service.getAvailableModels = originalGetAvailableModels;
+      vi.useRealTimers();
     });
 
     it("should integrate retry logic with request execution", async () => {
-      // Create a stub for getAvailableModels that we fully control
-      service.getAvailableModels = vi.fn().mockImplementation(async () => {
-        return ["model1", "model2"];
+      // Create a network error that should trigger retry
+      const networkError = new TypeError("Failed to fetch") as TypeError & {
+        code?: string;
+        status?: number;
+      };
+      mockExecuteRequest.mockRejectedValueOnce(networkError);
+
+      // Mock shouldRetry to track calls and indicate this error should be retried
+      mockShouldRetry.mockReturnValue(true); // Use mockReturnValue instead of mockReturnValueOnce
+
+      // Set up successful response after retry
+      const successResponse = {
+        data: [
+          { id: "model1", name: "Test Model 1" },
+          { id: "model2", name: "Test Model 2" },
+        ],
+      };
+      mockRetryRequest.mockResolvedValueOnce(successResponse);
+
+      // Act - call a method that uses executeRequest internally
+      const result = await service.getAvailableModels();
+
+      // Assert that retry mechanism worked correctly
+      expect(mockExecuteRequest).toHaveBeenCalledTimes(1);
+      expect(mockShouldRetry).toHaveBeenCalledWith(networkError, expect.any(String));
+      expect(mockRetryRequest).toHaveBeenCalledWith(expect.any(String), undefined);
+      expect(mockRetryRequest).toHaveBeenCalledTimes(1);
+      expect(result).toEqual([
+        { id: "model1", name: "Test Model 1" },
+        { id: "model2", name: "Test Model 2" },
+      ]);
+    });
+
+    it("should not retry on non-retryable errors", async () => {
+      // Create an auth error that should not be retried
+      const authError = new Error("Invalid API key") as Error & {
+        code: string;
+        status: number;
+      };
+      authError.code = "AUTHENTICATION_ERROR";
+      authError.status = 401;
+      mockExecuteRequest.mockRejectedValueOnce(authError);
+
+      // Mock shouldRetry to return false for auth errors
+      mockShouldRetry.mockReturnValue(false); // Use mockReturnValue instead of mockReturnValueOnce
+
+      // Act & Assert
+      const promise = service.getAvailableModels();
+      await expect(promise).rejects.toMatchObject({
+        code: "AUTHENTICATION_ERROR",
+        message: "Invalid API key",
+        status: 401,
       });
 
-      // Call and verify our stub worked
-      const result = await service.getAvailableModels();
-      expect(result).toEqual(["model1", "model2"]);
-      expect(service.getAvailableModels).toHaveBeenCalled();
+      // Assert retry mechanism worked correctly
+      expect(mockExecuteRequest).toHaveBeenCalledTimes(1);
+      // Check shouldRetry called with error before error processing
+      expect(mockShouldRetry).toHaveBeenCalledWith(authError, expect.any(String));
+      // Verify no retry was attempted since shouldRetry returned false
+      expect(mockRetryRequest).not.toHaveBeenCalled();
     });
   });
 });
