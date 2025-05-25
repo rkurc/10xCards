@@ -8,10 +8,9 @@ import type {
   OpenRouterModel,
   FlashcardGenerationResult,
   JsonSchema,
-  OpenRouterError,
 } from "../../types/openrouter.types";
 
-interface ApiErrorResponse {
+export interface ApiErrorResponse {
   status?: number;
   response?: {
     data?: {
@@ -52,7 +51,7 @@ export class OpenRouterService extends BaseService {
     super(supabase);
     this.apiKey = options.apiKey || process.env.PUBLIC_OPENROUTER_API_KEY || "";
     this.defaultModel = options.defaultModel || "anthropic/claude-3-opus";
-    this.defaultSystemMessage = 
+    this.defaultSystemMessage =
       options.defaultSystemMessage || "Jesteś pomocnym asystentem do tworzenia fiszek edukacyjnych.";
     this.defaultParameters = {
       temperature: 0.7,
@@ -78,14 +77,14 @@ export class OpenRouterService extends BaseService {
     responseFormat: OpenRouterResponseFormat | null = null
   ): OpenRouterChatRequest {
     const messages: OpenRouterMessage[] = [];
-    
+
     if (systemMessage) {
       messages.push({
         role: "system",
         content: systemMessage,
       });
     }
-    
+
     messages.push({
       role: "user",
       content: userMessage,
@@ -121,43 +120,36 @@ export class OpenRouterService extends BaseService {
    * Sprawdza, czy należy ponowić próbę dla danego błędu
    * @private
    */
-  private shouldRetry(
-    error: Error | ApiErrorResponse | unknown,
-    path?: string
-  ): boolean {
+  private shouldRetry(error: Error | ApiErrorResponse | unknown, path?: string): boolean {
     // Always retry network errors
     if (error instanceof TypeError) return true;
-    
+
     // Check for mock TypeError objects in tests (more robust check)
     if (
-      error && 
-      typeof error === 'object' && 
-      ('name' in error && error.name === 'TypeError' || 
-       'constructor' in error && error.constructor.name === 'TypeError')
+      error &&
+      typeof error === "object" &&
+      (("name" in error && error.name === "TypeError") ||
+        ("constructor" in error && error.constructor.name === "TypeError"))
     ) {
       return true;
     }
 
     // For API errors, only retry specific status codes
-    if (error && typeof error === 'object' && "status" in error) {
+    if (error && typeof error === "object" && "status" in error) {
       const statusCode = error.status as number;
       return (
         statusCode === 429 || // Rate limit
         statusCode === 500 || // Internal server error
         statusCode === 502 || // Bad gateway
         statusCode === 503 || // Service unavailable
-        statusCode === 504    // Gateway timeout
+        statusCode === 504 // Gateway timeout
       );
     }
 
     // If it's an error with a code property, check if it's a retryable error type
-    if (error && typeof error === 'object' && 'code' in error) {
+    if (error && typeof error === "object" && "code" in error) {
       const code = error.code as string;
-      return (
-        code === 'NETWORK_ERROR' ||
-        code === 'RATE_LIMIT_ERROR' ||
-        code === 'TIMEOUT_ERROR'
-      );
+      return code === "NETWORK_ERROR" || code === "RATE_LIMIT_ERROR" || code === "TIMEOUT_ERROR";
     }
 
     return false;
@@ -169,7 +161,8 @@ export class OpenRouterService extends BaseService {
    */
   private async retryRequest<T>(endpoint: string, body?: unknown): Promise<T> {
     let lastError: Error | ApiErrorResponse = new Error("Initial retry error");
-    
+    const retryReasons: string[] = [];
+
     for (let attempt = 0; attempt < this.maxRetries; attempt++) {
       try {
         const url = `${this.apiUrl}${endpoint}`;
@@ -198,12 +191,12 @@ export class OpenRouterService extends BaseService {
             status: response.status,
             response: { data },
           };
-          
+
           // If we shouldn't retry this error, fail immediately with a properly formatted error
           if (!this.shouldRetry(apiError, endpoint)) {
             this.handleApiError(apiError);
           }
-          
+
           // Otherwise keep track of the last error and continue to the next retry attempt
           lastError = apiError;
           continue;
@@ -212,6 +205,7 @@ export class OpenRouterService extends BaseService {
         // Success! Return the data
         return data;
       } catch (error) {
+        retryReasons.push(error instanceof Error ? error.message : String(error));
         // Handle network errors and other exceptions consistently
         if (error instanceof Error) {
           // If the error already has a code property, it's already been processed
@@ -220,53 +214,58 @@ export class OpenRouterService extends BaseService {
             if (!this.shouldRetry(error, endpoint)) {
               throw error;
             }
-            
+
             // Otherwise, store it and continue retrying
             lastError = error;
             continue;
           }
-          
+
           // For network errors (TypeError), we should continue retrying
           if (error instanceof TypeError) {
             lastError = error;
             continue;
           }
-          
+
           // For other errors without a code, add a standardized error structure
-          const enhancedError = new Error(`API request failed during retry (${attempt + 1}/${this.maxRetries}): ${error.message}`) as EnhancedError;
+          const enhancedError = new Error(
+            `API request failed during retry (${attempt + 1}/${this.maxRetries}): ${error.message}`
+          ) as EnhancedError;
           enhancedError.code = "API_ERROR";
           enhancedError.status = 500;
-          
+
           // Check if we should retry this type of error
           if (!this.shouldRetry(enhancedError, endpoint)) {
             throw enhancedError;
           }
-          
+
           lastError = enhancedError;
         } else {
           // For unknown error types, create a standard error
           const unknownError = new Error("Unknown error during API retry") as EnhancedError;
           unknownError.code = "UNKNOWN_ERROR";
           unknownError.status = 500;
-          
+
           if (!this.shouldRetry(unknownError, endpoint)) {
             throw unknownError;
           }
-          
+
           lastError = unknownError;
         }
       }
     }
-    
+
     // If we get here, we've exhausted all retries
     // Format the final error with additional context about retries
     if (lastError instanceof Error) {
-      const enhancedError = new Error(`API request failed after ${this.maxRetries} retries: ${lastError.message}`) as EnhancedError;
+      const enhancedError = new Error(
+        `API request failed after ${this.maxRetries} retries: ${lastError.message}`
+      ) as EnhancedError & { retryReasons?: string[] };
       enhancedError.code = "MAX_RETRIES_EXCEEDED";
       enhancedError.status = 500;
+      enhancedError.retryReasons = retryReasons;
       throw enhancedError;
     }
-    
+
     // For API error responses, handle them through our standard handler
     this.handleApiError(lastError as ApiErrorResponse);
   }
@@ -294,7 +293,7 @@ export class OpenRouterService extends BaseService {
     const apiError = error as ApiErrorResponse;
     let message: string;
     let code: string;
-    
+
     // Determine the appropriate error code and message based on status or error type
     if (apiError.status === 401 || apiError.status === 403) {
       message = "Invalid API key";
@@ -375,9 +374,7 @@ export class OpenRouterService extends BaseService {
 
       // If it's a standard Error, wrap it with additional context for consistent error format
       if (error instanceof Error) {
-        const enhancedError = new Error(
-          `API request failed: ${error.message}`
-        ) as EnhancedError;
+        const enhancedError = new Error(`API request failed: ${error.message}`) as EnhancedError;
         enhancedError.code = "API_ERROR";
         enhancedError.status = 500;
         throw enhancedError;
@@ -395,7 +392,7 @@ export class OpenRouterService extends BaseService {
           data: {
             error: {
               message: "Unknown error during API request",
-              type: "unknown_error"
+              type: "unknown_error",
             },
           },
         },
@@ -451,8 +448,8 @@ export class OpenRouterService extends BaseService {
       json_schema: {
         name: options?.schemaName || "response",
         strict: options?.strictSchema ?? true,
-        schema: schema
-      }
+        schema: schema,
+      },
     };
 
     const jsonResponse = await this.generateCompletion(prompt, {
@@ -463,7 +460,7 @@ export class OpenRouterService extends BaseService {
     try {
       // Try to parse the JSON response
       let parsedResponse = JSON.parse(jsonResponse);
-      
+
       // Some models might return the result wrapped in an additional object
       // For example: { "response": { ...actual data... } }
       // If the schema name is used as a wrapper, extract the inner content
@@ -471,7 +468,7 @@ export class OpenRouterService extends BaseService {
       if (parsedResponse && typeof parsedResponse === "object" && schemaName in parsedResponse) {
         parsedResponse = parsedResponse[schemaName];
       }
-      
+
       return parsedResponse as T;
     } catch (err) {
       // Create a standardized error for JSON parsing failures
@@ -500,7 +497,7 @@ export class OpenRouterService extends BaseService {
       count: options?.count,
       difficulty: options?.difficulty,
     });
-    
+
     return await this.generateJson<FlashcardGenerationResult>(text, this.buildFlashcardSchema(), {
       model: options?.model,
       systemMessage,
@@ -515,19 +512,19 @@ export class OpenRouterService extends BaseService {
   private buildFlashcardSystemPrompt(options?: { count?: number; difficulty?: "beginner" | "advanced" }): string {
     let prompt = "Jesteś ekspertem w tworzeniu efektywnych fiszek edukacyjnych. ";
     prompt += `Przeanalizuj podany tekst i stwórz ${options?.count || 5} najważniejszych fiszek. `;
-    
+
     if (options?.difficulty === "beginner") {
       prompt += "Skup się na podstawowe pojęcia i fundamenty. ";
     } else if (options?.difficulty === "advanced") {
       prompt += "Skup się na zaawansowane pojęcia i szczegóły. ";
     }
-    
+
     prompt += `
     Każda fiszka powinna zawierać pytanie i odpowiedź.
     Pytania powinny być jasne i konkretne.
     Odpowiedzi powinny być zwięzłe ale kompletne.
     Dodaj pomocnicze notatki tam gdzie to pomoże w zrozumieniu.`;
-    
+
     return prompt;
   }
 
