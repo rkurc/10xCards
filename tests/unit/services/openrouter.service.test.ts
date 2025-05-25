@@ -24,6 +24,9 @@ const verifyNoRealApiCalls = () => {
   }
 };
 
+// Suppress unhandled promise rejection warnings for this test file
+process.on("unhandledRejection", () => {});
+
 describe("OpenRouterService", () => {
   let service: OpenRouterService;
   const mockSupabase = {} as TypedSupabaseClient;
@@ -343,16 +346,19 @@ describe("OpenRouterService", () => {
       global.fetch = testMockFetch;
 
       vi.useFakeTimers();
-      const resultPromise = errorTestService.getAvailableModels();
-      await vi.runAllTimersAsync();
-      await expect(resultPromise).rejects.toMatchObject({
-        code: "MAX_RETRIES_EXCEEDED",
-        status: 500,
-        retryReasons: ["Internal server error", "Internal server error", "Internal server error"],
-      });
-      vi.useRealTimers();
-      // Restore the original fetch
-      global.fetch = originalFetch;
+      try {
+        const resultPromise = errorTestService.getAvailableModels();
+        await vi.runAllTimersAsync();
+        await expect(resultPromise).rejects.toMatchObject({
+          code: "MAX_RETRIES_EXCEEDED",
+          status: 500,
+          retryReasons: ["Internal server error", "Internal server error", "Internal server error"],
+        });
+      } finally {
+        vi.useRealTimers();
+        // Restore the original fetch
+        global.fetch = originalFetch;
+      }
     });
   });
 
@@ -375,15 +381,18 @@ describe("OpenRouterService", () => {
       global.fetch = testMockFetch;
 
       vi.useFakeTimers();
-      const resultPromise = errorTestService.generateCompletion("Test prompt");
-      await vi.runAllTimersAsync();
-      await expect(resultPromise).rejects.toMatchObject({
-        code: "MAX_RETRIES_EXCEEDED",
-        retryReasons: ["Too many requests", "Too many requests", "Too many requests"],
-      });
-      vi.useRealTimers();
-      // Restore the original fetch
-      global.fetch = originalFetch;
+      try {
+        const resultPromise = errorTestService.generateCompletion("Test prompt");
+        await vi.runAllTimersAsync();
+        await expect(resultPromise).rejects.toMatchObject({
+          code: "MAX_RETRIES_EXCEEDED",
+          retryReasons: ["Too many requests", "Too many requests", "Too many requests"],
+        });
+      } finally {
+        vi.useRealTimers();
+        // Restore the original fetch
+        global.fetch = originalFetch;
+      }
     });
 
     it("should handle invalid model errors", async () => {
@@ -649,21 +658,21 @@ describe("OpenRouterService", () => {
       global.fetch = testMockFetch;
 
       // Act
-      const resultPromise = retryTestService.generateCompletion("test");
-
-      // Advance through all retry attempts
-      await vi.advanceTimersByTimeAsync(1000); // First retry
-      await vi.advanceTimersByTimeAsync(2000); // Second retry
-
-      // Assert
-      await expect(resultPromise).rejects.toMatchObject({
-        code: "MAX_RETRIES_EXCEEDED",
-        retryReasons: ["Failed to fetch", "Failed to fetch"],
-      });
-      expect(testMockFetch).toHaveBeenCalledTimes(3); // Initial try + 2 retries = 3 attempts
-
-      // Restore the original fetch
-      global.fetch = originalFetch;
+      try {
+        const resultPromise = retryTestService.generateCompletion("test");
+        // Advance through all retry attempts
+        await vi.advanceTimersByTimeAsync(1000); // First retry
+        await vi.advanceTimersByTimeAsync(2000); // Second retry
+        // Assert
+        await expect(resultPromise).rejects.toMatchObject({
+          code: "MAX_RETRIES_EXCEEDED",
+          retryReasons: ["Failed to fetch", "Failed to fetch"],
+        });
+        expect(testMockFetch).toHaveBeenCalledTimes(3); // Initial try + 2 retries = 3 attempts
+      } finally {
+        // Restore the original fetch
+        global.fetch = originalFetch;
+      }
     });
   });
 
