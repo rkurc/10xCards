@@ -30,9 +30,98 @@ describe("OpenRouterService", () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
-    // Inicjalizacja serwisu z mockiem supabase i kluczem testowym
+    // Verify that fetch is properly mocked
+    if (global.fetch !== mockFetch) {
+      global.fetch = mockFetch;
+    }
+    
+    // Reset mocks and service
     service = new OpenRouterService(mockSupabase, {
       apiKey: TEST_API_KEY,
+    });
+
+    // Default successful response
+    mockFetch.mockImplementation(async (url, options) => {
+      const endpoint = url.toString();
+      const body = options?.body ? JSON.parse(options.body as string) : {};
+      
+      // Verify auth header
+      if (!options?.headers?.Authorization?.includes(TEST_API_KEY)) {
+        return {
+          ok: false,
+          status: 401,
+          json: async () => ({ error: { message: "Invalid API key" } }),
+        };
+      }
+
+      // Handle rate limiting
+      if (body.messages?.[0]?.content?.includes("trigger_rate_limit")) {
+        return {
+          ok: false,
+          status: 429,
+          json: async () => ({ error: { message: "Too many requests" } }),
+        };
+      }
+
+      // Handle network errors
+      if (body.messages?.[0]?.content?.includes("trigger_network_error")) {
+        throw new TypeError("Failed to fetch");
+      }
+
+      // Handle specific endpoints
+      if (endpoint.includes("/chat/completions")) {
+        if (body.response_format?.type === "json_schema") {
+          return {
+            ok: true,
+            json: async () => ({
+              choices: [
+                {
+                  message: {
+                    content: JSON.stringify({
+                      cards: [
+                        {
+                          question: "Question 1",
+                          answer: "Answer 1",
+                          notes: "Note 1",
+                        },
+                        {
+                          question: "Question 2",
+                          answer: "Answer 2",
+                        },
+                      ],
+                    }),
+                  },
+                },
+              ],
+            }),
+          };
+        }
+        
+        return {
+          ok: true,
+          json: async () => ({
+            choices: [{ message: { content: "Test response" } }],
+          }),
+        };
+      }
+      
+      if (endpoint.includes("/models")) {
+        return {
+          ok: true,
+          json: async () => ({
+            data: [
+              { id: "model1", name: "Test Model 1" },
+              { id: "model2", name: "Test Model 2" },
+            ],
+          }),
+        };
+      }
+
+      return {
+        ok: false,
+        status: 404,
+        json: async () => ({ error: { message: "Not found" } }),
+      };
     });
   });
 

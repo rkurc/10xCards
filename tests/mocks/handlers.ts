@@ -1,4 +1,5 @@
 import { http, HttpResponse } from "msw";
+import type { OpenRouterChatRequest } from "../../../src/types/openrouter.types";
 
 // Define handlers for mock API endpoints
 export const handlers = [
@@ -25,7 +26,7 @@ export const handlers = [
 
   // Generation API handlers
   http.post("/api/generation/process-text", async ({ request }) => {
-    const body = await request.json();
+    const body = (await request.json()) as { text: string };
 
     return HttpResponse.json({
       id: "generated-123",
@@ -45,6 +46,107 @@ export const handlers = [
         generationTime: 1.2,
         textLength: body.text.length,
       },
+    });
+  }),
+
+  // OpenRouter API handlers
+  http.post("https://openrouter.ai/api/v1/chat/completions", async ({ request }) => {
+    // Simulate auth error for missing or invalid API key
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return HttpResponse.json({ error: { message: "Invalid API key" } }, { status: 401 });
+    }
+
+    const body = (await request.json()) as OpenRouterChatRequest;
+
+    // Rate limit error simulation
+    if (body.messages?.[0]?.content?.includes("trigger_rate_limit")) {
+      return HttpResponse.json({ error: { message: "Too many requests" } }, { status: 429 });
+    }
+
+    // Invalid model error simulation
+    if (body.model?.includes("invalid")) {
+      return HttpResponse.json({ error: { type: "invalid_model", param: body.model } }, { status: 400 });
+    }
+
+    // Context length error simulation
+    if (body.messages?.[0]?.content?.length > 1000) {
+      return HttpResponse.json({ error: { type: "context_length_exceeded" } }, { status: 400 });
+    }
+
+    // If response_format is set, return a JSON response
+    if (body.response_format?.type === "json_schema") {
+      return HttpResponse.json({
+        id: "gen-123",
+        object: "chat.completion",
+        created: Date.now(),
+        model: body.model,
+        choices: [
+          {
+            message: {
+              role: "assistant",
+              content: JSON.stringify({
+                cards: [
+                  {
+                    question: "Question 1",
+                    answer: "Answer 1",
+                    notes: "Note 1",
+                  },
+                  {
+                    question: "Question 2",
+                    answer: "Answer 2",
+                  },
+                ],
+              }),
+            },
+            index: 0,
+            finish_reason: "stop",
+          },
+        ],
+        usage: {
+          prompt_tokens: 50,
+          completion_tokens: 20,
+          total_tokens: 70,
+        },
+      });
+    }
+
+    // Regular text response
+    return HttpResponse.json({
+      id: "gen-123",
+      object: "chat.completion",
+      created: Date.now(),
+      model: body.model,
+      choices: [
+        {
+          message: {
+            role: "assistant",
+            content: "Test response",
+          },
+          index: 0,
+          finish_reason: "stop",
+        },
+      ],
+      usage: {
+        prompt_tokens: 50,
+        completion_tokens: 20,
+        total_tokens: 70,
+      },
+    });
+  }),
+
+  http.post("https://openrouter.ai/api/v1/models", () => {
+    return HttpResponse.json({
+      data: [
+        {
+          id: "model1",
+          name: "Test Model 1",
+        },
+        {
+          id: "model2",
+          name: "Test Model 2",
+        },
+      ],
     });
   }),
 ];
