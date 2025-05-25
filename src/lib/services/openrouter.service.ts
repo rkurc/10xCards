@@ -199,6 +199,11 @@ export class OpenRouterService extends BaseService {
 
           // Otherwise keep track of the last error and continue to the next retry attempt
           lastError = apiError;
+          retryReasons.push(
+            data?.error?.message ||
+              (typeof data === "string" ? data : JSON.stringify(data)) ||
+              `HTTP ${response.status}`
+          );
           continue;
         }
 
@@ -255,19 +260,23 @@ export class OpenRouterService extends BaseService {
     }
 
     // If we get here, we've exhausted all retries
-    // Format the final error with additional context about retries
-    if (lastError instanceof Error) {
-      const enhancedError = new Error(
-        `API request failed after ${this.maxRetries} retries: ${lastError.message}`
-      ) as EnhancedError & { retryReasons?: string[] };
-      enhancedError.code = "MAX_RETRIES_EXCEEDED";
-      enhancedError.status = 500;
-      enhancedError.retryReasons = retryReasons;
-      throw enhancedError;
+    // Always throw a MAX_RETRIES_EXCEEDED error with all context
+    function getStatus(err: unknown): number {
+      if (typeof err === "object" && err !== null && "status" in err) {
+        const val = (err as { status?: unknown }).status;
+        if (typeof val === "number") return val;
+      }
+      return 500;
     }
-
-    // For API error responses, handle them through our standard handler
-    this.handleApiError(lastError as ApiErrorResponse);
+    const status = getStatus(lastError);
+    const message =
+      `API request failed after ${this.maxRetries} retries: ` +
+      (lastError instanceof Error ? lastError.message : JSON.stringify(lastError));
+    const enhancedError = new Error(message) as EnhancedError & { retryReasons?: string[] };
+    enhancedError.code = "MAX_RETRIES_EXCEEDED";
+    enhancedError.status = status;
+    enhancedError.retryReasons = retryReasons;
+    throw enhancedError;
   }
 
   /**
