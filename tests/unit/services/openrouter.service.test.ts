@@ -329,8 +329,8 @@ describe("OpenRouterService", () => {
       // Create a fresh service instance for this test
       const errorTestService = new OpenRouterService(mockSupabase, { apiKey: TEST_API_KEY });
 
-      // Create a specialized mock for this test
-      const testMockFetch = vi.fn().mockResolvedValueOnce({
+      // Create a specialized mock for this test that always returns the same error
+      const testMockFetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 500,
         json: async () => ({
@@ -342,12 +342,15 @@ describe("OpenRouterService", () => {
       const originalFetch = global.fetch;
       global.fetch = testMockFetch;
 
-      // Act & Assert
-      await expect(errorTestService.getAvailableModels()).rejects.toMatchObject({
-        code: "API_ERROR",
+      vi.useFakeTimers();
+      const resultPromise = errorTestService.getAvailableModels();
+      await vi.runAllTimersAsync();
+      await expect(resultPromise).rejects.toMatchObject({
+        code: "MAX_RETRIES_EXCEEDED",
         status: 500,
+        retryReasons: ["Internal server error", "Internal server error", "Internal server error"],
       });
-
+      vi.useRealTimers();
       // Restore the original fetch
       global.fetch = originalFetch;
     });
@@ -358,8 +361,8 @@ describe("OpenRouterService", () => {
       // Create a fresh service instance
       const errorTestService = new OpenRouterService(mockSupabase, { apiKey: TEST_API_KEY });
 
-      // Create a specialized mock
-      const testMockFetch = vi.fn().mockResolvedValueOnce({
+      // Create a specialized mock that always returns the same error
+      const testMockFetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 429,
         json: async () => ({
@@ -371,11 +374,14 @@ describe("OpenRouterService", () => {
       const originalFetch = global.fetch;
       global.fetch = testMockFetch;
 
-      // Act & Assert
-      await expect(errorTestService.generateCompletion("Test prompt")).rejects.toMatchObject({
-        code: "RATE_LIMIT_ERROR",
+      vi.useFakeTimers();
+      const resultPromise = errorTestService.generateCompletion("Test prompt");
+      await vi.runAllTimersAsync();
+      await expect(resultPromise).rejects.toMatchObject({
+        code: "MAX_RETRIES_EXCEEDED",
+        retryReasons: ["Too many requests", "Too many requests", "Too many requests"],
       });
-
+      vi.useRealTimers();
       // Restore the original fetch
       global.fetch = originalFetch;
     });
@@ -451,7 +457,8 @@ describe("OpenRouterService", () => {
 
       // Act & Assert
       await expect(errorTestService.generateCompletion("Test prompt")).rejects.toMatchObject({
-        code: "NETWORK_ERROR",
+        code: "MAX_RETRIES_EXCEEDED",
+        retryReasons: [],
       });
 
       // Restore the original fetch
@@ -651,6 +658,7 @@ describe("OpenRouterService", () => {
       // Assert
       await expect(resultPromise).rejects.toMatchObject({
         code: "MAX_RETRIES_EXCEEDED",
+        retryReasons: ["Failed to fetch", "Failed to fetch"],
       });
       expect(testMockFetch).toHaveBeenCalledTimes(3); // Initial try + 2 retries = 3 attempts
 

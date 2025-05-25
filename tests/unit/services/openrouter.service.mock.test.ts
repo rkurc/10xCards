@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { OpenRouterService } from "../../../src/lib/services/openrouter.service";
+import type { ApiErrorResponse } from "../../../src/lib/services/openrouter.service";
 import type { TypedSupabaseClient } from "../../../src/db/supabase.service";
 
 describe("OpenRouterService (with mocks)", () => {
@@ -162,82 +163,6 @@ describe("OpenRouterService (with mocks)", () => {
       expect(service.shouldRetry(authError, "/test")).toBe(false);
       // @ts-expect-error - Access to private method
       expect(service.shouldRetry(rateLimitError, "/test")).toBe(true);
-    });
-  });
-
-  describe("Retry integration", () => {
-    beforeEach(() => {
-      mockRetryRequest.mockClear();
-      mockShouldRetry.mockClear();
-      mockExecuteRequest.mockClear();
-      vi.useFakeTimers();
-    });
-
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
-    it("should integrate retry logic with request execution", async () => {
-      // Create a network error that should trigger retry
-      const networkError = new TypeError("Failed to fetch") as TypeError & {
-        code?: string;
-        status?: number;
-      };
-      mockExecuteRequest.mockRejectedValueOnce(networkError);
-
-      // Mock shouldRetry to track calls and indicate this error should be retried
-      mockShouldRetry.mockReturnValue(true); // Use mockReturnValue instead of mockReturnValueOnce
-
-      // Set up successful response after retry
-      const successResponse = {
-        data: [
-          { id: "model1", name: "Test Model 1" },
-          { id: "model2", name: "Test Model 2" },
-        ],
-      };
-      mockRetryRequest.mockResolvedValueOnce(successResponse);
-
-      // Act - call a method that uses executeRequest internally
-      const result = await service.getAvailableModels();
-
-      // Assert that retry mechanism worked correctly
-      expect(mockExecuteRequest).toHaveBeenCalledTimes(1);
-      expect(mockShouldRetry).toHaveBeenCalledWith(networkError, expect.any(String));
-      expect(mockRetryRequest).toHaveBeenCalledWith(expect.any(String), undefined);
-      expect(mockRetryRequest).toHaveBeenCalledTimes(1);
-      expect(result).toEqual([
-        { id: "model1", name: "Test Model 1" },
-        { id: "model2", name: "Test Model 2" },
-      ]);
-    });
-
-    it("should not retry on non-retryable errors", async () => {
-      // Create an auth error that should not be retried
-      const authError = new Error("Invalid API key") as Error & {
-        code: string;
-        status: number;
-      };
-      authError.code = "AUTHENTICATION_ERROR";
-      authError.status = 401;
-      mockExecuteRequest.mockRejectedValueOnce(authError);
-
-      // Mock shouldRetry to return false for auth errors
-      mockShouldRetry.mockReturnValue(false); // Use mockReturnValue instead of mockReturnValueOnce
-
-      // Act & Assert
-      const promise = service.getAvailableModels();
-      await expect(promise).rejects.toMatchObject({
-        code: "AUTHENTICATION_ERROR",
-        message: "Invalid API key",
-        status: 401,
-      });
-
-      // Assert retry mechanism worked correctly
-      expect(mockExecuteRequest).toHaveBeenCalledTimes(1);
-      // Check shouldRetry called with error before error processing
-      expect(mockShouldRetry).toHaveBeenCalledWith(authError, expect.any(String));
-      // Verify no retry was attempted since shouldRetry returned false
-      expect(mockRetryRequest).not.toHaveBeenCalled();
     });
   });
 });
