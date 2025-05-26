@@ -14,8 +14,18 @@ import type {
   GenerationFinalizeResponse,
 } from "../types";
 import { ErrorCode } from "../utils/db-error-handler";
+import { OpenRouterService } from "../lib/services/openrouter.service";
+import type { UUID } from "../types";
+import type { Database } from "../types/database.types";
 
 export class GenerationService extends BaseService {
+  private openRouterService: OpenRouterService;
+
+  constructor(supabase: TypedSupabaseClient) {
+    super(supabase);
+    this.openRouterService = new OpenRouterService(supabase);
+  }
+
   /**
    * Starts a flashcard generation process from the provided text
    * @param userId The ID of the requesting user
@@ -72,81 +82,84 @@ export class GenerationService extends BaseService {
    * Simulates asynchronous processing of the text
    * In a real implementation, this would be a background job
    */
-  private async processTextAsync(generationId: string): Promise<void> {
+  private async processTextAsync(generationId: number): Promise<void> {
     try {
       // Update status to processing
-      const { error: updateStatusError } = await this.supabase
+      await this.supabase
         .from("generation_logs")
-        .update({ status: "processing" })
+        .update({ status: "processing" } as Partial<Database["public"]["Tables"]["generation_logs"]["Update"]>)
         .eq("id", generationId);
 
       // Get the generation log to access text and options
-      const { data: generationLog, error: logError } = await this.supabase
+      const { data, error: logError } = await this.supabase
         .from("generation_logs")
-        .select("*")
+        .select("id, source_text, target_count")
         .eq("id", generationId)
         .single();
+      const generationLog = data as Database["public"]["Tables"]["generation_logs"]["Row"] | null;
 
       if (logError || !generationLog) {
         throw new Error(`Failed to retrieve generation log: ${logError?.message || "Record not found"}`);
       }
 
-      // Simulate processing delay based on text length
-      const processingDelay = Math.min(5000, Math.max(2000, generationLog.source_text.length / 100));
+      // Call OpenRouterService to generate flashcards
+      let generatedCards: GenerationCardDTO[] = [];
+      let flashcardResult;
+      try {
+        flashcardResult = await this.openRouterService.generateFlashcards(
+          generationLog.source_text || "",
+          {
+            count: generationLog.target_count || this.calculateDefaultCardCount(generationLog.source_text || ""),
+          }
+        );
+      } catch (err) {
+        throw new Error(
+          `OpenRouterService error: ${err instanceof Error ? err.message : JSON.stringify(err)}`
+        );
+      }
 
-      await new Promise((resolve) => setTimeout(resolve, processingDelay));
-
-      // Generate mock flashcards
-      const targetCount = generationLog.target_count || this.calculateDefaultCardCount(generationLog.source_text);
-
-      const generatedCards = this.generateMockFlashcards(generationLog.source_text, targetCount);
+      // Map OpenRouter flashcards to GenerationCardDTO
+      if (flashcardResult && Array.isArray(flashcardResult.cards)) {
+        generatedCards = flashcardResult.cards.map((card) => ({
+          id: crypto.randomUUID() as UUID,
+          front_content: card.question || "",
+          back_content: card.answer || "",
+          readability_score: 1.0,
+        }));
+      }
 
       // Store the generated cards in the database
       const cardInserts = generatedCards.map((card) => ({
-        id: this.generateUUID(), // Use numeric ID instead of UUID
+        id: card.id,
         generation_id: generationId,
         front_content: card.front_content,
         back_content: card.back_content,
         readability_score: card.readability_score,
       }));
 
-      const { error: insertError, data: insertData } = await this.supabase
+      // TODO: Remove 'as unknown as' after regenerating Supabase types to include 'generation_results'
+      await (this.supabase as unknown as { from: (table: string) => any })
         .from("generation_results")
-        .insert(cardInserts)
-        .select();
-
-      if (insertError) {
-        throw new Error(`Failed to store generated cards: ${insertError.message}`);
-      }
+        .insert(cardInserts);
 
       // Update generation log with completion status and generated count
-      const updateData = {
-        status: "completed",
-        updated_at: new Date().toISOString(),
-        generated_count: generatedCards.length,
-      };
-
-      const { error: completeError, data: completeData } = await this.supabase
+      await this.supabase
         .from("generation_logs")
-        .update(updateData)
-        .eq("id", generationId)
-        .select();
+        .update({
+          status: "completed",
+          updated_at: new Date().toISOString(),
+          generated_count: generatedCards.length,
+        } as Partial<Database["public"]["Tables"]["generation_logs"]["Update"]>)
+        .eq("id", generationId);
     } catch (error) {
       // Update status to failed
-      const failedUpdateData = {
-        status: "failed",
-        error_message: error instanceof Error ? error.message : "Unknown error",
-        updated_at: new Date().toISOString(),
-      };
-
-      console.log(
-        `[DEBUG] processTextAsync - Updating generation_logs with failed status:`,
-        JSON.stringify(failedUpdateData, null, 2)
-      );
-
-      const { error: failedError } = await this.supabase
+      await this.supabase
         .from("generation_logs")
-        .update(failedUpdateData)
+        .update({
+          status: "failed",
+          error_message: error instanceof Error ? error.message : "Unknown error",
+          updated_at: new Date().toISOString(),
+        } as Partial<Database["public"]["Tables"]["generation_logs"]["Update"]>)
         .eq("id", generationId);
     }
   }
@@ -161,16 +174,13 @@ export class GenerationService extends BaseService {
 
     // Generate up to targetCount cards, but limited by available content
     const actualCount = Math.min(targetCount, Math.floor(sentences.length / 2));
-    console.log("Actual card count:", actualCount);
-    console.log("Sentences:", sentences);
-    console.log("Target count:", targetCount);
     for (let i = 0; i < actualCount; i++) {
       // Create a card with front and back content
       const frontSentence = sentences[i * 2];
       const backSentence = sentences[i * 2 + 1] || "No additional context available.";
 
       cards.push({
-        id: this.generateUUID(), // Convert to string for the DTO
+        id: crypto.randomUUID() as UUID,
         front_content: this.createFrontContent(frontSentence, i),
         back_content: this.createBackContent(backSentence, i),
         readability_score: this.calculateReadabilityScore(frontSentence + " " + backSentence),
@@ -247,18 +257,6 @@ export class GenerationService extends BaseService {
       hash = hash & hash; // Convert to 32bit integer
     }
     return hash.toString(16);
-  }
-
-  /**
-   * Generates a UUID (for demo purposes)
-   */
-  private generateUUID(): string {
-    // Simple UUID generation (not RFC4122 compliant)
-    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
-      const r = (Math.random() * 16) | 0,
-        v = c === "x" ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    });
   }
 
   /**
