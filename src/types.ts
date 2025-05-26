@@ -1,4 +1,4 @@
-import type { Database } from "./db/database.types";
+import type { Database } from "types/database.types";
 
 // ===== Common Types =====
 
