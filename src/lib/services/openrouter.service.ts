@@ -49,8 +49,8 @@ export class OpenRouterService extends BaseService {
     } = {}
   ) {
     super(supabase);
-    this.apiKey = options.apiKey || process.env.PUBLIC_OPENROUTER_API_KEY || "";
-    this.defaultModel = options.defaultModel || "anthropic/claude-3-opus";
+    this.apiKey = options.apiKey || import.meta.env.PUBLIC_OPENROUTER_API_KEY || "";
+    this.defaultModel = options.defaultModel || "deepseek/deepseek-r1-0528:free";
     this.defaultSystemMessage =
       options.defaultSystemMessage || "Jesteś pomocnym asystentem do tworzenia fiszek edukacyjnych.";
     this.defaultParameters = {
@@ -108,9 +108,18 @@ export class OpenRouterService extends BaseService {
     if (mergedParameters.top_p !== undefined) request.top_p = mergedParameters.top_p;
     if (mergedParameters.presence_penalty !== undefined) request.presence_penalty = mergedParameters.presence_penalty;
 
-    // Handle response format
+    // Update response format handling
     if (responseFormat) {
-      request.response_format = responseFormat;
+      request.response_format = {
+        type: "json_object", // Force JSON response
+      };
+
+      // Add schema validation instruction to system message
+      if (systemMessage) {
+        messages[0].content += `\nPlease format your response as a JSON object following this schema: ${JSON.stringify(
+          responseFormat.json_schema?.schema
+        )}`;
+      }
     }
 
     return request;
@@ -453,7 +462,7 @@ export class OpenRouterService extends BaseService {
     }
   ): Promise<T> {
     const responseFormat: OpenRouterResponseFormat = {
-      type: "json_schema",
+      type: "json_object",
       json_schema: {
         name: options?.schemaName || "response",
         strict: options?.strictSchema ?? true,
@@ -461,18 +470,23 @@ export class OpenRouterService extends BaseService {
       },
     };
 
+    // Add schema requirements to system message
+    const enhancedSystemMessage = `${options?.systemMessage || this.defaultSystemMessage}\nPlease provide your response as a valid JSON object following this schema: ${JSON.stringify(schema)}`;
+
     const jsonResponse = await this.generateCompletion(prompt, {
       ...options,
+      systemMessage: enhancedSystemMessage,
       responseFormat,
     });
 
     try {
-      // Try to parse the JSON response
-      let parsedResponse = JSON.parse(jsonResponse);
+      // Try to extract JSON from the response if it's wrapped in text
+      const jsonMatch = jsonResponse.match(/```json\n?(.*?)\n?```/s) || jsonResponse.match(/{[\s\S]*}/);
+      const jsonString = jsonMatch ? jsonMatch[1] || jsonMatch[0] : jsonResponse;
 
-      // Some models might return the result wrapped in an additional object
-      // For example: { "response": { ...actual data... } }
-      // If the schema name is used as a wrapper, extract the inner content
+      let parsedResponse = JSON.parse(jsonString.trim());
+
+      // Handle schema name wrapper
       const schemaName = options?.schemaName || "response";
       if (parsedResponse && typeof parsedResponse === "object" && schemaName in parsedResponse) {
         parsedResponse = parsedResponse[schemaName];
@@ -480,7 +494,7 @@ export class OpenRouterService extends BaseService {
 
       return parsedResponse as T;
     } catch (err) {
-      // Create a standardized error for JSON parsing failures
+      console.error("Raw response:", jsonResponse);
       const parseError: EnhancedError = new Error(
         `Failed to parse JSON response: ${(err as Error)?.message || "Invalid JSON"}. Response: ${jsonResponse.slice(0, 100)}...`
       ) as EnhancedError;
