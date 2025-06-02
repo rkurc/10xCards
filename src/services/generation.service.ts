@@ -106,16 +106,11 @@ export class GenerationService extends BaseService {
       let generatedCards: GenerationCardDTO[] = [];
       let flashcardResult;
       try {
-        flashcardResult = await this.openRouterService.generateFlashcards(
-          generationLog.source_text || "",
-          {
-            count: generationLog.target_count || this.calculateDefaultCardCount(generationLog.source_text || ""),
-          }
-        );
+        flashcardResult = await this.openRouterService.generateFlashcards(generationLog.source_text || "", {
+          count: generationLog.target_count || this.calculateDefaultCardCount(generationLog.source_text || ""),
+        });
       } catch (err) {
-        throw new Error(
-          `OpenRouterService error: ${err instanceof Error ? err.message : JSON.stringify(err)}`
-        );
+        throw new Error(`OpenRouterService error: ${err instanceof Error ? err.message : JSON.stringify(err)}`);
       }
 
       // Map OpenRouter flashcards to GenerationCardDTO

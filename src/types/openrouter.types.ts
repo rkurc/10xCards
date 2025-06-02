@@ -17,7 +17,7 @@ export interface OpenRouterParameters {
  */
 export interface OpenRouterResponseFormat {
   /** Typ formatu odpowiedzi */
-  type: 'json_schema';
+  type: "json_schema";
   /** Schemat JSON dla odpowiedzi */
   json_schema: {
     name: string;
@@ -31,7 +31,7 @@ export interface OpenRouterResponseFormat {
  */
 export interface OpenRouterMessage {
   /** Rola w konwersacji */
-  role: 'system' | 'user' | 'assistant';
+  role: "system" | "user" | "assistant";
   /** Treść wiadomości */
   content: string;
 }
