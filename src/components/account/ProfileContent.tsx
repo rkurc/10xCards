@@ -10,7 +10,7 @@ import { useState } from "react";
 
 export function ProfileContent() {
   const { user } = useDirectAuth();
-  
+
   if (!user) {
     return (
       <Card>
@@ -34,14 +34,14 @@ export function ProfileContent() {
             <p className="text-sm font-medium">Email</p>
             <p className="text-sm text-muted-foreground">{user.email}</p>
           </div>
-          
+
           {user.name && (
             <div>
               <p className="text-sm font-medium">Imię</p>
               <p className="text-sm text-muted-foreground">{user.name}</p>
             </div>
           )}
-          
+
           {/* TODO: Add form to update profile information */}
         </CardContent>
         <CardFooter className="flex flex-col items-start gap-4">
