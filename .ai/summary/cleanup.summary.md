@@ -25,17 +25,17 @@ This document tracks the progress of the codebase cleanup process.
    - `src/lib/services/openrouter.service.ts`: AI integration for card generation
 
 #### Authentication System
-The codebase has two authentication implementations:
-1. **Legacy system**:
-   - `src/services/auth.service.ts`
-   - `src/context/AuthContext.tsx`
+The codebase has two authentication implementations, now in the process of consolidation:
+1. **Legacy system** (marked as deprecated):
+   - `src/services/auth.service.ts` (deprecated)
+   - `src/context/AuthContext.tsx` (deprecated)
+   - `src/hooks/useAuth.ts` (compatibility layer, deprecated)
 
-2. **New direct auth system**:
+2. **New direct auth system** (preferred approach):
    - `src/services/auth.direct.ts`
    - `src/hooks/useDirectAuth.ts`
-   - `src/hooks/useAuth.ts` (Compatibility layer)
 
-Based on imports and documentation in the refactor plan, the codebase is transitioning from the context-based system to the direct auth system.
+Consolidation progress is tracked in `.ai/summary/auth-migration-progress.md`. Several components have been migrated to the direct auth system.
 
 #### UI Components
 1. **Duplicate Auth Components**:
@@ -88,8 +88,14 @@ Based on the user stories and our findings, the following features appear to be 
    - Personal data management in `src/components/auth/UserMenu.tsx`
 2. Created a mock profile component at `src/components/account/ProfileContent.tsx` with TODOs
 3. Created a comprehensive TODO list in `.ai/summary/todo-list.md`
+4. Consolidated auth services:
+   - Migrated `AuthGuard.tsx` to use direct auth
+   - Rewrote `ForgotPasswordForm.tsx` to use direct auth
+   - Marked legacy auth files as deprecated
+   - Added migration progress tracking in `.ai/summary/auth-migration-progress.md`
 
 ### Next Steps
-1. **Consolidate Auth Services**: Remove duplicate authentication implementation
-2. **Begin Backend Cleanup**: Start with service refactoring
-3. **Clean up UI Components**: Remove unused components and fix duplicated login forms
+1. **Complete Auth Migration**: Update any remaining components still using legacy auth
+2. **Clean up Tests**: Update tests to use the direct auth system
+3. **Begin Backend Cleanup**: Continue with service refactoring
+4. **Clean up UI Components**: Remove unused components and fix duplicated login forms

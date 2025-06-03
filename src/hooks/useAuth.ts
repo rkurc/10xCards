@@ -1,3 +1,9 @@
+/**
+ * @deprecated This hook is deprecated and will be removed in a future version.
+ * Use useDirectAuth from @/hooks/useDirectAuth directly instead.
+ * 
+ * This is a temporary compatibility layer to facilitate migration from context-based auth to store-based auth.
+ */
 import { useDirectAuth } from "./useDirectAuth";
 import type { User, LoginResult } from "../types/auth.types";
 import { useEffect } from "react";

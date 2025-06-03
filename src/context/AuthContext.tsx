@@ -1,3 +1,7 @@
+/**
+ * @deprecated This file is deprecated and will be removed in a future version.
+ * Use the direct auth approach with useDirectAuth from @/hooks/useDirectAuth instead.
+ */
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { toast } from "sonner";
 import type { LoginResult, User } from "../types/auth.types";
