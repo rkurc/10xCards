@@ -11,6 +11,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/components/ui/use-toast";
 
+// TODO: Implement personal data management functionality (US-011)
+// - Add user profile page with account settings
+// - Implement data export functionality for GDPR compliance
+// - Add account deletion option that removes all user data
+
 export function UserMenu() {
   const { user, loading } = useDirectAuth();
   const { toast } = useToast();
@@ -36,10 +41,10 @@ export function UserMenu() {
         });
         setIsLoggingOut(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Błąd",
-        description: "Wystąpił nieoczekiwany błąd",
+        description: error?.message || "Wystąpił nieoczekiwany błąd",
         variant: "destructive",
       });
       setIsLoggingOut(false);

@@ -6,6 +6,11 @@ import { useGenerationActions } from "./hooks";
 import { useToast } from "../ui/use-toast";
 import { GenerationWrapper } from "./GenerationWrapper";
 
+// TODO: Implement readability assessment functionality (US-008)
+// - Add text analysis for readability score (FOG index)
+// - Display readability metrics to user
+// - Implement suggestions for text improvement
+
 function GenerateContentInner() {
   const { currentStep, generationId, cards, updateGenerationState } = useGenerationContext();
   const { toast } = useToast();

@@ -3,6 +3,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
+// TODO: Implement statistics dashboard functionality (US-007)
+// - Add components to display generation statistics
+// - Track number of generated and accepted cards
+// - Add real-time statistics updates
+
 export default function DashboardContent() {
   const { user, loading } = useDirectAuth();
   const [cardSetsCount, setCardSetsCount] = useState<number>(0);
