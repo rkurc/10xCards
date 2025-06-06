@@ -48,6 +48,32 @@ export const handlers = [
       },
     });
   }),
+  
+  // Card sets API handlers
+  http.get("/api/card-sets", ({ request }) => {
+    const url = new URL(request.url);
+    const page = Number(url.searchParams.get("page")) || 1;
+    const limit = Number(url.searchParams.get("limit")) || 10;
+    
+    return HttpResponse.json({
+      cardSets: [
+        {
+          id: "set-1",
+          name: "Test Set 1",
+          description: "Example set for testing",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          cardsCount: 10,
+        }
+      ],
+      pagination: {
+        page,
+        limit,
+        total: 1,
+        totalPages: 1,
+      }
+    });
+  }),
 
   // OpenRouter API handlers
   http.post("https://openrouter.ai/api/v1/chat/completions", async ({ request }) => {

@@ -1,17 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { requireAuth, createApiError, createApiResponse } from "../api-auth";
 import { ErrorCode } from "../db-error-handler";
+import type { User } from "../../types/auth.types";
+
+// Create a mock APIContext type that matches what we need for testing
+interface MockAPIContext {
+  locals: {
+    user?: User;
+    [key: string]: unknown;
+  };
+  request: Request;
+  [key: string]: unknown;
+}
 
 describe("API Authentication Utilities", () => {
   // Mock APIContext
-  let mockContext: any;
+  let mockContext: MockAPIContext;
 
   beforeEach(() => {
     // Reset mock context before each test
     mockContext = {
       locals: {
-        user: null,
-        isAuthenticated: false,
+        user: undefined, // User is undefined by default (not authenticated)
+        supabase: {},   // Mock Supabase client
       },
       request: new Request("https://example.com/api/test"),
     };
@@ -19,16 +30,16 @@ describe("API Authentication Utilities", () => {
 
   describe("requireAuth", () => {
     it("should return null when user is authenticated", () => {
-      // Setup authenticated context
-      mockContext.locals.user = { id: "test-user-id", email: "test@example.com" };
-      mockContext.locals.isAuthenticated = true;
+      // Setup authenticated context with the user property
+      mockContext.locals.user = { id: "test-user-id", email: "test@example.com", name: "Test User" };
 
-      const result = requireAuth(mockContext);
+      const result = requireAuth(mockContext as any);
       expect(result).toBeNull();
     });
 
     it("should return an unauthorized response when user is not authenticated", () => {
-      const result = requireAuth(mockContext);
+      // User is undefined which means not authenticated
+      const result = requireAuth(mockContext as any);
 
       expect(result).toBeInstanceOf(Response);
       expect(result?.status).toBe(401);
