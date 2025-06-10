@@ -13,9 +13,9 @@ export const mockAuth = {
     onAuthStateChange: vi.fn(() => ({
       data: {
         subscription: {
-          unsubscribe: vi.fn()
-        }
-      }
+          unsubscribe: vi.fn(),
+        },
+      },
     })),
-  }
+  },
 };

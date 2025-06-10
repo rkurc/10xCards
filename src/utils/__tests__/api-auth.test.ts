@@ -22,7 +22,7 @@ describe("API Authentication Utilities", () => {
     mockContext = {
       locals: {
         user: undefined, // User is undefined by default (not authenticated)
-        supabase: {},   // Mock Supabase client
+        supabase: {}, // Mock Supabase client
       },
       request: new Request("https://example.com/api/test"),
     };

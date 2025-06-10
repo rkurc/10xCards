@@ -58,9 +58,9 @@ describe("Direct Auth Service", () => {
     it("should handle server-side execution", async () => {
       // Mock window as undefined to simulate server-side execution
       global.window = undefined as any;
-      
+
       const result = await login("test@example.com", "password");
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toBe("Authentication service unavailable in server environment");
       expect(mockSupabaseAuth.auth.signInWithPassword).not.toHaveBeenCalled();
@@ -113,9 +113,9 @@ describe("Direct Auth Service", () => {
 
     it("should handle server-side execution", async () => {
       global.window = undefined as any;
-      
+
       const result = await register("test@example.com", "password");
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toBe("Registration service unavailable in server environment");
       expect(mockSupabaseAuth.auth.signUp).not.toHaveBeenCalled();
@@ -127,7 +127,7 @@ describe("Direct Auth Service", () => {
       mockSupabaseAuth.auth.signOut.mockResolvedValue({ error: null });
 
       const result = await logout();
-      
+
       expect(result.success).toBe(true);
       expect(mockSupabaseAuth.auth.signOut).toHaveBeenCalled();
     });
@@ -138,7 +138,7 @@ describe("Direct Auth Service", () => {
       });
 
       const result = await logout();
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toBe("Session not found");
       expect(mockSupabaseAuth.auth.signOut).toHaveBeenCalled();
@@ -146,9 +146,9 @@ describe("Direct Auth Service", () => {
 
     it("should handle server-side execution", async () => {
       global.window = undefined as any;
-      
+
       const result = await logout();
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toBe("Logout service unavailable in server environment");
       expect(mockSupabaseAuth.auth.signOut).not.toHaveBeenCalled();
@@ -195,9 +195,9 @@ describe("Direct Auth Service", () => {
 
     it("should return null on server-side", async () => {
       global.window = undefined as any;
-      
+
       const user = await getCurrentUser();
-      
+
       expect(user).toBeNull();
       expect(mockSupabaseAuth.auth.getUser).not.toHaveBeenCalled();
     });
@@ -206,11 +206,11 @@ describe("Direct Auth Service", () => {
   describe("resetPassword", () => {
     it("should successfully request password reset", async () => {
       // Mock window.location for redirectTo URL
-      Object.defineProperty(window, 'location', {
-        value: { origin: 'http://localhost:3000' },
-        writable: true
+      Object.defineProperty(window, "location", {
+        value: { origin: "http://localhost:3000" },
+        writable: true,
       });
-      
+
       mockSupabaseAuth.auth.resetPasswordForEmail.mockResolvedValue({
         error: null,
       });
@@ -236,9 +236,9 @@ describe("Direct Auth Service", () => {
 
     it("should handle server-side execution", async () => {
       global.window = undefined as any;
-      
+
       const result = await resetPassword("test@example.com");
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toBe("Password reset service unavailable in server environment");
       expect(mockSupabaseAuth.auth.resetPasswordForEmail).not.toHaveBeenCalled();
@@ -273,9 +273,9 @@ describe("Direct Auth Service", () => {
 
     it("should handle server-side execution", async () => {
       global.window = undefined as any;
-      
+
       const result = await updatePassword("newpassword");
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toBe("Password update service unavailable in server environment");
       expect(mockSupabaseAuth.auth.updateUser).not.toHaveBeenCalled();
@@ -311,9 +311,9 @@ describe("Direct Auth Service", () => {
 
     it("should handle server-side execution", async () => {
       global.window = undefined as any;
-      
+
       const result = await updateProfile({ name: "Updated Name" });
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toBe("Profile update service unavailable in server environment");
       expect(mockSupabaseAuth.auth.updateUser).not.toHaveBeenCalled();
@@ -323,11 +323,11 @@ describe("Direct Auth Service", () => {
   describe("isEmailVerified", () => {
     it("should return true when email is verified", async () => {
       mockSupabaseAuth.auth.getUser.mockResolvedValue({
-        data: { 
-          user: { 
-            ...mockUser, 
-            email_confirmed_at: new Date().toISOString() 
-          }
+        data: {
+          user: {
+            ...mockUser,
+            email_confirmed_at: new Date().toISOString(),
+          },
         },
         error: null,
       });
@@ -338,11 +338,11 @@ describe("Direct Auth Service", () => {
 
     it("should return false when email is not verified", async () => {
       mockSupabaseAuth.auth.getUser.mockResolvedValue({
-        data: { 
-          user: { 
-            ...mockUser, 
-            email_confirmed_at: null 
-          }
+        data: {
+          user: {
+            ...mockUser,
+            email_confirmed_at: null,
+          },
         },
         error: null,
       });
@@ -363,9 +363,9 @@ describe("Direct Auth Service", () => {
 
     it("should return false on server-side", async () => {
       global.window = undefined as any;
-      
+
       const verified = await isEmailVerified();
-      
+
       expect(verified).toBe(false);
       expect(mockSupabaseAuth.auth.getUser).not.toHaveBeenCalled();
     });
