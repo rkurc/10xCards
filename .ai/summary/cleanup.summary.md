@@ -25,17 +25,20 @@ This document tracks the progress of the codebase cleanup process.
    - `src/lib/services/openrouter.service.ts`: AI integration for card generation
 
 #### Authentication System
-The codebase has two authentication implementations, now in the process of consolidation:
-1. **Legacy system** (marked as deprecated):
-   - `src/services/auth.service.ts` (deprecated)
-   - `src/context/AuthContext.tsx` (deprecated)
-   - `src/hooks/useAuth.ts` (compatibility layer, deprecated)
+✅ **COMPLETED**: Authentication migration has been successfully completed!
 
-2. **New direct auth system** (preferred approach):
-   - `src/services/auth.direct.ts`
-   - `src/hooks/useDirectAuth.ts`
+**Current auth system** (store-based approach):
+   - `src/services/auth.direct.ts`: Direct authentication service
+   - `src/hooks/useDirectAuth.ts`: React hook for direct auth
 
-Consolidation progress is tracked in `.ai/summary/auth-migration-progress.md`. Several components have been migrated to the direct auth system.
+**Legacy system** has been removed (moved to backup folder):
+   - `src/services/auth.service.ts`
+   - `src/context/AuthContext.tsx`
+   - `src/hooks/useAuth.ts`
+
+Full details documented in:
+   - `.ai/summary/auth-migration-progress.md` 
+   - `.ai/summary/auth-migration-completion-plan.md`
 
 #### UI Components
 1. **Duplicate Auth Components**:
