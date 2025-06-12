@@ -1,11 +1,10 @@
-import { useContext } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AuthContext } from "@/context/AuthContext";
+import { useDirectAuth } from "@/hooks/useDirectAuth";
 import { GenerationProvider } from "../contexts/generation-context";
 
 export function App() {
-  const { isAuthenticated } = useContext(AuthContext);
+  const { isAuthenticated } = useDirectAuth();
 
   const handleGetStarted = () => {
     if (isAuthenticated) {

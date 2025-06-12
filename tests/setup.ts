@@ -4,6 +4,14 @@ import * as matchers from "@testing-library/jest-dom/matchers";
 import { expect, vi } from "vitest";
 import { server } from "./mocks/server";
 
+// Set up MSW server
+beforeAll(() => server.listen());
+afterEach(() => {
+  server.resetHandlers();
+  cleanup();
+});
+afterAll(() => server.close());
+
 // Ensure test environment values match .env.development values
 process.env.PUBLIC_SUPABASE_URL = "http://127.0.0.1:54321";
 process.env.PUBLIC_SUPABASE_ANON_KEY =

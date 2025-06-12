@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
+import { useDirectAuth } from "@/hooks/useDirectAuth";
 
 interface AuthGuardProps {
   children: ReactNode;
@@ -9,7 +9,7 @@ interface AuthGuardProps {
 }
 
 export function AuthGuard({ children, redirectUrl = "/login" }: AuthGuardProps) {
-  const { user, loading } = useAuth();
+  const { user, loading } = useDirectAuth();
   const [pathname, setPathname] = useState<string>("");
 
   useEffect(() => {

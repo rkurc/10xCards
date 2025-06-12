@@ -1,3 +1,7 @@
+/**
+ * @deprecated This file is deprecated and will be removed in a future version.
+ * Use auth.direct.ts instead which provides the same functionality with a better architecture.
+ */
 import { createBrowserSupabaseClient } from "../lib/supabase.client";
 import type { LoginResult, RegisterResult, User } from "../types/auth.types";
 

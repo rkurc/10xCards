@@ -1,7 +1,12 @@
-import { useDirectAuth } from "@/hooks/useDirectAuth";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useDirectAuth } from "../../hooks/useDirectAuth";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
+import { Button } from "../ui/button";
 import { useState, useEffect } from "react";
+
+// TODO: Implement statistics dashboard functionality (US-007)
+// - Add components to display generation statistics
+// - Track number of generated and accepted cards
+// - Add real-time statistics updates
 
 export default function DashboardContent() {
   const { user, loading } = useDirectAuth();
@@ -61,6 +66,11 @@ export default function DashboardContent() {
     );
   }
 
+  if (!user) {
+    // If user is not available, render nothing (or a minimal placeholder if desired)
+    return null;
+  }
+
   return (
     <div data-testid="dashboard-content" className="space-y-8">
       <div data-testid="dashboard-header" className="flex items-center">
@@ -88,9 +98,12 @@ export default function DashboardContent() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button className="w-full" variant="outline" disabled>
-              Rozpocznij naukę
-            </Button>
+            {!loading && !isLoadingCardSets && (
+              <Button className="w-full" variant="outline" disabled data-testid="study-button">
+                Rozpocznij naukę
+              </Button>
+            )}
+            {/* Do not render any button at all during loading */}
           </CardFooter>
         </Card>
 
