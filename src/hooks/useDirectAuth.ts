@@ -12,7 +12,7 @@ import {
   type RegisterResult,
   type PasswordResetResult,
   type UpdateProfileResult,
-} from "@/services/auth.direct";
+} from "../services/auth.direct";
 import type { User } from "@/types/auth.types";
 import { toast } from "sonner";
 
