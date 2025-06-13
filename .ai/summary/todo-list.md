@@ -30,16 +30,20 @@ This document lists all pending features and improvements that need to be implem
 ## Code Improvement TODOs
 
 ### Hooks
-- `src/hooks/useCardSets.ts` - Replace placeholder with actual API call
-- `src/hooks/useAuth.ts` - Add necessary side effects based on auth state changes
+- ✅ `src/hooks/useCardSets.ts` - Updated with proper API call implementation including query parameters
+- ✅ `src/hooks/useAuth.ts` - Removed (superseded by direct auth implementation)
 
 ### Components
-- `src/components/review/ReviewContent.tsx` - Add state updates for cards
+- ✅ `src/components/review/ReviewContent.tsx` - State updates for cards have been implemented
 
 ### Services
-- `src/services/generation.service.ts` - Fix type casting after regenerating Supabase types
+- ✅ `src/services/generation.service.ts` - Fixed type casting issue with 'generation_results' table access
 
 ## Next Steps
-1. Implement the missing features in order of priority
-2. Remove duplicate authentication implementations (context-based vs. direct auth)
-3. Clean up tests and improve test coverage
+1. ✅ Complete code improvement tasks (hooks, services, components) - Done!
+2. ✅ Remove duplicate authentication implementations - Done!
+3. 🔄 Implement the missing features in order of priority:
+   - US-007: Generation Statistics
+   - US-008: Readability Assessment  
+   - US-011: Personal Data Management
+4. Continue improving test coverage
