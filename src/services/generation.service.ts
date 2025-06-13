@@ -110,7 +110,7 @@ export class GenerationService extends BaseService {
           count: generationLog.target_count || this.calculateDefaultCardCount(generationLog.source_text || ""),
         });
       } catch (err) {
-        throw new Error(`OpenRouterService error: ${err instanceof Error ? err.message : JSON.stringify(err)}`);
+        throw new Error(`Błąd serwisu OpenRouter: ${err instanceof Error ? err.message : JSON.stringify(err)}`);
       }
 
       // Map OpenRouter flashcards to GenerationCardDTO
@@ -152,7 +152,7 @@ export class GenerationService extends BaseService {
         .from("generation_logs")
         .update({
           status: "failed",
-          error_message: error instanceof Error ? error.message : "Unknown error",
+          error_message: error instanceof Error ? error.message : "Nieznany błąd",
           updated_at: new Date().toISOString(),
         } as Partial<Database["public"]["Tables"]["generation_logs"]["Update"]>)
         .eq("id", generationId);
@@ -278,7 +278,7 @@ export class GenerationService extends BaseService {
       if (!generationExists) {
         throw {
           code: ErrorCode.NOT_FOUND,
-          message: "Generation not found or you don't have access to it",
+          message: "Nie znaleziono generacji lub nie masz do niej dostępu",
           status: 404,
         };
       }

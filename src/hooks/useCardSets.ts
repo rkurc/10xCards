@@ -31,7 +31,7 @@ export function useCardSets(params: UseCardSetsParams = {}) {
       setCardSets(response.data);
       setPagination(response.pagination);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load card sets");
+      setError(err instanceof Error ? err.message : "Nie udało się załadować zestawów fiszek");
     } finally {
       setIsLoading(false);
     }

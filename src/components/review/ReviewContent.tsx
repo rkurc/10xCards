@@ -71,7 +71,7 @@ export function ReviewContent({ generationId }: ReviewContentProps) {
         }
       } catch (err) {
         console.error("[REVIEW] Error fetching cards:", err);
-        setError("Failed to load cards. Please try again.");
+        setError("Nie udało się załadować fiszek. Spróbuj ponownie.");
 
         // Fallback to mock data for development
         if (process.env.NODE_ENV === "development") {
@@ -129,7 +129,7 @@ export function ReviewContent({ generationId }: ReviewContentProps) {
       setCards(cards.map((card) => (card.id === cardId ? { ...card, isAccepted: true } : card)));
     } catch (err) {
       console.error("[REVIEW] Error accepting card:", err);
-      toast.error("Failed to accept card. Please try again.");
+      toast.error("Nie udało się zaakceptować fiszki. Spróbuj ponownie.");
     }
   };
 
@@ -152,7 +152,7 @@ export function ReviewContent({ generationId }: ReviewContentProps) {
       setCards(cards.map((card) => (card.id === cardId ? { ...card, isAccepted: false } : card)));
     } catch (err) {
       console.error("[REVIEW] Error rejecting card:", err);
-      toast.error("Failed to reject card. Please try again.");
+      toast.error("Nie udało się odrzucić fiszki. Spróbuj ponownie.");
     }
   };
 

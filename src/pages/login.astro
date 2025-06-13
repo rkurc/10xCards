@@ -39,7 +39,7 @@ if (Astro.request.method === "POST") {
     return Astro.redirect(redirectUrl);
   } catch (error) {
     console.error("Login error:", error);
-    return Astro.redirect(`/login?error=Unexpected%20error&redirect=${redirectUrl}`);
+    return Astro.redirect(`/login?error=Wystąpił%20nieoczekiwany%20błąd&redirect=${redirectUrl}`);
   }
 }
 
@@ -100,7 +100,7 @@ const error = Astro.url.searchParams.get("error");
       <noscript>
         <form method="POST" class="space-y-4 border p-4 rounded-md mt-4">
           <div class="text-sm text-muted-foreground mb-4">
-            JavaScript is disabled. Using a simple HTML form instead.
+            JavaScript jest wyłączony. Używanie prostego formularza HTML.
           </div>
           <div class="space-y-2">
             <label for="email" class="text-sm font-medium">Email</label>

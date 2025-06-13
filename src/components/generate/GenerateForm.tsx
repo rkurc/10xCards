@@ -35,12 +35,12 @@ export function GenerateForm() {
     e.preventDefault();
 
     if (!localText.trim()) {
-      setError("Please enter some text to generate flashcards.");
+      setError("Wprowadź tekst, aby wygenerować fiszki.");
       return;
     }
 
     if (localText.length < 100) {
-      setError("Please enter at least 100 characters for better results.");
+      setError("Wprowadź co najmniej 100 znaków, aby uzyskać lepsze wyniki.");
       return;
     }
 
@@ -62,7 +62,7 @@ export function GenerateForm() {
       });
       console.log("[GENERATE-FORM] API response status:", response.status);
       if (!response.ok) {
-        throw new Error("Failed to start generation process");
+        throw new Error("Nie udało się rozpocząć procesu generowania");
       }
 
       const data = await response.json();
@@ -74,8 +74,8 @@ export function GenerateForm() {
       console.log("[GENERATE-FORM] State update complete");
 
       toast({
-        title: "Generation started",
-        description: `Estimated time: ${data.estimated_time_seconds} seconds`,
+        title: "Generowanie rozpoczęte",
+        description: `Szacowany czas: ${data.estimated_time_seconds} sekund`,
       });
 
       // Check if the API response includes a redirect URL
@@ -85,11 +85,11 @@ export function GenerateForm() {
       }
     } catch (error) {
       console.error("Error starting generation:", error);
-      setError("An error occurred while starting the generation process. Please try again.");
+      setError("Wystąpił błąd podczas rozpoczynania procesu generowania. Spróbuj ponownie.");
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to start generation process. Please try again.",
+        title: "Błąd",
+        description: "Nie udało się rozpocząć procesu generowania. Spróbuj ponownie.",
       });
     } finally {
       setIsSubmitting(false);
@@ -100,7 +100,7 @@ export function GenerateForm() {
     <form onSubmit={handleSubmit}>
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Generate New Flashcards</CardTitle>
+          <CardTitle>Generuj nowe fiszki</CardTitle>
         </CardHeader>
 
         <CardContent className="space-y-6">
@@ -111,24 +111,24 @@ export function GenerateForm() {
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="text">Paste your text below</Label>
+            <Label htmlFor="text">Wklej swój tekst poniżej</Label>
             <Textarea
               id="text"
               value={localText}
               onChange={(e) => setLocalText(e.target.value)}
-              placeholder="Paste the text you want to generate flashcards from..."
+              placeholder="Wklej tekst, z którego chcesz wygenerować fiszki..."
               rows={10}
               required
               className="min-h-[200px]"
             />
             <p className="text-xs text-muted-foreground">
-              Character count: {localText.length}
-              {localText.length < 100 && localText.length > 0 && " (minimum 100 characters required)"}
+              Liczba znaków: {localText.length}
+              {localText.length < 100 && localText.length > 0 && " (wymagane minimum 100 znaków)"}
             </p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="target-count">Target number of flashcards</Label>
+            <Label htmlFor="target-count">Docelowa liczba fiszek</Label>
             <Input
               id="target-count"
               type="number"
@@ -138,13 +138,13 @@ export function GenerateForm() {
               onChange={(e) => setTargetCount(parseInt(e.target.value) || 10)}
               className="w-32"
             />
-            <p className="text-xs text-muted-foreground">You can generate up to 50 flashcards at once</p>
+            <p className="text-xs text-muted-foreground">Możesz wygenerować do 50 fiszek jednocześnie</p>
           </div>
         </CardContent>
 
         <CardFooter className="flex justify-end space-x-2">
           <Button type="submit" disabled={isSubmitting || localText.length < 100} className="min-w-[120px]">
-            {isSubmitting ? "Processing..." : "Generate Cards"}
+            {isSubmitting ? "Przetwarzanie..." : "Generuj fiszki"}
           </Button>
         </CardFooter>
       </Card>

@@ -73,6 +73,6 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     });
   } catch (error) {
     console.error("[AUTH] Registration error:", error);
-    return createAuthErrorResponse("Unexpected error during registration", 500);
+    return createAuthErrorResponse("Wystąpił nieoczekiwany błąd podczas rejestracji", 500);
   }
 };

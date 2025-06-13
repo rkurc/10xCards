@@ -98,7 +98,7 @@ function getErrorCodeFromPgError(pgErrorCode: string): ErrorCode {
  */
 export function handleDatabaseError(
   error: PostgrestError | Error | unknown,
-  defaultMessage = "A database error occurred"
+  defaultMessage = "Wystąpił błąd bazy danych"
 ): DatabaseError {
   console.error("Database operation error:", error);
 
