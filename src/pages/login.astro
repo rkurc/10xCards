@@ -6,9 +6,6 @@ import { createSupabaseServerClient } from "../lib/supabase.server";
 // Disable pre-rendering to ensure auth state is always current
 export const prerender = false;
 
-// Determine if we're in test mode (for test-specific features)
-const isTestMode = Astro.url.searchParams.get("test-mode") === "true";
-
 // Get redirectUrl from query params
 const redirectUrl = Astro.url.searchParams.get("redirect") || "/dashboard";
 
@@ -28,7 +25,7 @@ if (Astro.request.method === "POST") {
       headers: Astro.request.headers,
     });
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -84,6 +81,21 @@ const error = Astro.url.searchParams.get("error");
 
       <!-- React login form with client:load directive -->
       <LoginFormReact client:load redirectUrl={redirectUrl} />
+      
+      <!-- Simple login option from LoginForm.astro -->
+      <div class="mt-8 border-t pt-6">
+        <h2 class="text-xl font-medium mb-4 text-center">Szybkie logowanie</h2>
+        <p class="text-sm text-muted-foreground mb-4 text-center">
+          Jeśli jesteś już zalogowany w przeglądarce, możesz kontynuować bez podawania hasła.
+        </p>
+        <a href={redirectUrl} class="w-full block">
+          <button
+            class="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          >
+            Kontynuuj
+          </button>
+        </a>
+      </div>
 
       <!-- Fallback for users with JavaScript disabled -->
       <noscript>
