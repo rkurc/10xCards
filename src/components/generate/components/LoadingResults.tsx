@@ -7,7 +7,7 @@ export function LoadingResults() {
     <Card className="w-full p-6">
       <CardContent className="flex flex-col items-center justify-center py-10">
         <Loader2 className="h-10 w-10 animate-spin mb-4" />
-        <p className="text-muted-foreground">Loading flashcard results...</p>
+        <p className="text-muted-foreground">Ładowanie wyników fiszek...</p>
       </CardContent>
     </Card>
   );

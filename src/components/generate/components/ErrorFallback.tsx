@@ -12,11 +12,11 @@ export function ErrorFallback({ error, resetErrorBoundary }: ErrorFallbackProps)
   return (
     <Alert variant="destructive">
       <AlertCircle className="h-4 w-4" />
-      <AlertTitle>Error</AlertTitle>
+      <AlertTitle>Błąd</AlertTitle>
       <AlertDescription>
         <p>{error.message}</p>
         <Button variant="outline" size="sm" onClick={resetErrorBoundary} className="mt-2">
-          Try Again
+          Spróbuj ponownie
         </Button>
       </AlertDescription>
     </Alert>
