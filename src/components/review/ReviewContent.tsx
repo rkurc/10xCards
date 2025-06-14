@@ -71,7 +71,7 @@ export function ReviewContent({ generationId }: ReviewContentProps) {
         }
       } catch (err) {
         console.error("[REVIEW] Error fetching cards:", err);
-        setError("Failed to load cards. Please try again.");
+        setError("Nie udało się załadować fiszek. Spróbuj ponownie.");
 
         // Fallback to mock data for development
         if (process.env.NODE_ENV === "development") {
@@ -129,7 +129,7 @@ export function ReviewContent({ generationId }: ReviewContentProps) {
       setCards(cards.map((card) => (card.id === cardId ? { ...card, isAccepted: true } : card)));
     } catch (err) {
       console.error("[REVIEW] Error accepting card:", err);
-      toast.error("Failed to accept card. Please try again.");
+      toast.error("Nie udało się zaakceptować fiszki. Spróbuj ponownie.");
     }
   };
 
@@ -152,7 +152,7 @@ export function ReviewContent({ generationId }: ReviewContentProps) {
       setCards(cards.map((card) => (card.id === cardId ? { ...card, isAccepted: false } : card)));
     } catch (err) {
       console.error("[REVIEW] Error rejecting card:", err);
-      toast.error("Failed to reject card. Please try again.");
+      toast.error("Nie udało się odrzucić fiszki. Spróbuj ponownie.");
     }
   };
 
@@ -165,8 +165,8 @@ export function ReviewContent({ generationId }: ReviewContentProps) {
 
       // Match the schema structure exactly
       const payload = {
-        name: `Generated Set - ${new Date().toLocaleDateString()}`,
-        description: "Automatically generated flashcards",
+        name: `Wygenerowany zestaw - ${new Date().toLocaleDateString()}`,
+        description: "Automatycznie wygenerowane fiszki",
         accepted_cards: acceptedCardIds, // This matches the schema expectation
       };
 
@@ -214,7 +214,7 @@ export function ReviewContent({ generationId }: ReviewContentProps) {
       <div>
         <div className="flex items-center gap-2 mb-4">
           <Button variant="outline" size="sm" onClick={handleBackToGenerate} className="flex items-center gap-1">
-            <ArrowLeft className="h-4 w-4" /> Back to Generator
+            <ArrowLeft className="h-4 w-4" /> Powrót do generatora
           </Button>
         </div>
 
@@ -258,7 +258,7 @@ export function ReviewContent({ generationId }: ReviewContentProps) {
 
       <div className="flex justify-between">
         <Button variant="outline" onClick={handleBackToGenerate}>
-          Back to Generator
+          Powrót do generatora
         </Button>
 
         <Button onClick={handleSaveCards} disabled={isSaving || cards.every((card) => !card.isAccepted)}>

@@ -73,7 +73,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: "An unexpected error occurred during logout",
+        error: "Wystąpił nieoczekiwany błąd podczas wylogowywania",
       }),
       {
         status: 500,

@@ -29,6 +29,6 @@ export const GET: APIRoute = async ({ url, cookies, redirect }) => {
     return redirect(`/registration-success?email=${encodeURIComponent(email)}&message=Verification email resent`);
   } catch (error) {
     console.error("Unexpected error resending verification email:", error);
-    return redirect(`/registration-success?email=${encodeURIComponent(email)}&error=Unexpected error occurred`);
+    return redirect(`/registration-success?email=${encodeURIComponent(email)}&error=Wystąpił nieoczekiwany błąd`);
   }
 };

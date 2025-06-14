@@ -85,8 +85,8 @@ export function GenerationResults({ generationId, cards, stats, onComplete }: Ge
       const data = await response.json();
 
       toast({
-        title: "Success",
-        description: `${data.accepted_count} cards accepted successfully.`,
+        title: "Sukces",
+        description: `Pomyślnie zaakceptowano ${data.accepted_count} fiszki.`,
       });
 
       // Mark all cards as accepted
@@ -95,8 +95,8 @@ export function GenerationResults({ generationId, cards, stats, onComplete }: Ge
       console.error("Error accepting cards:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to accept cards. Please try again.",
+        title: "Błąd",
+        description: "Nie udało się zaakceptować fiszek. Spróbuj ponownie.",
       });
     }
   };
@@ -105,8 +105,8 @@ export function GenerationResults({ generationId, cards, stats, onComplete }: Ge
     if (!setName.trim()) {
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Set name is required.",
+        title: "Błąd",
+        description: "Nazwa zestawu jest wymagana.",
       });
       return;
     }
@@ -119,8 +119,8 @@ export function GenerationResults({ generationId, cards, stats, onComplete }: Ge
       if (acceptedCardIds.length === 0) {
         toast({
           variant: "destructive",
-          title: "Error",
-          description: "Please accept at least one card before finalizing.",
+          title: "Błąd",
+          description: "Zaakceptuj co najmniej jedną fiszkę przed finalizacją.",
         });
         setIsSubmitting(false);
         return;
@@ -145,8 +145,8 @@ export function GenerationResults({ generationId, cards, stats, onComplete }: Ge
       const data = await response.json();
 
       toast({
-        title: "Success",
-        description: `Set "${setName}" created with ${data.card_count} cards.`,
+        title: "Sukces",
+        description: `Zestaw "${setName}" utworzony z ${data.card_count} fiszkami.`,
       });
 
       setFinalizeDialogOpen(false);
@@ -155,8 +155,8 @@ export function GenerationResults({ generationId, cards, stats, onComplete }: Ge
       console.error("Error finalizing generation:", error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to finalize generation. Please try again.",
+        title: "Błąd",
+        description: "Nie udało się sfinalizować generowania. Spróbuj ponownie.",
       });
     } finally {
       setIsSubmitting(false);
@@ -169,14 +169,14 @@ export function GenerationResults({ generationId, cards, stats, onComplete }: Ge
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Generated Flashcards</h2>
+        <h2 className="text-2xl font-bold">Wygenerowane fiszki</h2>
 
         <div className="space-x-2">
           <Button variant="outline" onClick={handleAcceptAll}>
-            Accept All
+            Akceptuj wszystkie
           </Button>
           <Button onClick={() => setFinalizeDialogOpen(true)}>
-            Finalize ({acceptedCount}/{cardStates.length})
+            Finalizuj ({acceptedCount}/{cardStates.length})
           </Button>
         </div>
       </div>
@@ -184,16 +184,16 @@ export function GenerationResults({ generationId, cards, stats, onComplete }: Ge
       <div className="bg-muted p-4 rounded-md">
         <div className="grid grid-cols-3 gap-4 text-sm">
           <div>
-            <p className="font-medium">Text Length:</p>
-            <p>{stats.text_length} characters</p>
+            <p className="font-medium">Długość tekstu:</p>
+            <p>{stats.text_length} znaków</p>
           </div>
           <div>
-            <p className="font-medium">Generated:</p>
-            <p>{stats.generated_count} cards</p>
+            <p className="font-medium">Wygenerowano:</p>
+            <p>{stats.generated_count} fiszek</p>
           </div>
           <div>
-            <p className="font-medium">Generation Time:</p>
-            <p>{(stats.generation_time_ms / 1000).toFixed(2)} seconds</p>
+            <p className="font-medium">Czas generowania:</p>
+            <p>{(stats.generation_time_ms / 1000).toFixed(2)} sekund</p>
           </div>
         </div>
       </div>
@@ -223,42 +223,42 @@ export function GenerationResults({ generationId, cards, stats, onComplete }: Ge
       <Dialog open={finalizeDialogOpen} onOpenChange={setFinalizeDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create Flashcard Set</DialogTitle>
+            <DialogTitle>Utwórz zestaw fiszek</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="set-name">Set Name</Label>
+              <Label htmlFor="set-name">Nazwa zestawu</Label>
               <Input
                 id="set-name"
                 value={setName}
                 onChange={(e) => setSetName(e.target.value)}
-                placeholder="Enter set name"
+                placeholder="Wprowadź nazwę zestawu"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="set-description">Description (Optional)</Label>
+              <Label htmlFor="set-description">Opis (Opcjonalnie)</Label>
               <Input
                 id="set-description"
                 value={setDescription}
                 onChange={(e) => setSetDescription(e.target.value)}
-                placeholder="Enter description"
+                placeholder="Wprowadź opis"
               />
             </div>
 
             <p className="text-sm text-muted-foreground">
-              You are creating a set with {acceptedCount} accepted cards.
-              {rejectedCount > 0 && ` ${rejectedCount} rejected cards will not be included.`}
+              Tworzysz zestaw z {acceptedCount} zaakceptowanymi fiszkami.
+              {rejectedCount > 0 && ` ${rejectedCount} odrzuconych fiszek nie zostanie uwzględnionych.`}
             </p>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setFinalizeDialogOpen(false)}>
-              Cancel
+              Anuluj
             </Button>
             <Button onClick={handleFinalize} disabled={isSubmitting}>
-              {isSubmitting ? "Creating..." : "Create Set"}
+              {isSubmitting ? "Tworzenie..." : "Utwórz zestaw"}
             </Button>
           </DialogFooter>
         </DialogContent>

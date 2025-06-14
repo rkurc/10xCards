@@ -39,6 +39,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     return createAuthSuccessResponse({});
   } catch {
-    return createAuthErrorResponse("An unexpected error occurred", 500);
+    return createAuthErrorResponse("Wystąpił nieoczekiwany błąd", 500);
   }
 };

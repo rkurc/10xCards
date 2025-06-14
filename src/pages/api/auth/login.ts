@@ -72,6 +72,6 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       },
     });
   } catch (error) {
-    return createAuthErrorResponse("Unexpected error during login", 500);
+    return createAuthErrorResponse("Wystąpił nieoczekiwany błąd podczas logowania", 500);
   }
 };

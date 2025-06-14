@@ -63,7 +63,7 @@ export function createApiError(error: string | Error | ApiError | unknown, statu
   } else {
     apiError = {
       code: "UNKNOWN_ERROR",
-      message: "An unknown error occurred",
+      message: "Wystąpił nieznany błąd",
       status,
       details: error,
     };

@@ -13,8 +13,8 @@ export function ProcessingStatusCard({ generationId, onComplete }: ProcessingSta
   return (
     <Card className="border-2 border-blue-500 shadow-lg">
       <CardContent className="p-6">
-        <h2 className="text-2xl font-bold mb-4">Processing Your Request...</h2>
-        <p className="mb-4">Generation ID: {generationId || "Unknown"}</p>
+        <h2 className="text-2xl font-bold mb-4">Przetwarzanie Twojego zapytania...</h2>
+        <p className="mb-4">ID generowania: {generationId || "Nieznane"}</p>
         {generationId && (
           <ErrorBoundary
             FallbackComponent={({ error }) => <ProcessingErrorFallback error={error} generationId={generationId} />}

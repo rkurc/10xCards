@@ -18,16 +18,16 @@ export function TestLoginErrorDisplay() {
 
       switch (errorType) {
         case "invalid-credentials":
-          setErrorMessage("Invalid login credentials");
+          setErrorMessage("Nieprawidłowe dane logowania");
           break;
         case "server-error":
-          setErrorMessage("Server error occurred");
+          setErrorMessage("Wystąpił błąd serwera");
           break;
         case "account-locked":
-          setErrorMessage("Account has been locked");
+          setErrorMessage("Konto zostało zablokowane");
           break;
         default:
-          setErrorMessage(`Error: ${errorType}`);
+          setErrorMessage(`Błąd: ${errorType}`);
       }
     }
   }, []);

@@ -47,7 +47,7 @@ export function GenerationStatus({ generationId, onComplete }: GenerationStatusP
         }
       } catch (err) {
         console.error(`[GENERATION-STATUS] Error in status check:`, err);
-        setError(`Failed to check generation status: ${err instanceof Error ? err.message : String(err)}`);
+        setError(`Nie udało się sprawdzić statusu generowania: ${err instanceof Error ? err.message : String(err)}`);
 
         // Try again after a delay even if there was an error
         setTimeout(checkStatus, 5000);
@@ -66,7 +66,7 @@ export function GenerationStatus({ generationId, onComplete }: GenerationStatusP
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-2">
         <div className="text-sm font-medium">Status: {status}</div>
-        <div className="text-sm text-muted-foreground">{progress}% complete</div>
+        <div className="text-sm text-muted-foreground">{progress}% ukończono</div>
       </div>
 
       <Progress value={progress} className="h-2" />
@@ -80,7 +80,7 @@ export function GenerationStatus({ generationId, onComplete }: GenerationStatusP
       {(status === "pending" || status === "processing") && (
         <div className="flex items-center justify-center mt-4">
           <Loader2 className="h-6 w-6 animate-spin mr-2" />
-          <span>Processing your flashcards...</span>
+          <span>Przetwarzanie twoich fiszek...</span>
         </div>
       )}
 
@@ -89,7 +89,7 @@ export function GenerationStatus({ generationId, onComplete }: GenerationStatusP
           onClick={() => (window.location.href = `/generate/review/${generationId}?source=error_recovery`)}
           className="w-full mt-4"
         >
-          Continue to Review Page
+          Przejdź do strony przeglądu
         </Button>
       )}
     </div>
