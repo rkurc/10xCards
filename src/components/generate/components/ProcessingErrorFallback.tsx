@@ -11,7 +11,9 @@ export function ProcessingErrorFallback({ error, generationId }: ProcessingError
     <div className="p-4 border border-red-500 rounded">
       <p>Błąd komponentu statusu: {error.message}</p>
       {generationId && (
-        <Button onClick={() => (window.location.href = `/generate/review/${generationId}`)}>Przejdź do przeglądu</Button>
+        <Button onClick={() => (window.location.href = `/generate/review/${generationId}`)}>
+          Przejdź do przeglądu
+        </Button>
       )}
     </div>
   );
